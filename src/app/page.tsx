@@ -1,15 +1,22 @@
 import { Logo } from "@/components/Logo";
 import { ClientCard } from "@/components/ClientCard";
 import { clients } from "@/lib/data/clients";
-import { seedPayables, seedReceivables } from "@/lib/data/m4-logistica";
+import { financeRegistry } from "@/lib/data/financeRegistry";
 import { computeContasPagarKpis, computeContasReceberKpis } from "@/lib/derive";
 import { formatCurrency } from "@/lib/format";
 import { ArrowDownCircle, ArrowUpCircle, Building2 } from "lucide-react";
 
 export default function ClientPortfolioPage() {
   const activeClients = clients.filter((c) => c.status === "ativo").length;
-  const contasPagarKpis = computeContasPagarKpis(seedPayables);
-  const contasReceberKpis = computeContasReceberKpis(seedReceivables);
+  const ativos = clients.filter((c) => c.status === "ativo" && financeRegistry[c.slug]);
+  const aReceberTotal = ativos.reduce(
+    (a, c) => a + computeContasReceberKpis(financeRegistry[c.slug].seedReceivables).aReceber.value,
+    0
+  );
+  const aPagarTotal = ativos.reduce(
+    (a, c) => a + computeContasPagarKpis(financeRegistry[c.slug].seedPayables).emAberto.value,
+    0
+  );
 
   return (
     <div className="min-h-screen">
@@ -53,7 +60,7 @@ export default function ClientPortfolioPage() {
               <ArrowUpCircle size={18} />
             </div>
             <div>
-              <p className="text-lg font-semibold text-brand-900">{formatCurrency(contasReceberKpis.aReceber.value)}</p>
+              <p className="text-lg font-semibold text-brand-900">{formatCurrency(aReceberTotal)}</p>
               <p className="text-xs text-slate-500">A receber em aberto (carteira)</p>
             </div>
           </div>
@@ -62,7 +69,7 @@ export default function ClientPortfolioPage() {
               <ArrowDownCircle size={18} />
             </div>
             <div>
-              <p className="text-lg font-semibold text-brand-900">{formatCurrency(contasPagarKpis.emAberto.value)}</p>
+              <p className="text-lg font-semibold text-brand-900">{formatCurrency(aPagarTotal)}</p>
               <p className="text-xs text-slate-500">A pagar em aberto (carteira)</p>
             </div>
           </div>

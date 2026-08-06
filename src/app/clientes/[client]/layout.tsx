@@ -3,11 +3,13 @@ import { IconRail } from "@/components/client/IconRail";
 import { ClientHeader } from "@/components/client/ClientHeader";
 import { ClientFooter } from "@/components/client/ClientFooter";
 import { getClient } from "@/lib/data/clients";
+import { getFinanceData } from "@/lib/data/financeRegistry";
 import { FinanceProvider } from "@/lib/store/FinanceContext";
 
-export default function M4Layout({ children }: { children: React.ReactNode }) {
-  const client = getClient("m4-logistica");
-  if (!client) notFound();
+export default async function ClientLayout({ children, params }: LayoutProps<"/clientes/[client]">) {
+  const { client: slug } = await params;
+  const client = getClient(slug);
+  if (!client || !getFinanceData(slug)) notFound();
 
   return (
     <div
@@ -19,7 +21,7 @@ export default function M4Layout({ children }: { children: React.ReactNode }) {
         } as React.CSSProperties
       }
     >
-      <FinanceProvider>
+      <FinanceProvider key={client.slug} client={client}>
         <IconRail client={client} />
         <div className="sm:pl-14 flex min-h-screen flex-col">
           <ClientHeader client={client} />

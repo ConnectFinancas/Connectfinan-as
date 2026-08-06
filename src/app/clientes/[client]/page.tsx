@@ -32,8 +32,8 @@ function ResumoCard({
   );
 }
 
-export default function M4DashboardPage() {
-  const { summary } = useFinance();
+export default function ClientDashboardPage() {
+  const { client, summary } = useFinance();
   const { anoCorrente, resumoKpis, resumoDoAno, indicadores, monthlyFinancials, evolucaoReceitaAcumulada, saidasPorClassificacao } = summary;
 
   return (
@@ -92,7 +92,7 @@ export default function M4DashboardPage() {
 
         <div className="card p-5">
           <h2 className="mb-1 text-sm font-semibold text-brand-900">Indicadores</h2>
-          <p className="mb-4 text-xs text-faint">M4 · {anoCorrente}</p>
+          <p className="mb-4 text-xs text-faint">{client.monogram} · {anoCorrente}</p>
           <dl className="flex flex-col gap-3 text-sm">
             <div className="flex items-center justify-between border-b border-border-subtle pb-3">
               <dt className="text-muted">Margem do resultado</dt>

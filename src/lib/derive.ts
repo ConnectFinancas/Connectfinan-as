@@ -1,7 +1,9 @@
 import { categoryColor } from "@/lib/categoryColor";
-import { deducoesManuais, dreMonths } from "@/lib/data/m4-logistica";
+import { dreMonths } from "@/lib/constants";
 import { HOJE, isVencido, parseISO } from "@/lib/today";
 import { CategoryGroup, DreGridRow, ExpenseSlice, MonthlyFinancials, Payable, Receivable, Status } from "@/lib/types";
+
+type DeducoesManuais = { impostos: number; inadimplencia: number; investimentos: number };
 
 export function displayStatus(status: Status, vencimento: string): Status {
   if (status === "pago" || status === "recebido") return status;
@@ -93,7 +95,13 @@ export function computeReceitaPorServico(receivables: Receivable[]): ExpenseSlic
     .map(([label, value]) => ({ label, value: round2(value), color: categoryColor(label).fg }));
 }
 
-export function computeDreGrid(payables: Payable[], categorias: CategoryGroup[], receitaBruta: number[], acumReceita: number): DreGridRow[] {
+export function computeDreGrid(
+  payables: Payable[],
+  categorias: CategoryGroup[],
+  receitaBruta: number[],
+  acumReceita: number,
+  deducoesManuais: DeducoesManuais
+): DreGridRow[] {
   const cmvValues = monthTotals(payables.filter((p) => p.classificacao === "CMV"));
   const acumCmv = round2(cmvValues.reduce((a, v) => a + v, 0));
 
@@ -142,12 +150,17 @@ export function computeDreGrid(payables: Payable[], categorias: CategoryGroup[],
   return rows;
 }
 
-export function computeFinanceSummary(payables: Payable[], receivables: Receivable[], categoriasPagar: CategoryGroup[]) {
+export function computeFinanceSummary(
+  payables: Payable[],
+  receivables: Receivable[],
+  categoriasPagar: CategoryGroup[],
+  deducoesManuais: DeducoesManuais
+) {
   const receitaBrutaPorMes = monthTotals(receivables);
   const acumReceita = round2(receitaBrutaPorMes.reduce((a, v) => a + v, 0));
   const despesasTotais = round2(payables.reduce((a, p) => a + p.valor, 0));
 
-  const dreGrid = computeDreGrid(payables, categoriasPagar, receitaBrutaPorMes, acumReceita);
+  const dreGrid = computeDreGrid(payables, categoriasPagar, receitaBrutaPorMes, acumReceita, deducoesManuais);
   const cmv = dreGrid.find((r) => r.label === "(-) CMV")?.acumulado ?? 0;
   const geracaoDeCaixa = dreGrid.find((r) => r.isTotal)?.acumulado ?? 0;
   const receitaLiquida = dreGrid.find((r) => r.label === "= Receita líquida")?.acumulado ?? 0;

@@ -3,7 +3,7 @@
 import { ChevronRight, Download, Info } from "lucide-react";
 import { RevenueExpenseChart } from "@/components/charts/RevenueExpenseChart";
 import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
-import { dreMonths } from "@/lib/data/m4-logistica";
+import { dreMonths } from "@/lib/constants";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
 

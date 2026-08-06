@@ -1,19 +1,10 @@
+"use client";
+
 import { AlertTriangle, Download, Landmark, Pin, Target, TrendingUp } from "lucide-react";
 import { DailyBalanceChart } from "@/components/charts/DailyBalanceChart";
 import { MiniBarCompare } from "@/components/charts/MiniBarCompare";
 import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
-import {
-  destaquesPeriodo,
-  faturamentoXRecebimentos,
-  fluxoCaixaKpis,
-  fluxoCaixaPeriodo,
-  fluxoDiario,
-  indicesFinanceiros,
-  maioresPagamentos,
-  maioresRecebimentos,
-  pontoDeAtencao,
-  resumoExecutivo,
-} from "@/lib/data/m4-logistica";
+import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
 
 function Kpi({ label, value, hint, tone, isPct }: { label: string; value: number; hint: string; tone?: "positive" | "negative"; isPct?: boolean }) {
@@ -32,6 +23,19 @@ function Kpi({ label, value, hint, tone, isPct }: { label: string; value: number
 const destaqueIcons = [Landmark, TrendingUp, Target, Pin];
 
 export default function FluxoDeCaixaPage() {
+  const {
+    fluxoCaixaPeriodo,
+    fluxoCaixaKpis,
+    fluxoDiario,
+    faturamentoXRecebimentos,
+    maioresRecebimentos,
+    maioresPagamentos,
+    indicesFinanceiros,
+    destaquesPeriodo,
+    resumoExecutivo,
+    pontoDeAtencao,
+  } = useFinance();
+
   return (
     <div className="flex flex-col gap-6">
       <div className="card flex flex-col gap-3 p-4 lg:flex-row lg:items-end lg:justify-between">

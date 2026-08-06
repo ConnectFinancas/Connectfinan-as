@@ -105,3 +105,28 @@ export type CategoryGroup = {
   padrao: boolean;
   categorias: { nome: string; padrao: boolean }[];
 };
+
+export type ClientFinanceData = {
+  seedPayables: Payable[];
+  seedReceivables: Receivable[];
+  seedCategoriasPagar: CategoryGroup[];
+  seedCategoriasReceber: CategoryGroup[];
+  deducoesManuais: { impostos: number; inadimplencia: number; investimentos: number };
+  fluxoCaixaPeriodo: string;
+  fluxoCaixaKpis: {
+    saldoInicial: number;
+    recebimentos: number;
+    pagamentos: number;
+    geracaoLiquida: number;
+    geracaoLiquidaPct: number;
+    saldoFinal: number;
+    crescimentoCaixa: number;
+  };
+  faturamentoXRecebimentos: { faturamento: number; recebido: number; conversaoEmCaixa: number; diferenca: number };
+  maioresRecebimentos: { data: string; valor: number; pctTotal: number }[];
+  maioresPagamentos: { data: string; valor: number; pctTotal: number }[];
+  indicesFinanceiros: { label: string; value: string }[];
+  destaquesPeriodo: { title: string; desc: string }[];
+  resumoExecutivo: string[];
+  pontoDeAtencao: string;
+};
