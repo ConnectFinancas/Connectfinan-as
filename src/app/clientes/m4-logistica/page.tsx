@@ -1,15 +1,9 @@
+"use client";
+
 import { RevenueExpenseChart } from "@/components/charts/RevenueExpenseChart";
 import { AccumulatedRevenueAreaChart } from "@/components/charts/AccumulatedRevenueAreaChart";
 import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
-import {
-  anoCorrente,
-  evolucaoReceitaAcumulada,
-  indicadores,
-  monthlyFinancials,
-  resumoDoAno,
-  resumoKpis,
-  saidasPorClassificacao,
-} from "@/lib/data/m4-logistica";
+import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
 
 function ResumoCard({
@@ -39,6 +33,9 @@ function ResumoCard({
 }
 
 export default function M4DashboardPage() {
+  const { summary } = useFinance();
+  const { anoCorrente, resumoKpis, resumoDoAno, indicadores, monthlyFinancials, evolucaoReceitaAcumulada, saidasPorClassificacao } = summary;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

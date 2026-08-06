@@ -1,12 +1,15 @@
 import { Logo } from "@/components/Logo";
 import { ClientCard } from "@/components/ClientCard";
 import { clients } from "@/lib/data/clients";
-import { contasPagarKpis, contasReceberKpis } from "@/lib/data/m4-logistica";
+import { seedPayables, seedReceivables } from "@/lib/data/m4-logistica";
+import { computeContasPagarKpis, computeContasReceberKpis } from "@/lib/derive";
 import { formatCurrency } from "@/lib/format";
 import { ArrowDownCircle, ArrowUpCircle, Building2 } from "lucide-react";
 
 export default function ClientPortfolioPage() {
   const activeClients = clients.filter((c) => c.status === "ativo").length;
+  const contasPagarKpis = computeContasPagarKpis(seedPayables);
+  const contasReceberKpis = computeContasReceberKpis(seedReceivables);
 
   return (
     <div className="min-h-screen">

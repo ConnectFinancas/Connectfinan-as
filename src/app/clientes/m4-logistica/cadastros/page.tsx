@@ -2,10 +2,20 @@
 
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
-import { categoriasPagar, categoriasReceber } from "@/lib/data/m4-logistica";
+import { useFinance } from "@/lib/store/FinanceContext";
 import { CategoryGroup } from "@/lib/types";
 
-function GroupCard({ group }: { group: CategoryGroup }) {
+function GroupCard({ group, tipo }: { group: CategoryGroup; tipo: "pagar" | "receber" }) {
+  const finance = useFinance();
+  const [novaCategoria, setNovaCategoria] = useState("");
+
+  function adicionar() {
+    const nome = novaCategoria.trim();
+    if (!nome) return;
+    finance.addCategoria(tipo, group.classificacao, nome);
+    setNovaCategoria("");
+  }
+
   return (
     <div className="card p-5">
       <div className="mb-3 flex items-center justify-between">
@@ -24,6 +34,7 @@ function GroupCard({ group }: { group: CategoryGroup }) {
       </div>
 
       <div className="mb-3 flex flex-wrap gap-2">
+        {group.categorias.length === 0 && <span className="text-xs text-faint">Nenhuma categoria ainda.</span>}
         {group.categorias.map((c) => (
           <span
             key={c.nome}
@@ -41,10 +52,16 @@ function GroupCard({ group }: { group: CategoryGroup }) {
 
       <div className="flex gap-2">
         <input
+          value={novaCategoria}
+          onChange={(e) => setNovaCategoria(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && adicionar()}
           placeholder={`Nova categoria em ${group.classificacao}...`}
           className="flex-1 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-xs text-brand-900 placeholder:text-faint"
         />
-        <button className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-m4-accent px-3 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors">
+        <button
+          onClick={adicionar}
+          className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-m4-accent px-3 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors"
+        >
           <Plus size={13} />
           Categoria
         </button>
@@ -54,8 +71,17 @@ function GroupCard({ group }: { group: CategoryGroup }) {
 }
 
 export default function CadastrosPage() {
+  const finance = useFinance();
   const [tab, setTab] = useState<"pagar" | "receber">("pagar");
-  const groups = tab === "pagar" ? categoriasPagar : categoriasReceber;
+  const [novaClassificacao, setNovaClassificacao] = useState("");
+  const groups = tab === "pagar" ? finance.categoriasPagar : finance.categoriasReceber;
+
+  function adicionarClassificacao() {
+    const nome = novaClassificacao.trim();
+    if (!nome) return;
+    finance.addClassificacao(tab, nome);
+    setNovaClassificacao("");
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,7 +112,7 @@ export default function CadastrosPage() {
 
       <div className="flex flex-col gap-4">
         {groups.map((g) => (
-          <GroupCard key={g.classificacao} group={g} />
+          <GroupCard key={g.classificacao} group={g} tipo={tab} />
         ))}
       </div>
 
@@ -98,10 +124,16 @@ export default function CadastrosPage() {
         <p className="mb-3 text-xs text-faint">Cria um novo grupo (uma nova classificação financeira)</p>
         <div className="flex gap-2">
           <input
+            value={novaClassificacao}
+            onChange={(e) => setNovaClassificacao(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && adicionarClassificacao()}
             placeholder="Nome da nova classificação..."
             className="flex-1 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-xs text-brand-900 placeholder:text-faint"
           />
-          <button className="whitespace-nowrap rounded-lg bg-m4-accent px-4 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors">
+          <button
+            onClick={adicionarClassificacao}
+            className="whitespace-nowrap rounded-lg bg-m4-accent px-4 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors"
+          >
             Adicionar classificação
           </button>
         </div>

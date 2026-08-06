@@ -1,7 +1,10 @@
+"use client";
+
 import { ChevronRight, Download, Info } from "lucide-react";
 import { RevenueExpenseChart } from "@/components/charts/RevenueExpenseChart";
 import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
-import { anoCorrente, dreGrid, dreMonths, faturamentoKpis, monthlyFinancials, receitaPorServico } from "@/lib/data/m4-logistica";
+import { dreMonths } from "@/lib/data/m4-logistica";
+import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
 
 function Kpi({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "positive" | "negative" }) {
@@ -16,6 +19,9 @@ function Kpi({ label, value, hint, tone }: { label: string; value: number; hint:
 }
 
 export default function FaturamentoDrePage() {
+  const { summary } = useFinance();
+  const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
