@@ -141,3 +141,47 @@ export const kpis = {
   contasPagarAberto: 70700,
   margemLiquida: 18,
 };
+
+// Dados da aba "Resumo" — mês corrente (Agosto/2026) e acumulado do ano
+export const anoCorrente = 2026;
+
+export const resumoKpis = {
+  receitaMes: { value: 268000, delta: 4.3 },
+  saidasMes: { value: 70700, delta: -8.1 },
+  resultadoMes: { value: 268000 - 70700, delta: 12.4 },
+  receitaAcumulada: { value: 1884000 },
+};
+
+export const resumoDoAno = {
+  receita: 1884000,
+  saidasTotais: 1395000,
+  resultado: 1884000 - 1395000,
+};
+
+export const indicadores = {
+  margemResultado: ((1884000 - 1395000) / 1884000) * 100,
+  receitaRecebidaCaixa: (1659000 / 1884000) * 100,
+  maiorGrupoSaida: { label: "Despesas Administrativas", valor: 558000 },
+  mesesComMovimento: 8,
+};
+
+export const saidasPorClassificacao: ExpenseSlice[] = [
+  { label: "Despesas Administrativas", value: 558000, color: "#4f8dfd" },
+  { label: "Despesas com Pessoal", value: 446400, color: "#ff8a5c" },
+  { label: "Custo dos Serviços (CMV)", value: 167400, color: "#22d3a0" },
+  { label: "Despesas Logísticas", value: 111600, color: "#a78bfa" },
+  { label: "Investimentos", value: 55800, color: "#f5c344" },
+  { label: "Impostos", value: 41850, color: "#f472b6" },
+  { label: "Despesas Financeiras", value: 13950, color: "#94a3b8" },
+];
+
+export const evolucaoReceitaAcumulada = [
+  { month: "Jan/26", acumulado: 214000 },
+  { month: "Fev/26", acumulado: 419000 },
+  { month: "Mar/26", acumulado: 641000 },
+  { month: "Abr/26", acumulado: 872000 },
+  { month: "Mai/26", acumulado: 1111000 },
+  { month: "Jun/26", acumulado: 1359000 },
+  { month: "Jul/26", acumulado: 1616000 },
+  { month: "Ago/26", acumulado: 1884000 },
+];

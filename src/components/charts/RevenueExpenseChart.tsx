@@ -1,59 +1,44 @@
 "use client";
 
-import {
-  Bar,
-  CartesianGrid,
-  Line,
-  ComposedChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MonthlyFinancials } from "@/lib/types";
 import { formatCompact, formatCurrencyPrecise } from "@/lib/format";
 
 export function RevenueExpenseChart({ data }: { data: MonthlyFinancials[] }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid vertical={false} stroke="#e2e6f0" />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          axisLine={false}
-          tick={{ fontSize: 12, fill: "#64748b" }}
-        />
+      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={4}>
+        <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
+        <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--text-muted)" }} />
         <YAxis
           tickLine={false}
           axisLine={false}
-          tick={{ fontSize: 12, fill: "#64748b" }}
+          tick={{ fontSize: 12, fill: "var(--text-muted)" }}
           tickFormatter={(v) => formatCompact(v)}
           width={56}
         />
         <Tooltip
+          cursor={{ fill: "var(--surface-muted)" }}
           formatter={(value, name) => [
             formatCurrencyPrecise(Number(value)),
-            name === "receita" ? "Receita" : "Despesa",
+            name === "receita" ? "Receita" : "Saídas",
           ]}
+          labelStyle={{ color: "var(--foreground)", fontWeight: 600, marginBottom: 4 }}
           contentStyle={{
+            background: "var(--surface)",
             borderRadius: 12,
-            border: "1px solid #e2e6f0",
-            boxShadow: "0 4px 10px -2px rgb(16 23 40 / 0.10)",
+            border: "1px solid var(--border-subtle)",
+            boxShadow: "0 8px 20px -6px rgb(0 0 0 / 0.35)",
             fontSize: 13,
           }}
         />
-        <Bar dataKey="despesa" fill="#dbe1ee" radius={[6, 6, 0, 0]} barSize={22} isAnimationActive={false} />
-        <Line
-          type="monotone"
-          dataKey="receita"
-          stroke="#0f9d6a"
-          strokeWidth={2.5}
-          dot={{ r: 3, fill: "#0f9d6a", strokeWidth: 0 }}
-          activeDot={{ r: 5 }}
-          isAnimationActive={false}
+        <Legend
+          formatter={(value) => (value === "receita" ? "Receita" : "Saídas")}
+          wrapperStyle={{ fontSize: 12, color: "var(--text-muted)" }}
         />
-      </ComposedChart>
+        <Bar dataKey="receita" fill="#22d3a0" radius={[4, 4, 0, 0]} barSize={14} isAnimationActive={false} />
+        <Bar dataKey="despesa" name="saidas" fill="#ff8a5c" radius={[4, 4, 0, 0]} barSize={14} isAnimationActive={false} />
+      </BarChart>
     </ResponsiveContainer>
   );
 }

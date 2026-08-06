@@ -20,7 +20,7 @@ export function KpiCard({
   return (
     <div className="card p-5 flex flex-col gap-3">
       <div className="flex items-start justify-between">
-        <span className="text-sm font-medium text-slate-500">{label}</span>
+        <span className="text-sm font-medium text-muted">{label}</span>
         <div
           className="flex h-9 w-9 items-center justify-center rounded-xl"
           style={{ background: `${accent ?? "#2b46a3"}1a`, color: accent ?? "#2b46a3" }}
@@ -35,14 +35,14 @@ export function KpiCard({
         {delta !== undefined && (
           <span
             className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-medium ${
-              positive ? "bg-accent-100 text-accent-600" : "bg-danger-100 text-danger-500"
+              positive ? "bg-accent-100 text-accent-500" : "bg-danger-100 text-danger-500"
             }`}
           >
             {positive ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
             {Math.abs(delta).toFixed(1)}%
           </span>
         )}
-        <span className="text-slate-400">{hint ?? "vs. mês anterior"}</span>
+        <span className="text-faint">{hint ?? "vs. mês anterior"}</span>
       </div>
     </div>
   );

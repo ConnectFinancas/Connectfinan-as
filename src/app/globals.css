@@ -35,12 +35,52 @@
   --surface-muted: #eef1f7;
   --border-subtle: #e2e6f0;
 
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
   --radius-lg: 1rem;
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
 
   --shadow-card: 0 1px 2px 0 rgb(16 23 40 / 0.04), 0 1px 6px -1px rgb(16 23 40 / 0.06);
   --shadow-card-hover: 0 4px 10px -2px rgb(16 23 40 / 0.10), 0 2px 6px -2px rgb(16 23 40 / 0.06);
+}
+
+/* Tema escuro do painel financeiro (usado dentro do sistema de cada cliente) */
+.cf-dark {
+  --background: #0a0d13;
+  --foreground: #e9edf3;
+
+  --brand-950: #05070b;
+  --brand-900: #eef1f6;
+  --brand-800: #cdd5e0;
+  --brand-700: #aab4c4;
+  --brand-600: #8b96a9;
+  --brand-500: #6b7688;
+  --brand-400: #4d5766;
+
+  --accent-500: #22d3a0;
+  --accent-600: #1cb989;
+  --accent-100: #12332a;
+
+  --warn-500: #f2a93c;
+  --warn-100: #3a2c14;
+
+  --danger-500: #f2665c;
+  --danger-100: #3a1c1e;
+
+  --info-500: #5b93fd;
+  --info-100: #16233f;
+
+  --surface: #121722;
+  --surface-muted: #171d29;
+  --border-subtle: #232b3a;
+
+  --text-muted: #8b95a8;
+  --text-faint: #626d80;
+
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.25);
+  --shadow-card-hover: 0 10px 24px -6px rgb(0 0 0 / 0.5);
 }
 
 @theme inline {
@@ -75,6 +115,8 @@
   --color-surface-muted: var(--surface-muted);
   --color-border-subtle: var(--border-subtle);
 
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
 }
 
 body {
@@ -88,6 +130,11 @@ body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+}
+
+.card-dashed {
+  border-style: dashed;
+  box-shadow: none;
 }
 
 .scrollbar-thin::-webkit-scrollbar {

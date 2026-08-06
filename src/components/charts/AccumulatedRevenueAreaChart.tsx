@@ -1,25 +1,18 @@
 "use client";
 
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { CashFlowPoint } from "@/lib/types";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrencyPrecise } from "@/lib/format";
 
-export function CashFlowAreaChart({ data }: { data: CashFlowPoint[] }) {
+export type AccumulatedPoint = { month: string; acumulado: number };
+
+export function AccumulatedRevenueAreaChart({ data }: { data: AccumulatedPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
-          <linearGradient id="saldoFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#5b93fd" stopOpacity={0.32} />
-            <stop offset="100%" stopColor="#5b93fd" stopOpacity={0} />
+          <linearGradient id="receitaAcumFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#22d3a0" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#22d3a0" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
@@ -32,8 +25,7 @@ export function CashFlowAreaChart({ data }: { data: CashFlowPoint[] }) {
           width={56}
         />
         <Tooltip
-          formatter={(value) => formatCurrencyPrecise(Number(value))}
-          labelFormatter={(l) => `Saldo em caixa · ${l}`}
+          formatter={(value) => [formatCurrencyPrecise(Number(value)), "Receita acumulada"]}
           labelStyle={{ color: "var(--foreground)", fontWeight: 600, marginBottom: 4 }}
           contentStyle={{
             background: "var(--surface)",
@@ -45,10 +37,10 @@ export function CashFlowAreaChart({ data }: { data: CashFlowPoint[] }) {
         />
         <Area
           type="monotone"
-          dataKey="saldo"
-          stroke="#5b93fd"
+          dataKey="acumulado"
+          stroke="#22d3a0"
           strokeWidth={2.5}
-          fill="url(#saldoFill)"
+          fill="url(#receitaAcumFill)"
           isAnimationActive={false}
         />
       </AreaChart>

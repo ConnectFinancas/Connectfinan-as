@@ -14,9 +14,9 @@ export default function ObrigacoesFiscaisPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Em Atraso" value={atrasado} icon={AlertOctagon} accent="#dc2626" hint="regularizar" />
-        <KpiCard label="A Vencer (agosto)" value={pendente} icon={CalendarClock} accent="#d97706" hint="guias pendentes" />
-        <KpiCard label="Recolhido no trimestre" value={pago} icon={CheckCircle2} accent="#0f9d6a" hint="já pago" />
+        <KpiCard label="Em Atraso" value={atrasado} icon={AlertOctagon} accent="#f2665c" hint="regularizar" />
+        <KpiCard label="A Vencer (agosto)" value={pendente} icon={CalendarClock} accent="#f2a93c" hint="guias pendentes" />
+        <KpiCard label="Recolhido no trimestre" value={pago} icon={CheckCircle2} accent="#22d3a0" hint="já pago" />
       </div>
 
       <div className="card overflow-hidden">
@@ -27,7 +27,7 @@ export default function ObrigacoesFiscaisPage() {
         <div className="overflow-x-auto p-5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border-subtle text-left text-xs text-slate-400">
+              <tr className="border-b border-border-subtle text-left text-xs text-faint">
                 <th className="pb-2 font-medium">Obrigação</th>
                 <th className="pb-2 font-medium">Competência</th>
                 <th className="pb-2 font-medium">Vencimento</th>
@@ -39,12 +39,12 @@ export default function ObrigacoesFiscaisPage() {
               {rows.map((t) => (
                 <tr key={t.id} className="border-b border-border-subtle last:border-0">
                   <td className="py-3 font-medium text-brand-900">{t.nome}</td>
-                  <td className="py-3 text-slate-500">{t.competencia}</td>
-                  <td className="py-3 whitespace-nowrap text-slate-500">
+                  <td className="py-3 text-muted">{t.competencia}</td>
+                  <td className="py-3 whitespace-nowrap text-muted">
                     {new Date(t.vencimento + "T00:00:00").toLocaleDateString("pt-BR")}
                   </td>
                   <td className="py-3 text-right font-medium tabular-nums text-brand-900">
-                    {t.valor > 0 ? formatCurrencyPrecise(t.valor) : <span className="text-slate-400">Declaratória</span>}
+                    {t.valor > 0 ? formatCurrencyPrecise(t.valor) : <span className="text-faint">Declaratória</span>}
                   </td>
                   <td className="py-3 pl-4">
                     <StatusBadge status={t.status} />

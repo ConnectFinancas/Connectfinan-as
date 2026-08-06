@@ -33,10 +33,12 @@ export function ExpensePieChart({ data }: { data: ExpenseSlice[] }) {
               ];
             }}
             contentStyle={{
+              background: "var(--surface)",
               borderRadius: 12,
-              border: "1px solid #e2e6f0",
-              boxShadow: "0 4px 10px -2px rgb(16 23 40 / 0.10)",
+              border: "1px solid var(--border-subtle)",
+              boxShadow: "0 8px 20px -6px rgb(0 0 0 / 0.35)",
               fontSize: 13,
+              color: "var(--foreground)",
             }}
           />
         </PieChart>
@@ -44,7 +46,7 @@ export function ExpensePieChart({ data }: { data: ExpenseSlice[] }) {
       <ul className="flex-1 w-full grid grid-cols-1 gap-1.5 text-sm">
         {data.map((d) => (
           <li key={d.label} className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 text-slate-600">
+            <span className="flex items-center gap-2 text-muted">
               <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: d.color }} />
               {d.label}
             </span>

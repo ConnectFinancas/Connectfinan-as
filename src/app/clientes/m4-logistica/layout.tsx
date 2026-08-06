@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
-import { Sidebar } from "@/components/client/Sidebar";
-import { TopBar } from "@/components/client/TopBar";
-import { MobileNav } from "@/components/client/MobileNav";
+import { IconRail } from "@/components/client/IconRail";
+import { ClientHeader } from "@/components/client/ClientHeader";
 import { getClient } from "@/lib/data/clients";
 
 export default function M4Layout({ children }: { children: React.ReactNode }) {
@@ -10,7 +9,7 @@ export default function M4Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="min-h-screen bg-background"
+      className="cf-dark min-h-screen bg-background"
       style={
         {
           "--client-accent": client.accent,
@@ -18,10 +17,9 @@ export default function M4Layout({ children }: { children: React.ReactNode }) {
         } as React.CSSProperties
       }
     >
-      <Sidebar client={client} />
-      <div className="lg:pl-64 flex min-h-screen flex-col">
-        <MobileNav client={client} />
-        <TopBar client={client} />
+      <IconRail client={client} />
+      <div className="sm:pl-14 flex min-h-screen flex-col">
+        <ClientHeader client={client} />
         <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>

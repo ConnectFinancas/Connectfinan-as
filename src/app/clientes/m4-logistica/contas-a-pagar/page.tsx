@@ -16,20 +16,20 @@ export default function ContasAPagarPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Atrasado" value={atrasado} icon={AlertOctagon} accent="#dc2626" hint="requer atenção" />
-        <KpiCard label="A Vencer (agosto)" value={pendente} icon={CalendarClock} accent="#d97706" hint="pendente + agendado" />
-        <KpiCard label="Pago no mês" value={pago} icon={CheckCircle2} accent="#0f9d6a" hint="já liquidado" />
+        <KpiCard label="Atrasado" value={atrasado} icon={AlertOctagon} accent="#f2665c" hint="requer atenção" />
+        <KpiCard label="A Vencer (agosto)" value={pendente} icon={CalendarClock} accent="#f2a93c" hint="pendente + agendado" />
+        <KpiCard label="Pago no mês" value={pago} icon={CheckCircle2} accent="#22d3a0" hint="já liquidado" />
       </div>
 
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between p-5 pb-0">
           <h2 className="text-sm font-semibold text-brand-900">Contas a Pagar — Agosto/2026</h2>
-          <span className="text-xs text-slate-400">{rows.length} lançamentos</span>
+          <span className="text-xs text-faint">{rows.length} lançamentos</span>
         </div>
         <div className="overflow-x-auto p-5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border-subtle text-left text-xs text-slate-400">
+              <tr className="border-b border-border-subtle text-left text-xs text-faint">
                 <th className="pb-2 font-medium">Favorecido</th>
                 <th className="pb-2 font-medium">Categoria</th>
                 <th className="pb-2 font-medium">Vencimento</th>
@@ -41,8 +41,8 @@ export default function ContasAPagarPage() {
               {rows.map((p) => (
                 <tr key={p.id} className="border-b border-border-subtle last:border-0">
                   <td className="py-3 font-medium text-brand-900">{p.favorecido}</td>
-                  <td className="py-3 text-slate-500">{p.categoria}</td>
-                  <td className="py-3 whitespace-nowrap text-slate-500">
+                  <td className="py-3 text-muted">{p.categoria}</td>
+                  <td className="py-3 whitespace-nowrap text-muted">
                     {new Date(p.vencimento + "T00:00:00").toLocaleDateString("pt-BR")}
                   </td>
                   <td className="py-3 text-right font-medium tabular-nums text-brand-900">
