@@ -2,6 +2,7 @@ import { Status } from "@/lib/types";
 
 const STYLES: Record<Status, { label: string; bg: string; fg: string; dot: string }> = {
   pago: { label: "Pago", bg: "bg-accent-100", fg: "text-accent-500", dot: "bg-accent-500" },
+  recebido: { label: "Recebido", bg: "bg-accent-100", fg: "text-accent-500", dot: "bg-accent-500" },
   pendente: { label: "Pendente", bg: "bg-warn-100", fg: "text-warn-500", dot: "bg-warn-500" },
   atrasado: { label: "Atrasado", bg: "bg-danger-100", fg: "text-danger-500", dot: "bg-danger-500" },
   agendado: { label: "Agendado", bg: "bg-info-100", fg: "text-info-500", dot: "bg-info-500" },

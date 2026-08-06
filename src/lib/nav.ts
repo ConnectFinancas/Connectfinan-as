@@ -1,11 +1,9 @@
 import {
   ArrowLeftRight,
   FileSpreadsheet,
-  LandmarkIcon,
   LayoutDashboard,
   LucideIcon,
   ReceiptText,
-  ScrollText,
   Settings2,
   UploadCloud,
 } from "lucide-react";
@@ -14,6 +12,7 @@ export type NavItem = {
   href: string;
   label: string;
   shortLabel: string;
+  pageTitle: string;
   subtitle: string;
   icon: LucideIcon;
   exact?: boolean;
@@ -25,6 +24,7 @@ export function clientNavItems(base: string): NavItem[] {
       href: base,
       label: "Resumo",
       shortLabel: "Resumo",
+      pageTitle: "Financeiro",
       subtitle: "Resumo · receita, saídas e resultado",
       icon: LayoutDashboard,
       exact: true,
@@ -32,63 +32,50 @@ export function clientNavItems(base: string): NavItem[] {
     {
       href: `${base}/contas-a-receber`,
       label: "Contas a Receber",
-      shortLabel: "A Receber",
-      subtitle: "Contas a Receber · títulos e recebimentos",
+      shortLabel: "Contas a Receber",
+      pageTitle: "Contas a Receber",
+      subtitle: "Boletos, recebimentos e inadimplência",
       icon: ReceiptText,
     },
     {
       href: `${base}/contas-a-pagar`,
       label: "Contas a Pagar",
-      shortLabel: "A Pagar",
-      subtitle: "Contas a Pagar · títulos e pagamentos",
+      shortLabel: "Contas a Pagar",
+      pageTitle: "Contas a Pagar",
+      subtitle: "Fornecedores, despesas e folha",
       icon: ReceiptText,
     },
     {
       href: `${base}/faturamento-dre`,
       label: "Faturamento & DRE",
-      shortLabel: "DRE",
-      subtitle: "Faturamento & DRE · resultado do período",
+      shortLabel: "Faturamento & DRE",
+      pageTitle: "Faturamento & DRE",
+      subtitle: "Demonstrativo de resultado por competência",
       icon: FileSpreadsheet,
     },
     {
       href: `${base}/fluxo-de-caixa`,
       label: "Fluxo de Caixa",
       shortLabel: "Fluxo de Caixa",
-      subtitle: "Fluxo de Caixa · entradas, saídas e saldo",
+      pageTitle: "Fluxo de Caixa",
+      subtitle: "Entradas, saídas e saldo diário",
       icon: ArrowLeftRight,
     },
     {
       href: `${base}/importar-ofx`,
       label: "Importar OFX",
       shortLabel: "Importar OFX",
-      subtitle: "Importar OFX · extrato e conciliação bancária",
+      pageTitle: "Importar Extrato (OFX)",
+      subtitle: "Concilie o extrato do banco com as contas · estilo Conta Azul",
       icon: UploadCloud,
     },
     {
       href: `${base}/cadastros`,
       label: "Cadastros",
       shortLabel: "Cadastros",
-      subtitle: "Cadastros · categorias, clientes e fornecedores",
+      pageTitle: "Cadastros Financeiros",
+      subtitle: "Categorias e classificações do seu jeito",
       icon: Settings2,
-    },
-  ];
-}
-
-export function clientExtraNavItems(base: string): NavItem[] {
-  return [
-    {
-      href: `${base}/obrigacoes-fiscais`,
-      label: "Obrigações Fiscais",
-      shortLabel: "Obrigações",
-      subtitle: "Obrigações Fiscais · guias e vencimentos",
-      icon: ScrollText,
-    },
-    {
-      href: `${base}/relatorios`,
-      label: "Relatórios",
-      shortLabel: "Relatórios",
-      subtitle: "Relatórios · exportação em PDF ou Excel",
-      icon: LandmarkIcon,
     },
   ];
 }

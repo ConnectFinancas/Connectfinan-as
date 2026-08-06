@@ -1,96 +1,145 @@
-import { dreCompetencia, dreFechamento, dreLines, receivables } from "@/lib/data/m4-logistica";
+import { ChevronRight, Download, Info } from "lucide-react";
+import { RevenueExpenseChart } from "@/components/charts/RevenueExpenseChart";
+import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
+import { anoCorrente, dreGrid, dreMonths, faturamentoKpis, monthlyFinancials, receitaPorServico } from "@/lib/data/m4-logistica";
 import { formatCurrencyPrecise } from "@/lib/format";
 
+function Kpi({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "positive" | "negative" }) {
+  const color = tone === "positive" ? "text-accent-500" : tone === "negative" ? "text-danger-500" : "text-brand-900";
+  return (
+    <div className="card p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">{label}</p>
+      <p className={`mt-2 text-2xl font-semibold tracking-tight ${color}`}>{formatCurrencyPrecise(value)}</p>
+      <p className="mt-1.5 text-xs text-faint">{hint}</p>
+    </div>
+  );
+}
+
 export default function FaturamentoDrePage() {
-  const receitaLiquida = dreLines.find((l) => l.label === "Receita Líquida")?.value ?? 0;
-  const lucroLiquido = dreLines.find((l) => l.isTotal)?.value ?? 0;
-  const margem = receitaLiquida ? (lucroLiquido / receitaLiquida) * 100 : 0;
-
-  const notasEmitidas = receivables.length;
-  const valorFaturado = receivables.reduce((a, r) => a + r.valor, 0);
-  const ticketMedio = valorFaturado / notasEmitidas;
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="card p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">Faturas Emitidas</p>
-          <p className="mt-2 text-2xl font-semibold text-brand-900">{notasEmitidas}</p>
-          <p className="mt-1.5 text-xs text-faint">Agosto/2026</p>
+      <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Ano</label>
+            <select className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900">
+              <option>{anoCorrente}</option>
+            </select>
+          </div>
+          <button className="mt-4 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors">
+            Detalhamento por mês
+          </button>
+          <button className="mt-4 flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-2 text-xs font-semibold text-brand-950 hover:bg-accent-600 transition-colors">
+            <Download size={13} />
+            Exportar Excel
+          </button>
         </div>
-        <div className="card p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">Valor Faturado</p>
-          <p className="mt-2 text-2xl font-semibold text-brand-900">{formatCurrencyPrecise(valorFaturado)}</p>
-          <p className="mt-1.5 text-xs text-faint">Agosto/2026</p>
-        </div>
-        <div className="card p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">Ticket Médio</p>
-          <p className="mt-2 text-2xl font-semibold text-brand-900">{formatCurrencyPrecise(ticketMedio)}</p>
-          <p className="mt-1.5 text-xs text-faint">por serviço faturado</p>
+        <div className="flex items-start gap-2 text-xs text-faint max-w-md">
+          <Info size={14} className="mt-0.5 shrink-0" />
+          <p>
+            Regime de <span className="text-brand-700 font-medium">competência</span> (pela data de vencimento). Receita
+            vem do Contas a Receber (por serviço); despesas do Contas a Pagar (por classificação). Clique em ▸ para abrir cada grupo.
+          </p>
         </div>
       </div>
 
-      <div className="card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-base font-semibold text-brand-900">
-            Demonstrativo do Resultado do Exercício (DRE)
-          </h1>
-          <p className="text-sm text-muted">
-            Competência: <span className="font-medium text-brand-700">{dreCompetencia}</span> · Fechado em {dreFechamento}
-          </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <Kpi label="Receita do Ano" value={faturamentoKpis.receitaDoAno.value} hint={faturamentoKpis.receitaDoAno.hint} />
+        <Kpi label="Receita Líquida" value={faturamentoKpis.receitaLiquida.value} hint={faturamentoKpis.receitaLiquida.hint} />
+        <Kpi label="Deduções + Despesas" value={faturamentoKpis.deducoesDespesas.value} hint={faturamentoKpis.deducoesDespesas.hint} />
+        <Kpi
+          label="Geração de Caixa"
+          value={faturamentoKpis.geracaoDeCaixa.value}
+          hint={faturamentoKpis.geracaoDeCaixa.hint}
+          tone={faturamentoKpis.geracaoDeCaixa.value >= 0 ? "positive" : "negative"}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="card p-5">
+          <h2 className="text-sm font-semibold text-brand-900">Receita x Despesa por mês</h2>
+          <p className="mb-2 text-xs text-faint">Meses com lançamentos no ano</p>
+          <RevenueExpenseChart data={monthlyFinancials} />
         </div>
-        <div className="flex gap-3">
-          <div className="rounded-xl bg-surface-muted px-4 py-2.5 text-right">
-            <p className="text-[11px] text-faint">Margem Líquida</p>
-            <p className="text-base font-semibold text-brand-900">{margem.toFixed(1)}%</p>
-          </div>
-          <div className="rounded-xl bg-accent-100 px-4 py-2.5 text-right">
-            <p className="text-[11px] text-accent-500">Lucro Líquido</p>
-            <p className="text-base font-semibold text-accent-500">{formatCurrencyPrecise(lucroLiquido)}</p>
-          </div>
+        <div className="card p-5">
+          <h2 className="text-sm font-semibold text-brand-900">Receita por serviço</h2>
+          <p className="mb-3 text-xs text-faint">Acumulado do ano</p>
+          <ExpensePieChart
+            data={receitaPorServico}
+            centerLabel={formatCurrencyPrecise(faturamentoKpis.receitaDoAno.value)}
+            centerSub={`receita ${anoCorrente}`}
+          />
         </div>
       </div>
 
       <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <tbody>
-            {dreLines.map((line, idx) => (
-              <tr
-                key={idx}
-                className={`border-b border-border-subtle last:border-0 ${
-                  line.isTotal ? "bg-accent-100" : line.isSubtotal ? "bg-surface-muted" : ""
-                }`}
-              >
-                <td
-                  className={`py-3 pl-5 pr-3 ${line.indent ? "pl-9 text-muted" : "font-medium"} ${
-                    line.isTotal ? "text-accent-500 font-semibold" : line.isSubtotal ? "text-brand-900 font-semibold" : "text-brand-900"
-                  }`}
-                >
-                  {line.label}
-                </td>
-                <td
-                  className={`py-3 pr-5 text-right tabular-nums whitespace-nowrap ${
-                    line.isTotal
-                      ? "text-accent-500 font-semibold text-base"
-                      : line.isSubtotal
-                        ? "text-brand-900 font-semibold"
-                        : line.negative
-                          ? "text-danger-500"
-                          : "text-muted"
-                  }`}
-                >
-                  {formatCurrencyPrecise(line.value)}
-                </td>
+        <div className="p-5 pb-4">
+          <h2 className="text-sm font-semibold text-brand-900">DRE</h2>
+          <p className="text-xs text-faint">Demonstrativo mês a mês · clique em ▸ para ver as categorias de cada grupo</p>
+        </div>
+        <div className="overflow-x-auto pb-2">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border-subtle text-left text-[11px] text-faint">
+                <th className="py-2 pl-5 pr-3 font-medium sticky left-0 bg-surface">Conta</th>
+                {dreMonths.map((m) => (
+                  <th key={m} className="py-2 px-3 text-right font-medium whitespace-nowrap">{m.toUpperCase()}</th>
+                ))}
+                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">Acum. {anoCorrente}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {dreGrid.map((row, idx) => {
+                if (row.isSection) {
+                  return (
+                    <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
+                      <td colSpan={dreMonths.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                        {row.label}
+                      </td>
+                    </tr>
+                  );
+                }
+                const rowColor = row.isSubtotal
+                  ? "text-brand-900"
+                  : row.negative
+                    ? "text-warn-500"
+                    : "text-muted";
+                const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
+                return (
+                  <tr
+                    key={idx}
+                    className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""}`}
+                  >
+                    <td
+                      className={`py-2.5 pl-5 pr-3 whitespace-nowrap sticky left-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : "bg-surface"} ${
+                        row.isTotal || row.isSubtotal || row.isHeader ? "font-semibold text-brand-900" : "text-muted"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {row.expandable && <ChevronRight size={12} className="text-faint" />}
+                        {row.label}
+                      </span>
+                    </td>
+                    {row.values.map((v, i) => (
+                      <td
+                        key={i}
+                        className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
+                          row.isTotal ? (v >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
+                        }`}
+                      >
+                        {formatCurrencyPrecise(v)}
+                      </td>
+                    ))}
+                    <td className={`py-2.5 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                      {formatCurrencyPrecise(row.acumulado)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <p className="text-xs text-faint">
-        Regime tributário: Lucro Presumido. Valores apurados a partir da conciliação bancária e lançamentos
-        contábeis do período. DRE gerencial elaborada pela equipe de BPO financeiro — Connect Finanças.
-      </p>
     </div>
   );
 }

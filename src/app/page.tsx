@@ -1,7 +1,7 @@
 import { Logo } from "@/components/Logo";
 import { ClientCard } from "@/components/ClientCard";
 import { clients } from "@/lib/data/clients";
-import { kpis } from "@/lib/data/m4-logistica";
+import { contasPagarKpis, contasReceberKpis } from "@/lib/data/m4-logistica";
 import { formatCurrency } from "@/lib/format";
 import { ArrowDownCircle, ArrowUpCircle, Building2 } from "lucide-react";
 
@@ -50,7 +50,7 @@ export default function ClientPortfolioPage() {
               <ArrowUpCircle size={18} />
             </div>
             <div>
-              <p className="text-lg font-semibold text-brand-900">{formatCurrency(kpis.contasReceberAberto)}</p>
+              <p className="text-lg font-semibold text-brand-900">{formatCurrency(contasReceberKpis.aReceber.value)}</p>
               <p className="text-xs text-slate-500">A receber em aberto (carteira)</p>
             </div>
           </div>
@@ -59,7 +59,7 @@ export default function ClientPortfolioPage() {
               <ArrowDownCircle size={18} />
             </div>
             <div>
-              <p className="text-lg font-semibold text-brand-900">{formatCurrency(kpis.contasPagarAberto)}</p>
+              <p className="text-lg font-semibold text-brand-900">{formatCurrency(contasPagarKpis.emAberto.value)}</p>
               <p className="text-xs text-slate-500">A pagar em aberto (carteira)</p>
             </div>
           </div>

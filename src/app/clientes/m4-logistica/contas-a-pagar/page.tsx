@@ -1,70 +1,120 @@
-import { AlertOctagon, CalendarClock, CheckCircle2 } from "lucide-react";
-import { KpiCard } from "@/components/KpiCard";
+import { Download } from "lucide-react";
+import { CategoryTag } from "@/components/CategoryTag";
 import { StatusBadge } from "@/components/StatusBadge";
-import { payables } from "@/lib/data/m4-logistica";
+import { contasPagarKpis, payables, totalContasPagar } from "@/lib/data/m4-logistica";
 import { formatCurrencyPrecise } from "@/lib/format";
 
-export default function ContasAPagarPage() {
-  const atrasado = payables.filter((p) => p.status === "atrasado").reduce((a, p) => a + p.valor, 0);
-  const pendente = payables
-    .filter((p) => p.status === "pendente" || p.status === "agendado")
-    .reduce((a, p) => a + p.valor, 0);
-  const pago = payables.filter((p) => p.status === "pago").reduce((a, p) => a + p.valor, 0);
+function Kpi({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "positive" | "negative" | "warn" }) {
+  const color = tone === "positive" ? "text-accent-500" : tone === "negative" ? "text-danger-500" : tone === "warn" ? "text-warn-500" : "text-brand-900";
+  return (
+    <div className="card p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">{label}</p>
+      <p className={`mt-2 text-2xl font-semibold tracking-tight ${color}`}>{formatCurrencyPrecise(value)}</p>
+      <p className="mt-1.5 text-xs text-faint">{hint}</p>
+    </div>
+  );
+}
 
+export default function ContasAPagarPage() {
   const rows = [...payables].sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Atrasado" value={atrasado} icon={AlertOctagon} accent="#f2665c" hint="requer atenção" />
-        <KpiCard label="A Vencer (agosto)" value={pendente} icon={CalendarClock} accent="#f2a93c" hint="pendente + agendado" />
-        <KpiCard label="Pago no mês" value={pago} icon={CheckCircle2} accent="#22d3a0" hint="já liquidado" />
+      <div className="card p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <button className="rounded-lg bg-m4-accent px-4 py-2.5 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors whitespace-nowrap">
+            + Nova despesa
+          </button>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Vencimento de</label>
+            <input type="date" className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Até</label>
+            <input type="date" className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Categoria</label>
+            <select className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900">
+              <option>Todas as categorias</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Classificação financeira</label>
+            <select className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900">
+              <option>Todas as classificações</option>
+            </select>
+          </div>
+          <div className="flex flex-1 min-w-[160px] flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Fornecedor / descrição</label>
+            <input placeholder="buscar..." className="w-full rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900 placeholder:text-faint" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Status</label>
+            <select className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900">
+              <option>Todos</option>
+            </select>
+          </div>
+          <button className="flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-2 text-xs font-semibold text-brand-950 hover:bg-accent-600 transition-colors whitespace-nowrap">
+            <Download size={13} />
+            Exportar CSV
+          </button>
+          <button className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-muted hover:bg-surface-muted transition-colors">
+            Limpar
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <Kpi label="Despesas no período" value={contasPagarKpis.despesasPeriodo.value} hint={contasPagarKpis.despesasPeriodo.hint} />
+        <Kpi label="Pago" value={contasPagarKpis.pago.value} hint={contasPagarKpis.pago.hint} tone="positive" />
+        <Kpi label="Em Aberto" value={contasPagarKpis.emAberto.value} hint={contasPagarKpis.emAberto.hint} tone="warn" />
+        <Kpi label="Maior Valor" value={contasPagarKpis.maiorValor.value} hint={contasPagarKpis.maiorValor.hint} />
       </div>
 
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between p-5 pb-0">
-          <h2 className="text-sm font-semibold text-brand-900">Contas a Pagar — Agosto/2026</h2>
-          <span className="text-xs text-faint">{rows.length} lançamentos</span>
+          <h2 className="text-sm font-semibold text-brand-900">Despesas</h2>
+          <span className="text-xs text-faint">{totalContasPagar} lançamentos</span>
         </div>
         <div className="overflow-x-auto p-5">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border-subtle text-left text-xs text-faint">
-                <th className="pb-2 font-medium">Favorecido</th>
+                <th className="pb-2 pr-2 font-medium"><input type="checkbox" className="accent-accent-500" /></th>
+                <th className="pb-2 font-medium">Fornecedor</th>
                 <th className="pb-2 font-medium">Categoria</th>
-                <th className="pb-2 font-medium">Vencimento</th>
+                <th className="pb-2 pr-4 font-medium">Classificação financeira</th>
+                <th className="pb-2 pr-4 font-medium">Vencimento</th>
                 <th className="pb-2 font-medium text-right">Valor</th>
                 <th className="pb-2 pl-4 font-medium">Status</th>
+                <th className="pb-2 pl-4 font-medium">Pagamento</th>
+                <th className="pb-2 pl-4 font-medium">Descrição</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((p) => (
                 <tr key={p.id} className="border-b border-border-subtle last:border-0">
-                  <td className="py-3 font-medium text-brand-900">{p.favorecido}</td>
-                  <td className="py-3 text-muted">{p.categoria}</td>
-                  <td className="py-3 whitespace-nowrap text-muted">
+                  <td className="py-3 pr-2"><input type="checkbox" className="accent-accent-500" /></td>
+                  <td className="py-3 font-medium text-brand-900 whitespace-nowrap">{p.favorecido}</td>
+                  <td className="py-3"><CategoryTag name={p.categoria} /></td>
+                  <td className="py-3 pr-4 text-muted whitespace-nowrap">{p.classificacao}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap text-muted">
                     {new Date(p.vencimento + "T00:00:00").toLocaleDateString("pt-BR")}
                   </td>
-                  <td className="py-3 text-right font-medium tabular-nums text-brand-900">
+                  <td className="py-3 text-right font-medium tabular-nums text-brand-900 whitespace-nowrap">
                     {formatCurrencyPrecise(p.valor)}
                   </td>
                   <td className="py-3 pl-4">
                     <StatusBadge status={p.status} />
                   </td>
+                  <td className="py-3 pl-4 whitespace-nowrap text-muted">
+                    {p.pagamento ? new Date(p.pagamento + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
+                  </td>
+                  <td className="py-3 pl-4 text-muted whitespace-nowrap">{p.descricao}</td>
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="border-t border-border-subtle bg-surface-muted">
-                <td className="py-3 pl-1 font-semibold text-brand-900" colSpan={3}>
-                  Total do mês
-                </td>
-                <td className="py-3 text-right font-semibold tabular-nums text-brand-900">
-                  {formatCurrencyPrecise(rows.reduce((a, p) => a + p.valor, 0))}
-                </td>
-                <td />
-              </tr>
-            </tfoot>
           </table>
         </div>
       </div>

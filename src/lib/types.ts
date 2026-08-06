@@ -36,24 +36,30 @@ export type DreLine = {
   negative?: boolean;
 };
 
-export type Status = "pago" | "pendente" | "atrasado" | "agendado" | "conciliado" | "nao_conciliado";
+export type Status = "pago" | "recebido" | "pendente" | "atrasado" | "agendado" | "conciliado" | "nao_conciliado";
 
 export type Payable = {
   id: string;
   favorecido: string;
   categoria: string;
+  classificacao: string;
   vencimento: string;
   valor: number;
   status: Status;
+  pagamento?: string;
+  descricao: string;
 };
 
 export type Receivable = {
   id: string;
   cliente: string;
+  categoria: string;
+  classificacao: string;
   descricao: string;
   vencimento: string;
   valor: number;
   status: Status;
+  recebimento?: string;
 };
 
 export type BankTransaction = {
@@ -78,4 +84,24 @@ export type ExpenseSlice = {
   label: string;
   value: number;
   color: string;
+};
+
+export type DreGridRow = {
+  label: string;
+  values: number[];
+  acumulado: number;
+  isHeader?: boolean;
+  isSubtotal?: boolean;
+  isTotal?: boolean;
+  isSection?: boolean;
+  indent?: boolean;
+  negative?: boolean;
+  expandable?: boolean;
+};
+
+export type CategoryGroup = {
+  classificacao: string;
+  color: string;
+  padrao: boolean;
+  categorias: { nome: string; padrao: boolean }[];
 };

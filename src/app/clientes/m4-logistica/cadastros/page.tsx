@@ -1,85 +1,110 @@
-import { Plus, Tag, Truck, Users } from "lucide-react";
+"use client";
 
-const categorias = [
-  { nome: "Despesas Administrativas", tipo: "Saída" },
-  { nome: "Despesas com Pessoal", tipo: "Saída" },
-  { nome: "Custo dos Serviços (CMV)", tipo: "Saída" },
-  { nome: "Despesas Logísticas", tipo: "Saída" },
-  { nome: "Investimentos", tipo: "Saída" },
-  { nome: "Impostos", tipo: "Saída" },
-  { nome: "Despesas Financeiras", tipo: "Saída" },
-  { nome: "Prestação de Serviços", tipo: "Entrada" },
-];
+import { useState } from "react";
+import { Plus, X } from "lucide-react";
+import { categoriasPagar, categoriasReceber } from "@/lib/data/m4-logistica";
+import { CategoryGroup } from "@/lib/types";
 
-const clientesM4 = [
-  "Prime Import Comércio",
-  "Bela Casa Utilidades",
-  "RM Distribuidora (FBA)",
-  "TechGadgets Brasil",
-  "Boa Vista Eletro",
-  "Nordeste Cosméticos",
-  "Casa & Cia",
-  "Fast Import Eletrônicos",
-];
-
-const fornecedores = [
-  "Armazém Log Park",
-  "Transportadora Rápido Sul",
-  "EmbalaFácil Distribuidora",
-  "CEMIG Energia",
-  "WMS Cloud Sistemas",
-  "TotalFork Manutenção",
-  "Posto Ipiranga",
-  "Vivo Empresas",
-];
-
-function CadastroCard({
-  title,
-  icon: Icon,
-  items,
-}: {
-  title: string;
-  icon: typeof Tag;
-  items: string[];
-}) {
+function GroupCard({ group }: { group: CategoryGroup }) {
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center justify-between p-5 pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info-100 text-info-500">
-            <Icon size={15} />
-          </div>
-          <h2 className="text-sm font-semibold text-brand-900">{title}</h2>
+    <div className="card p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full" style={{ background: group.color }} />
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-brand-900">{group.classificacao}</h3>
         </div>
-        <button className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors">
+        {group.padrao ? (
+          <span className="text-[10px] font-medium text-faint">padrão</span>
+        ) : (
+          <button className="flex items-center gap-1 text-[11px] font-medium text-danger-500 hover:text-danger-500/80">
+            <X size={11} />
+            remover classificação
+          </button>
+        )}
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {group.categorias.map((c) => (
+          <span
+            key={c.nome}
+            className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1.5 text-xs font-medium text-brand-900"
+          >
+            {c.nome}
+            {c.padrao ? (
+              <span className="text-[9px] font-semibold text-faint">PADRÃO</span>
+            ) : (
+              <X size={11} className="text-danger-500 cursor-pointer" />
+            )}
+          </span>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        <input
+          placeholder={`Nova categoria em ${group.classificacao}...`}
+          className="flex-1 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-xs text-brand-900 placeholder:text-faint"
+        />
+        <button className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-m4-accent px-3 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors">
           <Plus size={13} />
-          Novo
+          Categoria
         </button>
       </div>
-      <ul className="divide-y divide-border-subtle">
-        {items.map((item) => (
-          <li key={item} className="flex items-center justify-between px-5 py-2.5 text-sm text-brand-900">
-            {item}
-            <span className="text-xs text-faint">ativo</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
 
 export default function CadastrosPage() {
+  const [tab, setTab] = useState<"pagar" | "receber">("pagar");
+  const groups = tab === "pagar" ? categoriasPagar : categoriasReceber;
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="card p-5">
-        <h1 className="text-base font-semibold text-brand-900">Cadastros</h1>
-        <p className="text-sm text-muted">Categorias financeiras, clientes e fornecedores da M4 Logística.</p>
+      <div className="inline-flex w-fit rounded-lg border border-border-subtle bg-surface p-1">
+        <button
+          onClick={() => setTab("pagar")}
+          className={`rounded-md px-4 py-2 text-xs font-semibold transition-colors ${
+            tab === "pagar" ? "bg-m4-accent text-white" : "text-muted hover:text-brand-900"
+          }`}
+        >
+          Contas a Pagar
+        </button>
+        <button
+          onClick={() => setTab("receber")}
+          className={`rounded-md px-4 py-2 text-xs font-semibold transition-colors ${
+            tab === "receber" ? "bg-m4-accent text-white" : "text-muted hover:text-brand-900"
+          }`}
+        >
+          Contas a Receber
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <CadastroCard title="Categorias" icon={Tag} items={categorias.map((c) => `${c.nome} · ${c.tipo}`)} />
-        <CadastroCard title="Clientes" icon={Users} items={clientesM4} />
-        <CadastroCard title="Fornecedores" icon={Truck} items={fornecedores} />
+      <p className="text-sm text-muted">
+        As <span className="font-medium text-brand-900">categorias</span> ficam dentro de cada{" "}
+        <span className="font-medium text-brand-900">classificação</span>. Adicione uma categoria no grupo certo, ou
+        crie uma classificação nova embaixo.
+      </p>
+
+      <div className="flex flex-col gap-4">
+        {groups.map((g) => (
+          <GroupCard key={g.classificacao} group={g} />
+        ))}
+      </div>
+
+      <div className="card p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Plus size={15} className="text-accent-500" />
+          <h3 className="text-sm font-semibold text-brand-900">Nova classificação</h3>
+        </div>
+        <p className="mb-3 text-xs text-faint">Cria um novo grupo (uma nova classificação financeira)</p>
+        <div className="flex gap-2">
+          <input
+            placeholder="Nome da nova classificação..."
+            className="flex-1 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-xs text-brand-900 placeholder:text-faint"
+          />
+          <button className="whitespace-nowrap rounded-lg bg-m4-accent px-4 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors">
+            Adicionar classificação
+          </button>
+        </div>
       </div>
     </div>
   );
