@@ -1,11 +1,24 @@
 "use client";
 
+import { Fragment, useState } from "react";
+import dynamic from "next/dynamic";
 import { ChevronRight, Download, Info } from "lucide-react";
-import { RevenueExpenseChart } from "@/components/charts/RevenueExpenseChart";
-import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
+import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
+import { DetalhamentoMesModal } from "@/components/client/DetalhamentoMesModal";
 import { dreMonths } from "@/lib/constants";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
+import { formatDateBR } from "@/lib/today";
+import { Payable } from "@/lib/types";
+
+const RevenueExpenseChart = dynamic(() => import("@/components/charts/RevenueExpenseChart").then((m) => m.RevenueExpenseChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+const ExpensePieChart = dynamic(() => import("@/components/charts/ExpensePieChart").then((m) => m.ExpensePieChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
 
 function Kpi({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "positive" | "negative" }) {
   const color = tone === "positive" ? "text-accent-500" : tone === "negative" ? "text-danger-500" : "text-brand-900";
@@ -18,9 +31,34 @@ function Kpi({ label, value, hint, tone }: { label: string; value: number; hint:
   );
 }
 
+function categoriaRowsFor(payables: Payable[], classificacao: string) {
+  const items = payables.filter((p) => p.classificacao === classificacao);
+  const byCategoria = new Map<string, Payable[]>();
+  for (const p of items) {
+    if (!byCategoria.has(p.categoria)) byCategoria.set(p.categoria, []);
+    byCategoria.get(p.categoria)!.push(p);
+  }
+  return [...byCategoria.entries()]
+    .map(([categoria, list]) => {
+      const values = Array(12).fill(0);
+      for (const p of list) values[new Date(p.vencimento + "T00:00:00").getMonth()] += p.valor;
+      const acumulado = list.reduce((a, p) => a + p.valor, 0);
+      return {
+        categoria,
+        values,
+        acumulado,
+        lancamentos: [...list].sort((a, b) => a.vencimento.localeCompare(b.vencimento)),
+      };
+    })
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 export default function FaturamentoDrePage() {
-  const { summary } = useFinance();
+  const { summary, payables } = useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
+  const [detalhamentoAberto, setDetalhamentoAberto] = useState(false);
+  const [classAberta, setClassAberta] = useState<string | null>(null);
+  const [categoriaAberta, setCategoriaAberta] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,7 +70,10 @@ export default function FaturamentoDrePage() {
               <option>{anoCorrente}</option>
             </select>
           </div>
-          <button className="mt-4 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors">
+          <button
+            onClick={() => setDetalhamentoAberto(true)}
+            className="mt-4 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+          >
             Detalhamento por mês
           </button>
           <button className="mt-4 flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-2 text-xs font-semibold text-brand-950 hover:bg-accent-600 transition-colors">
@@ -105,6 +146,8 @@ export default function FaturamentoDrePage() {
                     </tr>
                   );
                 }
+                const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && row.label !== "(-) CMV";
+                const isOpen = isClassRow && classAberta === row.label;
                 const rowColor = row.isSubtotal
                   ? "text-brand-900"
                   : row.negative
@@ -112,40 +155,94 @@ export default function FaturamentoDrePage() {
                     : "text-muted";
                 const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
                 return (
-                  <tr
-                    key={idx}
-                    className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""}`}
-                  >
-                    <td
-                      className={`py-2.5 pl-5 pr-3 whitespace-nowrap sticky left-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : "bg-surface"} ${
-                        row.isTotal || row.isSubtotal || row.isHeader ? "font-semibold text-brand-900" : "text-muted"
+                  <Fragment key={idx}>
+                    <tr
+                      onClick={isClassRow ? () => setClassAberta(isOpen ? null : row.label) : undefined}
+                      className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""} ${
+                        isClassRow ? "cursor-pointer hover:bg-surface-muted/60" : ""
                       }`}
                     >
-                      <span className="inline-flex items-center gap-1">
-                        {row.expandable && <ChevronRight size={12} className="text-faint" />}
-                        {row.label}
-                      </span>
-                    </td>
-                    {row.values.map((v, i) => (
                       <td
-                        key={i}
-                        className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
-                          row.isTotal ? (v >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
+                        className={`py-2.5 pl-5 pr-3 whitespace-nowrap sticky left-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : "bg-surface"} ${
+                          row.isTotal || row.isSubtotal || row.isHeader ? "font-semibold text-brand-900" : "text-muted"
                         }`}
                       >
-                        {formatCurrencyPrecise(v)}
+                        <span className="inline-flex items-center gap-1">
+                          {row.expandable && (
+                            <ChevronRight size={12} className={`text-faint transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                          )}
+                          {row.label}
+                        </span>
                       </td>
-                    ))}
-                    <td className={`py-2.5 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
-                      {formatCurrencyPrecise(row.acumulado)}
-                    </td>
-                  </tr>
+                      {row.values.map((v, i) => (
+                        <td
+                          key={i}
+                          className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
+                            row.isTotal ? (v >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
+                          }`}
+                        >
+                          {formatCurrencyPrecise(v)}
+                        </td>
+                      ))}
+                      <td className={`py-2.5 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                        {formatCurrencyPrecise(row.acumulado)}
+                      </td>
+                    </tr>
+                    {isOpen &&
+                      categoriaRowsFor(payables, row.label).map((catRow) => {
+                        const catKey = `${row.label}|${catRow.categoria}`;
+                        const catOpen = categoriaAberta === catKey;
+                        return (
+                          <Fragment key={catKey}>
+                            <tr
+                              onClick={() => setCategoriaAberta(catOpen ? null : catKey)}
+                              className="cursor-pointer border-b border-border-subtle bg-surface/60 hover:bg-surface-muted/60"
+                            >
+                              <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">
+                                <span className="inline-flex items-center gap-1">
+                                  <ChevronRight size={11} className={`text-faint transition-transform ${catOpen ? "rotate-90" : ""}`} />
+                                  {catRow.categoria}
+                                </span>
+                              </td>
+                              {catRow.values.map((v, i) => (
+                                <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(v)}
+                                </td>
+                              ))}
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                {formatCurrencyPrecise(catRow.acumulado)}
+                              </td>
+                            </tr>
+                            {catOpen && (
+                              <tr className="border-b border-border-subtle bg-surface/30">
+                                <td colSpan={dreMonths.length + 2} className="py-2 pl-14 pr-5">
+                                  <div className="flex flex-col gap-1">
+                                    {catRow.lancamentos.map((l) => (
+                                      <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
+                                        <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
+                                        <span className="flex-1 truncate">
+                                          {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
+                                          {l.descricao}
+                                        </span>
+                                        <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
+                  </Fragment>
                 );
               })}
             </tbody>
           </table>
         </div>
       </div>
+
+      {detalhamentoAberto && <DetalhamentoMesModal onClose={() => setDetalhamentoAberto(false)} />}
     </div>
   );
 }

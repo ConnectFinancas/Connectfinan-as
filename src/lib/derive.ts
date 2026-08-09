@@ -1,9 +1,16 @@
 import { categoryColor } from "@/lib/categoryColor";
-import { dreMonths } from "@/lib/constants";
+import { dreMonths, fullMonthNames } from "@/lib/constants";
 import { HOJE, isVencido, parseISO } from "@/lib/today";
 import { CategoryGroup, DreGridRow, ExpenseSlice, MonthlyFinancials, Payable, Receivable, Status } from "@/lib/types";
 
 type DeducoesManuais = { impostos: number; inadimplencia: number; investimentos: number };
+
+// Categoria usada nos lançamentos de pagamento a fornecedor (custo de mercadoria vendida).
+// Esses lançamentos ficam em Contas a Pagar mas NÃO entram no DRE — o CMV do DRE é informado
+// manualmente por mês (cmvManual), pois a análise estratégica é pelo preço de custo do produto
+// vendido, não pelo que foi pago ao fornecedor no período. CSV (custo sobre serviços) continua
+// somado automaticamente a partir dos lançamentos.
+const CUSTO_MERCADORIA_CATEGORIA = "Custo sobre Mercadorias Vendidas";
 
 export function displayStatus(status: Status, vencimento: string): Status {
   if (status === "pago" || status === "recebido") return status;
@@ -71,10 +78,21 @@ export function computeEvolucaoReceita(receivables: Receivable[]) {
   });
 }
 
-export function computeSaidasPorClassificacao(payables: Payable[], categorias: CategoryGroup[]): ExpenseSlice[] {
+export function computeSaidasPorClassificacao(
+  payables: Payable[],
+  categorias: CategoryGroup[],
+  cmvManual: number[] = Array(12).fill(0)
+): ExpenseSlice[] {
   const byClass = new Map<string, number>();
   for (const p of payables) {
+    // Pagamento a fornecedor não entra no DRE (ver computeDreGrid) — mantido fora daqui também
+    // para o "Saídas por classificação" bater com o "Saídas totais" do Resumo.
+    if (p.classificacao === "CMV" && p.categoria === CUSTO_MERCADORIA_CATEGORIA) continue;
     byClass.set(p.classificacao, (byClass.get(p.classificacao) ?? 0) + p.valor);
+  }
+  const cmvManualTotal = cmvManual.reduce((a, v) => a + v, 0);
+  if (cmvManualTotal > 0) {
+    byClass.set("CMV", (byClass.get("CMV") ?? 0) + cmvManualTotal);
   }
   return [...byClass.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -100,9 +118,15 @@ export function computeDreGrid(
   categorias: CategoryGroup[],
   receitaBruta: number[],
   acumReceita: number,
-  deducoesManuais: DeducoesManuais
+  deducoesManuais: DeducoesManuais,
+  cmvManual: number[] = Array(12).fill(0)
 ): DreGridRow[] {
-  const cmvValues = monthTotals(payables.filter((p) => p.classificacao === "CMV"));
+  // CMV do DRE = CSV (custo sobre serviços, automático via lançamentos) + CMV manual do mês
+  // (preço de custo do produto vendido, informado à parte). Pagamentos a fornecedor NÃO entram aqui.
+  const csvAutoValues = monthTotals(
+    payables.filter((p) => p.classificacao === "CMV" && p.categoria !== CUSTO_MERCADORIA_CATEGORIA)
+  );
+  const cmvValues = csvAutoValues.map((v, i) => round2(v + (cmvManual[i] ?? 0)));
   const acumCmv = round2(cmvValues.reduce((a, v) => a + v, 0));
 
   const receitaLiquida = receitaBruta.map((v, i) => v - cmvValues[i]);
@@ -150,36 +174,114 @@ export function computeDreGrid(
   return rows;
 }
 
+// Pagamentos a fornecedor (custo de mercadoria) não entram no DRE, mas ficam disponíveis aqui
+// para o detalhamento do mês — total e dividido por fornecedor quando identificado.
+export function computePagamentosFornecedores(payables: Payable[], mesIndex: number) {
+  const items = payables.filter(
+    (p) => p.classificacao === "CMV" && p.categoria === CUSTO_MERCADORIA_CATEGORIA && monthIndex(p.vencimento) === mesIndex
+  );
+  const total = round2(items.reduce((a, p) => a + p.valor, 0));
+  const porFornecedor = new Map<string, number>();
+  for (const p of items) {
+    const key = p.favorecido && p.favorecido !== "—" ? p.favorecido : "Não identificado";
+    porFornecedor.set(key, round2((porFornecedor.get(key) ?? 0) + p.valor));
+  }
+  return {
+    total,
+    quantidade: items.length,
+    porFornecedor: [...porFornecedor.entries()]
+      .map(([fornecedor, valor]) => ({ fornecedor, valor }))
+      .sort((a, b) => b.valor - a.valor),
+  };
+}
+
+// Detalhamento do mês: classificação → categoria → lançamentos, com % de representatividade
+// sobre o total de saídas do mês (usado no painel "Detalhamento por mês" do DRE).
+export function computeDetalhamentoMes(payables: Payable[], categoriasPagar: CategoryGroup[], mesIndex: number) {
+  const doMes = payables.filter((p) => monthIndex(p.vencimento) === mesIndex);
+  const totalMes = round2(doMes.reduce((a, p) => a + p.valor, 0));
+
+  const porClassificacao = new Map<string, Payable[]>();
+  for (const p of doMes) {
+    if (!porClassificacao.has(p.classificacao)) porClassificacao.set(p.classificacao, []);
+    porClassificacao.get(p.classificacao)!.push(p);
+  }
+
+  const classificacoes = [...porClassificacao.entries()]
+    .map(([classificacao, items]) => {
+      const valor = round2(items.reduce((a, p) => a + p.valor, 0));
+      const porCategoria = new Map<string, Payable[]>();
+      for (const p of items) {
+        if (!porCategoria.has(p.categoria)) porCategoria.set(p.categoria, []);
+        porCategoria.get(p.categoria)!.push(p);
+      }
+      const categorias = [...porCategoria.entries()]
+        .map(([categoria, lancamentos]) => {
+          const valorCategoria = round2(lancamentos.reduce((a, p) => a + p.valor, 0));
+          return {
+            categoria,
+            valor: valorCategoria,
+            pctDoTotal: totalMes > 0 ? round2((valorCategoria / totalMes) * 100) : 0,
+            lancamentos: [...lancamentos].sort((a, b) => a.vencimento.localeCompare(b.vencimento)),
+          };
+        })
+        .sort((a, b) => b.valor - a.valor);
+      return {
+        classificacao,
+        valor,
+        pctDoTotal: totalMes > 0 ? round2((valor / totalMes) * 100) : 0,
+        color: categoriasPagar.find((c) => c.classificacao === classificacao)?.color ?? categoryColor(classificacao).fg,
+        categorias,
+      };
+    })
+    .sort((a, b) => b.valor - a.valor);
+
+  return { mes: dreMonths[mesIndex], totalMes, classificacoes };
+}
+
 export function computeFinanceSummary(
   payables: Payable[],
   receivables: Receivable[],
   categoriasPagar: CategoryGroup[],
-  deducoesManuais: DeducoesManuais
+  deducoesManuais: DeducoesManuais,
+  cmvManual: number[] = Array(12).fill(0)
 ) {
   const receitaBrutaPorMes = monthTotals(receivables);
   const acumReceita = round2(receitaBrutaPorMes.reduce((a, v) => a + v, 0));
-  const despesasTotais = round2(payables.reduce((a, p) => a + p.valor, 0));
 
-  const dreGrid = computeDreGrid(payables, categoriasPagar, receitaBrutaPorMes, acumReceita, deducoesManuais);
+  const dreGrid = computeDreGrid(payables, categoriasPagar, receitaBrutaPorMes, acumReceita, deducoesManuais, cmvManual);
   const cmv = dreGrid.find((r) => r.label === "(-) CMV")?.acumulado ?? 0;
   const geracaoDeCaixa = dreGrid.find((r) => r.isTotal)?.acumulado ?? 0;
   const receitaLiquida = dreGrid.find((r) => r.label === "= Receita líquida")?.acumulado ?? 0;
   const deducoesDespesas = round2(acumReceita - geracaoDeCaixa);
+  // Despesas totais do "Resumo do ano": consistentes com o DRE (exclui pagamentos a
+  // fornecedor, que não entram no demonstrativo — ver computeDreGrid).
+  const despesasTotais = round2(acumReceita - geracaoDeCaixa);
 
-  const mesAtual = HOJE.getMonth();
-  const receitaMes = round2(receivables.filter((r) => monthIndex(r.vencimento) === mesAtual).reduce((a, r) => a + r.valor, 0));
-  const saidasMes = round2(payables.filter((p) => monthIndex(p.vencimento) === mesAtual).reduce((a, p) => a + p.valor, 0));
+  // Mês de referência do Resumo: o mês mais recente (até hoje) que teve algum lançamento,
+  // em vez do mês fixo de "hoje" — evita mostrar R$ 0,00 em clientes cujo período informado já passou.
+  const despesaPorMesResumo = monthTotals(payables);
+  let mesReferencia = HOJE.getMonth();
+  for (let i = Math.min(HOJE.getMonth(), 11); i >= 0; i--) {
+    if (receitaBrutaPorMes[i] > 0 || despesaPorMesResumo[i] > 0) {
+      mesReferencia = i;
+      break;
+    }
+  }
+  const receitaMes = round2(receivables.filter((r) => monthIndex(r.vencimento) === mesReferencia).reduce((a, r) => a + r.valor, 0));
+  const saidasMes = round2(payables.filter((p) => monthIndex(p.vencimento) === mesReferencia).reduce((a, p) => a + p.valor, 0));
+  const mesReferenciaLabel = `${fullMonthNames[mesReferencia]}/2026`;
 
   const mesesComMovimento = dreMonths.filter((_, i) => receitaBrutaPorMes[i] > 0 || monthTotals(payables)[i] > 0).length;
   const recebido = round2(receivables.filter((r) => r.status === "recebido").reduce((a, r) => a + r.valor, 0));
-  const saidasPorClassificacao = computeSaidasPorClassificacao(payables, categoriasPagar);
+  const saidasPorClassificacao = computeSaidasPorClassificacao(payables, categoriasPagar, cmvManual);
   const maiorGrupoSaida = saidasPorClassificacao[0] ?? { label: "—", value: 0 };
 
   return {
     anoCorrente: 2026,
     resumoKpis: {
-      receitaMes: { value: receitaMes },
-      saidasMes: { value: saidasMes },
+      receitaMes: { value: receitaMes, mesLabel: mesReferenciaLabel },
+      saidasMes: { value: saidasMes, mesLabel: mesReferenciaLabel },
       resultadoMes: { value: round2(receitaMes - saidasMes) },
       receitaAcumulada: { value: acumReceita },
     },

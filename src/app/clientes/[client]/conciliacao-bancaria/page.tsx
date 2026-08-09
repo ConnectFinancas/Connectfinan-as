@@ -1,6 +1,6 @@
 import { FileText } from "lucide-react";
 
-export default function ImportarOfxPage() {
+export default function ConciliacaoBancariaPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="card card-dashed flex flex-col items-center gap-4 p-16 text-center">

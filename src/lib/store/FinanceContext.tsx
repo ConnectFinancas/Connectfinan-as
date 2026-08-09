@@ -36,6 +36,12 @@ type FinanceContextValue = FinanceState &
   markPago: (tipo: Tipo, id: string, dataPagamento: string) => void;
   addCategoria: (tipo: Tipo, classificacao: string, categoriaNome: string) => void;
   addClassificacao: (tipo: Tipo, nome: string) => void;
+  updatePayables: (ids: string[], patch: Partial<Payable>) => void;
+  updateReceivables: (ids: string[], patch: Partial<Receivable>) => void;
+  deletePayables: (ids: string[]) => void;
+  deleteReceivables: (ids: string[]) => void;
+  duplicatePayables: (ids: string[]) => void;
+  duplicateReceivables: (ids: string[]) => void;
   summary: ReturnType<typeof computeFinanceSummary>;
   contasPagarKpis: ReturnType<typeof computeContasPagarKpis>;
   contasReceberKpis: ReturnType<typeof computeContasReceberKpis>;
@@ -115,9 +121,39 @@ export function FinanceProvider({ client, children }: { client: Client; children
       return { ...s, [key]: [...s[key], novo] };
     });
 
+  const updatePayables = (ids: string[], patch: Partial<Payable>) =>
+    setState((s) => ({
+      ...s,
+      payables: s.payables.map((p) => (ids.includes(p.id) ? { ...p, ...patch } : p)),
+    }));
+
+  const updateReceivables = (ids: string[], patch: Partial<Receivable>) =>
+    setState((s) => ({
+      ...s,
+      receivables: s.receivables.map((r) => (ids.includes(r.id) ? { ...r, ...patch } : r)),
+    }));
+
+  const deletePayables = (ids: string[]) =>
+    setState((s) => ({ ...s, payables: s.payables.filter((p) => !ids.includes(p.id)) }));
+
+  const deleteReceivables = (ids: string[]) =>
+    setState((s) => ({ ...s, receivables: s.receivables.filter((r) => !ids.includes(r.id)) }));
+
+  const duplicatePayables = (ids: string[]) =>
+    setState((s) => {
+      const copies = s.payables.filter((p) => ids.includes(p.id)).map((p) => ({ ...p, id: genId("p"), status: "pendente" as const, pagamento: undefined }));
+      return { ...s, payables: [...copies, ...s.payables] };
+    });
+
+  const duplicateReceivables = (ids: string[]) =>
+    setState((s) => {
+      const copies = s.receivables.filter((r) => ids.includes(r.id)).map((r) => ({ ...r, id: genId("r"), status: "pendente" as const, recebimento: undefined }));
+      return { ...s, receivables: [...copies, ...s.receivables] };
+    });
+
   const summary = useMemo(
-    () => computeFinanceSummary(state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais),
-    [state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais]
+    () => computeFinanceSummary(state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais, seed.cmvManual),
+    [state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais, seed.cmvManual]
   );
   const contasPagarKpis = useMemo(() => computeContasPagarKpis(state.payables), [state.payables]);
   const contasReceberKpis = useMemo(() => computeContasReceberKpis(state.receivables), [state.receivables]);
@@ -148,6 +184,12 @@ export function FinanceProvider({ client, children }: { client: Client; children
     markPago,
     addCategoria,
     addClassificacao,
+    updatePayables,
+    updateReceivables,
+    deletePayables,
+    deleteReceivables,
+    duplicatePayables,
+    duplicateReceivables,
     summary,
     contasPagarKpis,
     contasReceberKpis,

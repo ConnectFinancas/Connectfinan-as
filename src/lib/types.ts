@@ -114,6 +114,10 @@ export type ClientFinanceData = {
   seedCategoriasPagar: CategoryGroup[];
   seedCategoriasReceber: CategoryGroup[];
   deducoesManuais: { impostos: number; inadimplencia: number; investimentos: number };
+  // CMV (preço de custo do produto vendido) informado manualmente por mês — não vem dos
+  // pagamentos a fornecedor em Contas a Pagar. Índice 0 = Jan, 11 = Dez. Ainda pendente de
+  // preenchimento com valores reais para a maioria dos clientes.
+  cmvManual?: number[];
   fluxoCaixaPeriodo: string;
   fluxoCaixaKpis: {
     saldoInicial: number;

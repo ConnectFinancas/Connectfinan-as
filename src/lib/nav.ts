@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   FileSpreadsheet,
+  Landmark,
   LayoutDashboard,
   LucideIcon,
   ReceiptText,
@@ -62,10 +63,10 @@ export function clientNavItems(base: string): NavItem[] {
       icon: ArrowLeftRight,
     },
     {
-      href: `${base}/importar-ofx`,
-      label: "Importar OFX",
-      shortLabel: "Importar OFX",
-      pageTitle: "Importar Extrato (OFX)",
+      href: `${base}/conciliacao-bancaria`,
+      label: "Conciliação Bancária",
+      shortLabel: "Conciliação Bancária",
+      pageTitle: "Conciliação Bancária",
       subtitle: "Concilie o extrato do banco com as contas · estilo Conta Azul",
       icon: UploadCloud,
     },
@@ -76,6 +77,14 @@ export function clientNavItems(base: string): NavItem[] {
       pageTitle: "Cadastros Financeiros",
       subtitle: "Categorias e classificações do seu jeito",
       icon: Settings2,
+    },
+    {
+      href: `${base}/contas`,
+      label: "Contas",
+      shortLabel: "Contas",
+      pageTitle: "Contas",
+      subtitle: "Em construção",
+      icon: Landmark,
     },
   ];
 }

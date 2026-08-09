@@ -1,11 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { AlertTriangle, Download, Landmark, Pin, Target, TrendingUp } from "lucide-react";
-import { DailyBalanceChart } from "@/components/charts/DailyBalanceChart";
+import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { MiniBarCompare } from "@/components/charts/MiniBarCompare";
-import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
+
+const DailyBalanceChart = dynamic(() => import("@/components/charts/DailyBalanceChart").then((m) => m.DailyBalanceChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+const ExpensePieChart = dynamic(() => import("@/components/charts/ExpensePieChart").then((m) => m.ExpensePieChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
 
 function Kpi({ label, value, hint, tone, isPct }: { label: string; value: number; hint: string; tone?: "positive" | "negative"; isPct?: boolean }) {
   const color = tone === "positive" ? "text-accent-500" : tone === "negative" ? "text-danger-500" : "text-brand-900";

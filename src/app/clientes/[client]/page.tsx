@@ -1,10 +1,22 @@
 "use client";
 
-import { RevenueExpenseChart } from "@/components/charts/RevenueExpenseChart";
-import { AccumulatedRevenueAreaChart } from "@/components/charts/AccumulatedRevenueAreaChart";
-import { ExpensePieChart } from "@/components/charts/ExpensePieChart";
+import dynamic from "next/dynamic";
+import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
+
+const RevenueExpenseChart = dynamic(() => import("@/components/charts/RevenueExpenseChart").then((m) => m.RevenueExpenseChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+const AccumulatedRevenueAreaChart = dynamic(
+  () => import("@/components/charts/AccumulatedRevenueAreaChart").then((m) => m.AccumulatedRevenueAreaChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const ExpensePieChart = dynamic(() => import("@/components/charts/ExpensePieChart").then((m) => m.ExpensePieChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
 
 function ResumoCard({
   label,
@@ -39,8 +51,8 @@ export default function ClientDashboardPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <ResumoCard label="Receita do Mês" value={resumoKpis.receitaMes.value} hint="Agosto/2026" />
-        <ResumoCard label="Saídas do Mês" value={resumoKpis.saidasMes.value} hint="contas a pagar do mês" />
+        <ResumoCard label="Receita do Mês" value={resumoKpis.receitaMes.value} hint={resumoKpis.receitaMes.mesLabel} />
+        <ResumoCard label="Saídas do Mês" value={resumoKpis.saidasMes.value} hint={`contas a pagar · ${resumoKpis.saidasMes.mesLabel}`} />
         <ResumoCard
           label="Resultado do Mês"
           value={resumoKpis.resultadoMes.value}

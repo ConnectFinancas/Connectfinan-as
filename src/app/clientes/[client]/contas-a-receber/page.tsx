@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Download } from "lucide-react";
+import { Check, Copy, Download, Pencil, Tag, Trash2, X } from "lucide-react";
 import { CategoryTag } from "@/components/CategoryTag";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LancamentoModal } from "@/components/client/LancamentoModal";
+import { BulkClassificacaoModal } from "@/components/client/BulkClassificacaoModal";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { displayStatus } from "@/lib/derive";
 import { formatDateBR, HOJE, toISO } from "@/lib/today";
 import { formatCurrencyPrecise } from "@/lib/format";
+import { Receivable } from "@/lib/types";
 
 function Kpi({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "positive" | "negative" | "warn" }) {
   const color = tone === "positive" ? "text-accent-500" : tone === "negative" ? "text-danger-500" : tone === "warn" ? "text-warn-500" : "text-brand-900";
@@ -24,6 +26,9 @@ function Kpi({ label, value, hint, tone }: { label: string; value: number; hint:
 export default function ContasAReceberPage() {
   const finance = useFinance();
   const [modalAberto, setModalAberto] = useState(false);
+  const [editEntry, setEditEntry] = useState<Receivable | null>(null);
+  const [bulkClassifAberto, setBulkClassifAberto] = useState(false);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [classificacaoFiltro, setClassificacaoFiltro] = useState("todas");
@@ -44,12 +49,37 @@ export default function ContasAReceberPage() {
       .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
   }, [finance.receivables, busca, statusFiltro, classificacaoFiltro, de, ate]);
 
+  const todosVisiveisSelecionados = rows.length > 0 && rows.every((r) => selecionados.includes(r.id));
+
   function limparFiltros() {
     setBusca("");
     setStatusFiltro("todos");
     setClassificacaoFiltro("todas");
     setDe("");
     setAte("");
+  }
+
+  function toggleTodos() {
+    if (todosVisiveisSelecionados) {
+      setSelecionados((s) => s.filter((id) => !rows.some((r) => r.id === id)));
+    } else {
+      setSelecionados((s) => [...new Set([...s, ...rows.map((r) => r.id)])]);
+    }
+  }
+
+  function toggleUm(id: string) {
+    setSelecionados((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  }
+
+  function handleExcluirSelecionados() {
+    if (!confirm(`Excluir ${selecionados.length} lançamento(s) selecionado(s)? Essa ação não pode ser desfeita.`)) return;
+    finance.deleteReceivables(selecionados);
+    setSelecionados([]);
+  }
+
+  function handleDuplicarSelecionados() {
+    finance.duplicateReceivables(selecionados);
+    setSelecionados([]);
   }
 
   return (
@@ -127,13 +157,49 @@ export default function ContasAReceberPage() {
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between p-5 pb-0">
           <h2 className="text-sm font-semibold text-brand-900">Contas a receber</h2>
-          <span className="text-xs text-faint">{rows.length} de {finance.receivables.length} contas</span>
+          {selecionados.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-brand-900">{selecionados.length} selecionado{selecionados.length > 1 ? "s" : ""}</span>
+              <button
+                onClick={() => setBulkClassifAberto(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+              >
+                <Tag size={12} />
+                Alterar classificação/categoria
+              </button>
+              <button
+                onClick={handleDuplicarSelecionados}
+                className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+              >
+                <Copy size={12} />
+                Duplicar
+              </button>
+              <button
+                onClick={handleExcluirSelecionados}
+                className="flex items-center gap-1.5 rounded-lg border border-danger-500/40 px-2.5 py-1.5 text-xs font-medium text-danger-500 hover:bg-danger-500/10 transition-colors"
+              >
+                <Trash2 size={12} />
+                Excluir
+              </button>
+              <button
+                onClick={() => setSelecionados([])}
+                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-faint hover:text-brand-900 transition-colors"
+              >
+                <X size={12} />
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <span className="text-xs text-faint">{rows.length} de {finance.receivables.length} contas</span>
+          )}
         </div>
         <div className="overflow-x-auto p-5">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border-subtle text-left text-xs text-faint">
-                <th className="pb-2 pr-2 font-medium"><input type="checkbox" className="accent-accent-500" /></th>
+                <th className="pb-2 pr-2 font-medium">
+                  <input type="checkbox" checked={todosVisiveisSelecionados} onChange={toggleTodos} className="accent-accent-500" />
+                </th>
                 <th className="pb-2 font-medium">Cliente</th>
                 <th className="pb-2 font-medium">Categoria</th>
                 <th className="pb-2 pr-4 font-medium">Classificação financeira</th>
@@ -143,14 +209,21 @@ export default function ContasAReceberPage() {
                 <th className="pb-2 pl-4 font-medium">Recebimento</th>
                 <th className="pb-2 pl-4 font-medium">Forma de Recebimento</th>
                 <th className="pb-2 pl-4 font-medium">Descrição</th>
+                <th className="pb-2 pl-4 font-medium"></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => {
                 const status = displayStatus(r.status, r.vencimento);
                 return (
-                  <tr key={r.id} className="border-b border-border-subtle last:border-0 group">
-                    <td className="py-3 pr-2"><input type="checkbox" className="accent-accent-500" /></td>
+                  <tr
+                    key={r.id}
+                    onClick={() => setEditEntry(r)}
+                    className="cursor-pointer border-b border-border-subtle last:border-0 group hover:bg-surface-muted/60"
+                  >
+                    <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={selecionados.includes(r.id)} onChange={() => toggleUm(r.id)} className="accent-accent-500" />
+                    </td>
                     <td className="py-3 font-medium text-brand-900 whitespace-nowrap">{r.cliente}</td>
                     <td className="py-3"><CategoryTag name={r.categoria} /></td>
                     <td className="py-3 pr-4 text-muted whitespace-nowrap">{r.classificacao}</td>
@@ -164,7 +237,10 @@ export default function ContasAReceberPage() {
                         {status !== "recebido" && (
                           <button
                             title="Marcar como recebido"
-                            onClick={() => finance.markPago("receber", r.id, toISO(HOJE))}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              finance.markPago("receber", r.id, toISO(HOJE));
+                            }}
                             className="opacity-0 group-hover:opacity-100 flex h-5 w-5 items-center justify-center rounded-full bg-accent-100 text-accent-500 transition-opacity"
                           >
                             <Check size={12} />
@@ -175,6 +251,15 @@ export default function ContasAReceberPage() {
                     <td className="py-3 pl-4 whitespace-nowrap text-muted">{r.recebimento ? formatDateBR(r.recebimento) : "—"}</td>
                     <td className="py-3 pl-4 whitespace-nowrap text-muted">{r.formaRecebimento ?? "—"}</td>
                     <td className="py-3 pl-4 text-muted whitespace-nowrap">{r.descricao}</td>
+                    <td className="py-3 pl-4" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        title="Editar lançamento"
+                        onClick={() => setEditEntry(r)}
+                        className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-full text-faint hover:bg-surface-muted hover:text-brand-900 transition-colors"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -184,6 +269,10 @@ export default function ContasAReceberPage() {
       </div>
 
       {modalAberto && <LancamentoModal tipo="receber" onClose={() => setModalAberto(false)} />}
+      {editEntry && <LancamentoModal key={editEntry.id} tipo="receber" entry={editEntry} onClose={() => setEditEntry(null)} />}
+      {bulkClassifAberto && (
+        <BulkClassificacaoModal tipo="receber" ids={selecionados} onClose={() => { setBulkClassifAberto(false); setSelecionados([]); }} />
+      )}
     </div>
   );
 }
