@@ -13,8 +13,15 @@ export function LancamentoModal({ tipo, onClose }: { tipo: "pagar" | "receber"; 
   const categorias = tipo === "pagar" ? finance.categoriasPagar : finance.categoriasReceber;
   const existentes = tipo === "pagar" ? finance.payables.map((p) => p.favorecido) : finance.receivables.map((r) => r.cliente);
   const pessoas = useMemo(() => [...new Set(existentes)].filter((n) => n !== "—"), [existentes]);
+  const contasExistentes =
+    tipo === "pagar" ? finance.payables.map((p) => p.conta) : finance.receivables.map((r) => r.formaRecebimento);
+  const contas = useMemo(
+    () => [...new Set(contasExistentes)].filter((c): c is string => !!c),
+    [contasExistentes]
+  );
 
   const [pessoa, setPessoa] = useState("");
+  const [conta, setConta] = useState("");
   const [descricao, setDescricao] = useState("");
   const [classificacao, setClassificacao] = useState(categorias[0]?.classificacao ?? "");
   const [categoria, setCategoria] = useState("");
@@ -60,6 +67,7 @@ export function LancamentoModal({ tipo, onClose }: { tipo: "pagar" | "receber"; 
         status: statusFinal,
         pagamento: status === "pago" ? dataPagamento : undefined,
         descricao: n > 1 ? `${descricao.trim()} (${i + 1}/${n})` : descricao.trim(),
+        conta: conta.trim() || undefined,
       }));
       finance.addPayable(entries);
     } else {
@@ -73,6 +81,7 @@ export function LancamentoModal({ tipo, onClose }: { tipo: "pagar" | "receber"; 
         status: statusFinal,
         recebimento: status === "pago" ? dataPagamento : undefined,
         descricao: n > 1 ? `${descricao.trim()} (${i + 1}/${n})` : descricao.trim(),
+        formaRecebimento: conta.trim() || undefined,
       }));
       finance.addReceivable(entries);
     }
@@ -106,6 +115,24 @@ export function LancamentoModal({ tipo, onClose }: { tipo: "pagar" | "receber"; 
             <datalist id="pessoas-lista">
               {pessoas.map((p) => (
                 <option key={p} value={p} />
+              ))}
+            </datalist>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">
+              {tipo === "pagar" ? "Conta" : "Forma de Recebimento"}
+            </label>
+            <input
+              list="contas-lista"
+              value={conta}
+              onChange={(e) => setConta(e.target.value)}
+              placeholder={tipo === "pagar" ? "Ex.: Banco do Brasil" : "Ex.: Pix"}
+              className="w-full rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900 placeholder:text-faint"
+            />
+            <datalist id="contas-lista">
+              {contas.map((c) => (
+                <option key={c} value={c} />
               ))}
             </datalist>
           </div>

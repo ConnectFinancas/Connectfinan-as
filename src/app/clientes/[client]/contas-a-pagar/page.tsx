@@ -141,6 +141,7 @@ export default function ContasAPagarPage() {
                 <th className="pb-2 font-medium text-right">Valor</th>
                 <th className="pb-2 pl-4 font-medium">Status</th>
                 <th className="pb-2 pl-4 font-medium">Pagamento</th>
+                <th className="pb-2 pl-4 font-medium">Conta</th>
                 <th className="pb-2 pl-4 font-medium">Descrição</th>
               </tr>
             </thead>
@@ -172,6 +173,7 @@ export default function ContasAPagarPage() {
                       </div>
                     </td>
                     <td className="py-3 pl-4 whitespace-nowrap text-muted">{p.pagamento ? formatDateBR(p.pagamento) : "—"}</td>
+                    <td className="py-3 pl-4 whitespace-nowrap text-muted">{p.conta ?? "—"}</td>
                     <td className="py-3 pl-4 text-muted whitespace-nowrap">{p.descricao}</td>
                   </tr>
                 );

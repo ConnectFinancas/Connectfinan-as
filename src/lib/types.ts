@@ -48,6 +48,7 @@ export type Payable = {
   status: Status;
   pagamento?: string;
   descricao: string;
+  conta?: string;
 };
 
 export type Receivable = {
@@ -60,6 +61,7 @@ export type Receivable = {
   valor: number;
   status: Status;
   recebimento?: string;
+  formaRecebimento?: string;
 };
 
 export type BankTransaction = {

@@ -141,6 +141,7 @@ export default function ContasAReceberPage() {
                 <th className="pb-2 font-medium text-right">Valor</th>
                 <th className="pb-2 pl-4 font-medium">Status</th>
                 <th className="pb-2 pl-4 font-medium">Recebimento</th>
+                <th className="pb-2 pl-4 font-medium">Forma de Recebimento</th>
                 <th className="pb-2 pl-4 font-medium">Descrição</th>
               </tr>
             </thead>
@@ -172,6 +173,7 @@ export default function ContasAReceberPage() {
                       </div>
                     </td>
                     <td className="py-3 pl-4 whitespace-nowrap text-muted">{r.recebimento ? formatDateBR(r.recebimento) : "—"}</td>
+                    <td className="py-3 pl-4 whitespace-nowrap text-muted">{r.formaRecebimento ?? "—"}</td>
                     <td className="py-3 pl-4 text-muted whitespace-nowrap">{r.descricao}</td>
                   </tr>
                 );

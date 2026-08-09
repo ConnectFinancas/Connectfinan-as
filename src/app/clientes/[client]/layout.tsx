@@ -2,9 +2,15 @@ import { notFound } from "next/navigation";
 import { IconRail } from "@/components/client/IconRail";
 import { ClientHeader } from "@/components/client/ClientHeader";
 import { ClientFooter } from "@/components/client/ClientFooter";
-import { getClient } from "@/lib/data/clients";
+import { clients, getClient } from "@/lib/data/clients";
 import { getFinanceData } from "@/lib/data/financeRegistry";
 import { FinanceProvider } from "@/lib/store/FinanceContext";
+
+// Pré-gera cada cliente conhecido como página estática em tempo de build,
+// para que a troca entre abas seja instantânea (sem SSR a cada navegação).
+export function generateStaticParams() {
+  return clients.filter((c) => c.status === "ativo" && getFinanceData(c.slug)).map((c) => ({ client: c.slug }));
+}
 
 export default async function ClientLayout({ children, params }: LayoutProps<"/clientes/[client]">) {
   const { client: slug } = await params;
