@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Pencil, Plus, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Pencil, Plus, RotateCcw, Sparkles, X } from "lucide-react";
 import { ResultadoConciliacao } from "@/lib/reconciliation/match";
 import { ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
 import { LancamentoModal } from "@/components/client/LancamentoModal";
@@ -29,6 +29,8 @@ type RecebimentoItem = {
   index: number;
 };
 
+type Visao = "todos" | "pendentes" | "conciliados";
+
 export function ConciliacaoResultado({
   resultado,
   datas,
@@ -36,6 +38,7 @@ export function ConciliacaoResultado({
   onNavegar,
   onEditarItem,
   onLancado,
+  onFinalizar,
 }: {
   resultado: ResultadoConciliacao | ResultadoSalvo;
   datas?: string[];
@@ -47,6 +50,7 @@ export function ConciliacaoResultado({
     patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
   ) => void;
   onLancado?: (chave: string) => void;
+  onFinalizar?: () => number;
 }) {
   const migrados = "migrados" in resultado ? resultado.migrados ?? {} : {};
   const [taxaLancada, setTaxaLancada] = useState(false);
@@ -61,6 +65,8 @@ export function ConciliacaoResultado({
   } | null>(null);
   const [editando, setEditando] = useState<{ tipo: "pix" | "dinheiro" | "pagamento"; index: number } | null>(null);
   const [rascunho, setRascunho] = useState("");
+  const [visao, setVisao] = useState<Visao>("todos");
+  const [mensagemFinalizar, setMensagemFinalizar] = useState<string | null>(null);
 
   const { cartao, pix, dinheiro, pagamentos } = resultado;
 
@@ -83,6 +89,14 @@ export function ConciliacaoResultado({
     })),
   ];
 
+  const totalItens = recebimentos.length + pagamentos.length;
+  const totalPendentes =
+    recebimentos.filter((r) => r.status === "pendente").length + pagamentos.filter((p) => p.status === "pendente").length;
+  const totalConciliados = totalItens - totalPendentes;
+
+  const recebimentosVisiveis = recebimentos.filter((r) => visao === "todos" || (visao === "pendentes") === (r.status === "pendente"));
+  const pagamentosVisiveis = pagamentos.filter((p) => visao === "todos" || (visao === "pendentes") === (p.status === "pendente"));
+
   const idx = datas && dataSelecionada ? datas.indexOf(dataSelecionada) : -1;
   const podeAnterior = datas && idx !== -1 && idx < datas.length - 1;
   const podeProximo = datas && idx > 0;
@@ -96,6 +110,19 @@ export function ConciliacaoResultado({
     if (!editando || !onEditarItem) return;
     onEditarItem(editando.tipo, editando.index, { matchInfo: rascunho, status: rascunho.trim() ? "conciliado" : "pendente" });
     setEditando(null);
+  }
+
+  function reabrir(tipo: "pix" | "dinheiro", index: number) {
+    onEditarItem?.(tipo, index, { status: "pendente", matchInfo: "" });
+  }
+
+  function finalizarDia() {
+    const qtd = onFinalizar?.() ?? 0;
+    setMensagemFinalizar(
+      qtd > 0
+        ? `${qtd} despesa${qtd > 1 ? "s" : ""} enviada${qtd > 1 ? "s" : ""} para Contas a Pagar.`
+        : "Nada pendente pra enviar — esse dia já está tudo migrado."
+    );
   }
 
   return (
@@ -147,6 +174,37 @@ export function ConciliacaoResultado({
         </div>
       )}
 
+      {/* Barra de visão + finalizar, no estilo Conta Azul (Filtros / Conciliação / Todos conciliados) */}
+      <div className="card flex flex-wrap items-center justify-between gap-3 p-3">
+        <div className="flex gap-1.5">
+          {([
+            ["todos", `Todos (${totalItens})`],
+            ["pendentes", `Pendentes (${totalPendentes})`],
+            ["conciliados", `Conciliados (${totalConciliados})`],
+          ] as const).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setVisao(v)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                visao === v ? "bg-client-accent text-white" : "text-muted hover:bg-surface-muted"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          {mensagemFinalizar && <span className="text-xs text-faint">{mensagemFinalizar}</span>}
+          <button
+            onClick={finalizarDia}
+            className="flex items-center gap-1.5 rounded-lg border border-client-accent px-3 py-1.5 text-xs font-semibold text-client-accent hover:bg-client-accent/10 transition-colors"
+          >
+            <Sparkles size={13} />
+            Finalizar conciliação do dia
+          </button>
+        </div>
+      </div>
+
       {/* Cartão */}
       <div className="card p-5">
         <div className="mb-3 flex items-center justify-between">
@@ -190,13 +248,21 @@ export function ConciliacaoResultado({
             Quantidade de vendas no cartão ({cartao.faturamentoQtd}) diferente da quantidade de recebimentos no PagBank ({cartao.pagbankQtd}) — confira antes de lançar a taxa.
           </p>
         )}
+        {cartao.quantidadeBate && migrados["cartao"] && (
+          <p className="mt-3 flex items-center gap-1 text-xs text-accent-500">
+            <Check size={12} />
+            Faturamento do cartão já enviado para Contas a Receber.
+          </p>
+        )}
       </div>
 
       {/* Pix + Dinheiro unificados */}
       <div className="card overflow-hidden">
         <div className="p-5 pb-3">
           <h3 className="text-sm font-semibold text-brand-900">Recebimentos (Pix e Dinheiro)</h3>
-          <p className="text-xs text-faint">Faturamento × extrato Bradesco (Pix) e caixa físico (Dinheiro)</p>
+          <p className="text-xs text-faint">
+            Faturamento × extrato Bradesco (Pix) e caixa físico (Dinheiro) — só o que está pendente pode ser corrigido
+          </p>
         </div>
         <div className="overflow-x-auto px-5 pb-5">
           <table className="w-full text-sm">
@@ -210,10 +276,12 @@ export function ConciliacaoResultado({
               </tr>
             </thead>
             <tbody>
-              {recebimentos.map((item, i) => {
-                const emEdicao = editando?.tipo === (item.forma === "Pix" ? "pix" : "dinheiro") && editando.index === item.index;
+              {recebimentosVisiveis.map((item) => {
+                const tipo = item.forma === "Pix" ? "pix" : "dinheiro";
+                const emEdicao = editando?.tipo === tipo && editando.index === item.index;
+                const conciliado = item.status === "conciliado";
                 return (
-                  <tr key={`${item.forma}-${i}`} className="border-b border-border-subtle last:border-0">
+                  <tr key={`${item.forma}-${item.index}`} className="border-b border-border-subtle last:border-0">
                     <td className="py-2 text-muted">
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
@@ -248,26 +316,36 @@ export function ConciliacaoResultado({
                       )}
                     </td>
                     <td className="py-2 text-right">
-                      <StatusPill ok={item.status === "conciliado"} />
+                      <StatusPill ok={conciliado} />
                     </td>
                     <td className="py-2 text-right">
                       {!emEdicao && onEditarItem && (
-                        <button
-                          onClick={() => iniciarEdicao(item.forma === "Pix" ? "pix" : "dinheiro", item.index, item.matchInfo)}
-                          className="text-faint hover:text-brand-900 transition-colors"
-                          title="Corrigir"
-                        >
-                          <Pencil size={13} />
-                        </button>
+                        conciliado ? (
+                          <button
+                            onClick={() => reabrir(tipo, item.index)}
+                            className="text-faint hover:text-warn-500 transition-colors"
+                            title="Não é isso? Reabrir para corrigir"
+                          >
+                            <RotateCcw size={13} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => iniciarEdicao(tipo, item.index, item.matchInfo)}
+                            className="text-faint hover:text-brand-900 transition-colors"
+                            title="Corrigir"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>
                 );
               })}
-              {recebimentos.length === 0 && (
+              {recebimentosVisiveis.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-4 text-center text-xs text-faint">
-                    Nenhuma venda em Pix ou Dinheiro no período.
+                    Nenhum item nessa visão.
                   </td>
                 </tr>
               )}
@@ -295,17 +373,18 @@ export function ConciliacaoResultado({
               </tr>
             </thead>
             <tbody>
-              {pagamentos.map((p, i) => (
-                <tr key={i} className="border-b border-border-subtle last:border-0">
-                  <td className="py-2 text-muted capitalize">{p.origem}</td>
-                  <td className="py-2 text-brand-900">{p.historico}</td>
-                  <td className="py-2 text-muted">{p.tipo === "transferencia" ? "Transferência" : "Pagamento"}</td>
-                  <td className="py-2 text-right tabular-nums text-brand-900">{formatCurrencyPrecise(p.valor)}</td>
-                  <td className="py-2 text-right">
-                    <StatusPill ok={p.status === "conciliado"} />
-                  </td>
-                  <td className="py-2 text-right">
-                    <div className="flex items-center justify-end gap-2">
+              {pagamentosVisiveis.map((p) => {
+                const i = pagamentos.indexOf(p);
+                return (
+                  <tr key={i} className="border-b border-border-subtle last:border-0">
+                    <td className="py-2 text-muted capitalize">{p.origem}</td>
+                    <td className="py-2 text-brand-900">{p.historico}</td>
+                    <td className="py-2 text-muted">{p.tipo === "transferencia" ? "Transferência" : "Pagamento"}</td>
+                    <td className="py-2 text-right tabular-nums text-brand-900">{formatCurrencyPrecise(p.valor)}</td>
+                    <td className="py-2 text-right">
+                      <StatusPill ok={p.status === "conciliado"} />
+                    </td>
+                    <td className="py-2 text-right">
                       {p.status === "pendente" && p.tipo === "pagamento" && (pagamentosLancados.has(i) || migrados[`pagamento-${i}`] ? (
                         <span className="inline-flex items-center gap-1 rounded-lg bg-accent-100 px-2 py-1 text-[11px] font-medium text-accent-500">
                           <Check size={11} />
@@ -328,26 +407,14 @@ export function ConciliacaoResultado({
                           Lançar despesa
                         </button>
                       ))}
-                      {onEditarItem && (
-                        <button
-                          onClick={() => {
-                            const novoStatus = p.status === "conciliado" ? "pendente" : "conciliado";
-                            onEditarItem("pagamento", i, { status: novoStatus });
-                          }}
-                          className="text-faint hover:text-brand-900 transition-colors"
-                          title={p.status === "conciliado" ? "Marcar como pendente" : "Marcar como conciliado"}
-                        >
-                          <Pencil size={13} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {pagamentos.length === 0 && (
+                    </td>
+                  </tr>
+                );
+              })}
+              {pagamentosVisiveis.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-4 text-center text-xs text-faint">
-                    Nenhuma saída no período.
+                    Nenhum item nessa visão.
                   </td>
                 </tr>
               )}

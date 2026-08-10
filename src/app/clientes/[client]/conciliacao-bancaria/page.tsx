@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, FileImage, FileSpreadsheet, Landmark, Users } from "lucide-react";
+import { Building2, FileSpreadsheet, Landmark, Users } from "lucide-react";
 import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
 import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
 import { useFinance, genId } from "@/lib/store/FinanceContext";
-import { Receivable } from "@/lib/types";
+import { Payable, Receivable } from "@/lib/types";
 import { parseFaturamento, parseBradesco, parsePagBank } from "@/lib/reconciliation/parsers";
 import { conciliarDia } from "@/lib/reconciliation/match";
 import { CaixaFisicoExtraido, MovimentoCaixaFisico } from "@/lib/reconciliation/types";
@@ -222,6 +222,43 @@ function DocumentosMjPrime() {
     });
   }
 
+  // "Finalizar conciliação do dia": envia as saídas que ainda não foram identificadas/lançadas
+  // pra Contas a Pagar já como pagas (o extrato confirma que o dinheiro saiu), com uma
+  // categoria genérica "A Classificar" pra o contador ajustar depois. Recebimentos (pix,
+  // dinheiro, cartão) já migram sozinhos assim que ficam conciliados — não precisa repetir aqui.
+  function finalizarDia(): number {
+    if (!resultadoExibido || !dataSelecionada) return 0;
+    const data = resultadoExibido.data;
+    const migrados = resultadoExibido.migrados ?? {};
+    const novosPayables: Payable[] = [];
+    const novasChaves: Record<string, string> = {};
+
+    resultadoExibido.pagamentos.forEach((p, i) => {
+      const chave = `pagamento-${i}`;
+      if (p.tipo !== "pagamento" || p.status !== "pendente" || migrados[chave]) return;
+      const id = genId("p");
+      novasChaves[chave] = id;
+      novosPayables.push({
+        id,
+        favorecido: p.sugestao?.favorecido || "—",
+        classificacao: "DESPESAS ADMINISTRATIVAS",
+        categoria: "A Classificar",
+        vencimento: p.data,
+        valor: p.valor,
+        status: "pago",
+        pagamento: p.data,
+        descricao: p.historico,
+      });
+    });
+
+    if (novosPayables.length > 0) {
+      finance.addCategoria("pagar", "DESPESAS ADMINISTRATIVAS", "A Classificar");
+      finance.addPayable(novosPayables);
+      historico.marcarMigrados(data, novasChaves);
+    }
+    return novosPayables.length;
+  }
+
   const datasComPendencia = useMemo(
     () => [...new Set(pendencias.map((p) => p.data))].sort().reverse(),
     [pendencias]
@@ -282,13 +319,12 @@ function DocumentosMjPrime() {
       <div className="card p-5">
         <h2 className="text-sm font-semibold text-brand-900">Documentos do período</h2>
         <p className="mt-0.5 text-xs text-faint">
-          Envie os 4 documentos para começar a conciliação. O relatório de faturamento é a base — as demais entradas são
-          conferidas contra ele.
+          Envie os 3 documentos para começar a conciliação. O relatório de faturamento é a base — as demais entradas são
+          conferidas contra ele. O caixa físico é digitado manualmente logo abaixo.
         </p>
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <UploadBox icon={Landmark} title="Extrato Bradesco" hint="PDF ou print do extrato" onExtracted={setBradescoRaw} />
           <UploadBox icon={Landmark} title="Extrato PagBank" hint="Extrato da conta/maquininha PagBank (PDF)" onExtracted={setPagbankRaw} />
-          <UploadBox icon={FileImage} title="Foto do caixa físico" hint="Anexo de referência — digite os valores abaixo" />
           <UploadBox icon={FileSpreadsheet} title="Relatório de faturamento" hint="Vendas do período (PDF, base da conciliação)" onExtracted={setFaturamentoRaw} />
         </div>
       </div>
@@ -314,6 +350,7 @@ function DocumentosMjPrime() {
           onNavegar={setDataOverride}
           onEditarItem={editarItem}
           onLancado={(chave) => dataSelecionada && historico.marcarMigrados(dataSelecionada, { [chave]: "lancado" })}
+          onFinalizar={finalizarDia}
         />
       )}
     </div>

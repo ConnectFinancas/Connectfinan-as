@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, Building2 } from "lucide-react";
 import { Client } from "@/lib/types";
 import { clientNavItems } from "@/lib/nav";
 
@@ -24,6 +24,14 @@ export function ClientHeader({ client }: { client: Client }) {
           <span className="hidden md:inline-flex items-center rounded-full border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-muted">
             Financeiro · {active.shortLabel}
           </span>
+          <Link
+            href="/"
+            title="Trocar de cliente"
+            className="flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground transition-colors"
+          >
+            <Building2 size={14} />
+            <span className="hidden sm:inline">Trocar de cliente</span>
+          </Link>
           <button className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border-subtle bg-surface text-muted hover:text-foreground transition-colors">
             <Bell size={16} />
             <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-danger-500" />
