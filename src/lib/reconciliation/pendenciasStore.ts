@@ -44,5 +44,9 @@ export function usePendencias(slug: string) {
     setPendencias((atual) => atual.filter((p) => p.id !== id));
   }
 
-  return { pendencias, upsertPendencias, resolver };
+  function limparTudo() {
+    setPendencias([]);
+  }
+
+  return { pendencias, upsertPendencias, resolver, limparTudo };
 }

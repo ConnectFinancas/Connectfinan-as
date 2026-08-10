@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, FileSpreadsheet, Landmark, Users } from "lucide-react";
+import { Building2, FileSpreadsheet, Landmark, Trash2, Users } from "lucide-react";
 import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
 import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
@@ -18,7 +18,7 @@ type Extraido = { text: string; viaOcr: boolean; file: File } | null;
 
 function DocumentosMjPrime() {
   const finance = useFinance();
-  const { pendencias, upsertPendencias } = usePendencias(finance.client.slug);
+  const { pendencias, upsertPendencias, limparTudo: limparPendencias } = usePendencias(finance.client.slug);
   const historico = useConciliacaoHistorico(finance.client.slug);
   const [dataOverride, setDataOverride] = useState<string | null>(null);
   const [ultimoUpload, setUltimoUpload] = useState<string | null>(null);
@@ -259,6 +259,35 @@ function DocumentosMjPrime() {
     return novosPayables.length;
   }
 
+  // Apaga pendências + histórico salvo da conciliação (e os lançamentos que foram criados
+  // automaticamente a partir dele, pra não duplicar ao refazer), voltando a tela ao zero.
+  function limparConciliacao() {
+    const confirmado = window.confirm(
+      "Isso vai apagar todo o histórico e as pendências de conciliação salvos, além dos lançamentos criados automaticamente a partir deles em Contas a Receber/Pagar. Lançamentos que você criou manualmente não são afetados. Deseja continuar?"
+    );
+    if (!confirmado) return;
+
+    const idsReceber: string[] = [];
+    const idsPagar: string[] = [];
+    Object.values(historico.historico).forEach((dia) => {
+      Object.values(dia.migrados ?? {}).forEach((id) => {
+        if (id.startsWith("r_")) idsReceber.push(id);
+        else if (id.startsWith("p_")) idsPagar.push(id);
+      });
+    });
+    if (idsReceber.length > 0) finance.deleteReceivables(idsReceber);
+    if (idsPagar.length > 0) finance.deletePayables(idsPagar);
+
+    historico.limparTudo();
+    limparPendencias();
+    setFaturamentoRaw(null);
+    setPagbankRaw(null);
+    setBradescoRaw(null);
+    setCaixaMovs([]);
+    setDataOverride(null);
+    setUltimoUpload(null);
+  }
+
   const datasComPendencia = useMemo(
     () => [...new Set(pendencias.map((p) => p.data))].sort().reverse(),
     [pendencias]
@@ -317,11 +346,22 @@ function DocumentosMjPrime() {
       )}
 
       <div className="card p-5">
-        <h2 className="text-sm font-semibold text-brand-900">Documentos do período</h2>
-        <p className="mt-0.5 text-xs text-faint">
-          Envie os 3 documentos para começar a conciliação. O relatório de faturamento é a base — as demais entradas são
-          conferidas contra ele. O caixa físico é digitado manualmente logo abaixo.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-brand-900">Documentos do período</h2>
+            <p className="mt-0.5 text-xs text-faint">
+              Envie os 3 documentos para começar a conciliação. O relatório de faturamento é a base — as demais entradas
+              são conferidas contra ele. O caixa físico é digitado manualmente logo abaixo.
+            </p>
+          </div>
+          <button
+            onClick={limparConciliacao}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-muted hover:border-danger-500/40 hover:text-danger-500 transition-colors"
+          >
+            <Trash2 size={13} />
+            Limpar conciliação
+          </button>
+        </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <UploadBox icon={Landmark} title="Extrato Bradesco" hint="PDF ou print do extrato" onExtracted={setBradescoRaw} />
           <UploadBox icon={Landmark} title="Extrato PagBank" hint="Extrato da conta/maquininha PagBank (PDF)" onExtracted={setPagbankRaw} />

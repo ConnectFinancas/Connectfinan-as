@@ -69,7 +69,11 @@ export function useConciliacaoHistorico(slug: string) {
     });
   }
 
+  function limparTudo() {
+    setHistorico({});
+  }
+
   const datas = Object.keys(historico).sort().reverse();
 
-  return { historico, datas, salvar, atualizarItem, marcarMigrados, desmarcarMigrado };
+  return { historico, datas, salvar, atualizarItem, marcarMigrados, desmarcarMigrado, limparTudo };
 }
