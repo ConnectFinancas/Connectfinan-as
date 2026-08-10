@@ -109,15 +109,21 @@ export function conciliarDia(
     valorBate: diferenca >= 0, // negativo indicaria PagBank creditando mais que o faturado — sinal de algo errado
   };
 
-  // Baixa por baixa: cada venda no cartão casada com o crédito correspondente no PagBank,
-  // igual ao Pix/Dinheiro — permite conciliar uma por uma em vez de só no agregado.
-  const cartaoCasados = casarPorValor(vendasCartao, creditosPagBank);
-  const cartaoVendas: ItemConferencia<MovimentoPagBank>[] = cartaoCasados.map(({ a, b }) => ({
-    vendaValor: a.valor,
-    vendaHora: a.hora,
-    match: b,
-    status: b ? "conciliado" : "pendente",
-  }));
+  // Baixa por baixa: diferente de Pix/Dinheiro, o crédito de cada venda no PagBank normalmente
+  // NÃO chega com o mesmo valor da venda (a maquininha desconta a taxa por transação, ou os
+  // valores vêm antecipados/agrupados de outro jeito) — casar por valor exato deixava tudo
+  // como "pendente" mesmo quando a quantidade batia certinho. Em vez disso, casa por posição
+  // (ordem de chegada) quando a quantidade de vendas bate com a quantidade de créditos — é o
+  // mesmo critério que já validava o card-resumo do cartão (quantidadeBate).
+  const cartaoVendas: ItemConferencia<MovimentoPagBank>[] = vendasCartao.map((venda, i) => {
+    const match = vendasCartao.length === creditosPagBank.length ? creditosPagBank[i] : undefined;
+    return {
+      vendaValor: venda.valor,
+      vendaHora: venda.hora,
+      match,
+      status: match ? "conciliado" : "pendente",
+    };
+  });
 
   // ---------- Pix: vendas faturadas x recebidos no Bradesco ----------
   const vendasPix = faturamento.vendas.filter((v) => v.forma === "PIX");
