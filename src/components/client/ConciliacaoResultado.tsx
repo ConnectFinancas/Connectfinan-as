@@ -45,6 +45,7 @@ type Item = {
   };
   // dados brutos p/ ações de correção (recebimento)
   correcao?: { tipo: "pix" | "dinheiro" | "cartaoVenda"; index: number; matchInfoAtual?: string };
+  isCartao?: boolean; // só aparece detalhado na aba "Movimentações"
 };
 
 function StatusPill({ jaMigrado, temMatch, naoRequerAcao }: { jaMigrado: boolean; temMatch: boolean; naoRequerAcao: boolean }) {
@@ -154,6 +155,7 @@ export function ConciliacaoResultado({
         bancoDescricao: bancoTxt || "Ainda não encontrado no PagBank",
         sistemaResumo: `Venda Cartão${item.vendaHora ? ` · ${item.vendaHora}` : ""} · ${formatCurrencyPrecise(item.vendaValor)}`,
         correcao: { tipo: "cartaoVenda", index: i, matchInfoAtual: bancoTxt },
+        isCartao: true,
       });
     });
 
@@ -247,7 +249,12 @@ export function ConciliacaoResultado({
   const itensAtivos = itens.filter((i) => !arquivados.includes(i.chave));
   const itensArquivados = itens.filter((i) => arquivados.includes(i.chave));
 
-  const totalPendentes = itensAtivos.filter((i) => !i.jaMigrado && !i.naoRequerAcao).length;
+  // O cartão só aparece detalhado venda a venda na aba "Movimentações" — na de
+  // "Conciliações pendentes" fica só o card-resumo lá em cima, pra não poluir a lista.
+  const baseParaAba = (i: Item) =>
+    abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao && !i.isCartao : true;
+
+  const totalPendentes = itensAtivos.filter((i) => !i.jaMigrado && !i.naoRequerAcao && !i.isCartao).length;
   const totalMovimentacoes = itensAtivos.length;
 
   const buscaNum = busca.trim() ? Number(busca.trim().replace(",", ".")) : null;
@@ -262,20 +269,16 @@ export function ConciliacaoResultado({
   }
 
   const itensVisiveis = itensAtivos
-    .filter((i) => (abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true))
+    .filter(baseParaAba)
     .filter((i) => abaTipo === "todos" || (abaTipo === "recebimentos" ? i.categoria === "recebimento" : i.categoria === "pagamento"))
     .filter(combina);
 
-  const contagemTodos = itensAtivos.filter((i) => abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true).length;
-  const contagemRecebimentos = itensAtivos.filter(
-    (i) => i.categoria === "recebimento" && (abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true)
-  ).length;
-  const contagemPagamentos = itensAtivos.filter(
-    (i) => i.categoria === "pagamento" && (abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true)
-  ).length;
+  const contagemTodos = itensAtivos.filter(baseParaAba).length;
+  const contagemRecebimentos = itensAtivos.filter((i) => i.categoria === "recebimento" && baseParaAba(i)).length;
+  const contagemPagamentos = itensAtivos.filter((i) => i.categoria === "pagamento" && baseParaAba(i)).length;
 
   const valorPendente = itensAtivos
-    .filter((i) => !i.jaMigrado && !i.naoRequerAcao)
+    .filter((i) => !i.jaMigrado && !i.naoRequerAcao && !i.isCartao)
     .reduce((acc, i) => acc + i.bancoValor, 0);
 
   const idx = datas && dataSelecionada ? datas.indexOf(dataSelecionada) : -1;
@@ -414,7 +417,7 @@ export function ConciliacaoResultado({
           </p>
         )}
         <p className="mt-3 text-xs text-faint">
-          Cada venda no cartão aparece baixa por baixa na lista abaixo, junto com Pix e Dinheiro.
+          Cada venda no cartão aparece baixa por baixa na aba <strong>Movimentações</strong> abaixo.
         </p>
       </div>
 
