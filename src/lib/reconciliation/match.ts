@@ -9,6 +9,8 @@ export type ItemConferencia<T> = {
   vendaValor: number;
   vendaHora?: string;
   match?: T;
+  /** Preenchido quando o usuário corrige manualmente o resultado da leitura automática. */
+  matchInfo?: string;
   status: "conciliado" | "pendente";
 };
 

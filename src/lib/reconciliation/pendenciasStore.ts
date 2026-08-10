@@ -34,11 +34,10 @@ export function usePendencias(slug: string) {
     window.localStorage.setItem(storageKey(slug), JSON.stringify(pendencias));
   }, [pendencias, hydrated, slug]);
 
-  function upsertPendencias(novas: Pendencia[]) {
-    setPendencias((atual) => {
-      const outrasDatas = atual.filter((p) => !novas.some((n) => n.data === p.data && n.tipo === p.tipo));
-      return [...outrasDatas, ...novas];
-    });
+  // Substitui TODAS as pendências de `data` pelas `novas` (mesmo que `novas` esteja vazio) —
+  // evita pendências fantasma quando um tipo que antes tinha pendência é totalmente reconciliado.
+  function upsertPendencias(data: string, novas: Pendencia[]) {
+    setPendencias((atual) => [...atual.filter((p) => p.data !== data), ...novas]);
   }
 
   function resolver(id: string) {

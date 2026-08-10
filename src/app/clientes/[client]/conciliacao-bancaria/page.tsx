@@ -10,6 +10,7 @@ import { parseFaturamento, parseBradesco, parsePagBank } from "@/lib/reconciliat
 import { conciliarDia } from "@/lib/reconciliation/match";
 import { CaixaFisicoExtraido, MovimentoCaixaFisico } from "@/lib/reconciliation/types";
 import { usePendencias } from "@/lib/reconciliation/pendenciasStore";
+import { useConciliacaoHistorico, ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
 import { formatDateBR } from "@/lib/today";
 
 type Extraido = { text: string; viaOcr: boolean; file: File } | null;
@@ -17,6 +18,9 @@ type Extraido = { text: string; viaOcr: boolean; file: File } | null;
 function DocumentosMjPrime() {
   const finance = useFinance();
   const { pendencias, upsertPendencias } = usePendencias(finance.client.slug);
+  const historico = useConciliacaoHistorico(finance.client.slug);
+  const [dataOverride, setDataOverride] = useState<string | null>(null);
+  const [ultimoUpload, setUltimoUpload] = useState<string | null>(null);
 
   const [faturamentoRaw, setFaturamentoRaw] = useState<Extraido>(null);
   const [pagbankRaw, setPagbankRaw] = useState<Extraido>(null);
@@ -48,49 +52,105 @@ function DocumentosMjPrime() {
 
   useEffect(() => {
     if (!resultado) return;
+    historico.salvar(resultado);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultado?.data]);
+
+  // Quando um novo upload traz um dia diferente, ele assume o foco automaticamente
+  // (padrão sancionado do React p/ "resetar" estado durante o render, sem efeito).
+  if (resultado && resultado.data !== ultimoUpload) {
+    setUltimoUpload(resultado.data);
+    setDataOverride(null);
+  }
+
+  const dataSelecionada = dataOverride ?? resultado?.data ?? historico.datas[0] ?? null;
+
+  const resultadoExibido: ResultadoSalvo | null = dataSelecionada
+    ? historico.historico[dataSelecionada] ?? (resultado?.data === dataSelecionada ? resultado : null)
+    : null;
+
+  useEffect(() => {
+    if (!resultadoExibido) return;
+    const data = resultadoExibido.data;
     const novasPendencias = [
-      ...resultado.pix
+      ...resultadoExibido.pix
         .filter((p) => p.status === "pendente")
         .map((p, i) => ({
-          id: `pix-${resultado.data}-${i}`,
-          data: resultado.data,
+          id: `pix-${data}-${i}`,
+          data,
           descricao: `Pix não identificado no Bradesco (${p.vendaHora ?? ""})`,
           valor: p.vendaValor,
           tipo: "pix" as const,
         })),
-      ...resultado.dinheiro
+      ...resultadoExibido.dinheiro
         .filter((d) => d.status === "pendente")
         .map((d, i) => ({
-          id: `dinheiro-${resultado.data}-${i}`,
-          data: resultado.data,
+          id: `dinheiro-${data}-${i}`,
+          data,
           descricao: `Dinheiro não identificado no caixa físico (${d.vendaHora ?? ""})`,
           valor: d.vendaValor,
           tipo: "dinheiro" as const,
         })),
-      ...resultado.pagamentos
+      ...resultadoExibido.pagamentos
         .filter((p) => p.status === "pendente")
         .map((p, i) => ({
-          id: `pagamento-${resultado.data}-${i}`,
-          data: resultado.data,
+          id: `pagamento-${data}-${i}`,
+          data,
           descricao: p.historico,
           valor: p.valor,
           tipo: "pagamento" as const,
         })),
     ];
-    upsertPendencias(novasPendencias);
+    upsertPendencias(data, novasPendencias);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resultado]);
+  }, [resultadoExibido]);
+
+  function editarItem(
+    tipo: "pix" | "dinheiro" | "pagamento",
+    index: number,
+    patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
+  ) {
+    if (!dataSelecionada) return;
+    historico.atualizarItem(dataSelecionada, (r) => {
+      if (tipo === "pagamento") {
+        return {
+          ...r,
+          pagamentos: r.pagamentos.map((p, i) => (i === index ? { ...p, status: patch.status ?? p.status } : p)),
+        };
+      }
+      if (tipo === "pix") {
+        return {
+          ...r,
+          pix: r.pix.map((it, i) =>
+            i === index ? { ...it, matchInfo: patch.matchInfo ?? it.matchInfo, status: patch.status ?? it.status } : it
+          ),
+        };
+      }
+      return {
+        ...r,
+        dinheiro: r.dinheiro.map((it, i) =>
+          i === index ? { ...it, matchInfo: patch.matchInfo ?? it.matchInfo, status: patch.status ?? it.status } : it
+        ),
+      };
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      {pendencias.length > 0 && !resultado && (
+      {pendencias.length > 0 && (
         <div className="rounded-lg border border-warn-500/30 bg-warn-100 px-4 py-3 text-sm text-warn-500">
           <span className="font-medium">{pendencias.length} conciliaç{pendencias.length > 1 ? "ões pendentes" : "ão pendente"}</span> de
-          períodos anteriores — envie os documentos do dia pra revisar.
+          períodos anteriores.
           <ul className="mt-2 flex flex-col gap-0.5 text-xs">
             {pendencias.slice(0, 5).map((p) => (
               <li key={p.id}>
-                {formatDateBR(p.data)} · {p.descricao}
+                <button
+                  onClick={() => historico.historico[p.data] && setDataOverride(p.data)}
+                  disabled={!historico.historico[p.data]}
+                  className="text-left underline decoration-dotted hover:text-warn-600 disabled:no-underline disabled:cursor-default"
+                >
+                  {formatDateBR(p.data)} · {p.descricao}
+                </button>
               </li>
             ))}
           </ul>
@@ -116,12 +176,23 @@ function DocumentosMjPrime() {
         <CaixaFisicoManualTable movimentos={caixaMovs} onChange={setCaixaMovs} />
       </div>
 
-      {!faturamento && (
+      {!resultadoExibido && (
         <div className="card card-dashed flex flex-col items-center gap-2 p-12 text-center">
-          <p className="text-sm text-muted">Envie ao menos o relatório de faturamento para iniciar a conciliação do dia.</p>
+          <p className="text-sm text-muted">
+            Envie ao menos o relatório de faturamento para iniciar a conciliação do dia, ou escolha uma data já
+            conciliada acima.
+          </p>
         </div>
       )}
-      {resultado && <ConciliacaoResultado resultado={resultado} />}
+      {resultadoExibido && (
+        <ConciliacaoResultado
+          resultado={resultadoExibido}
+          datas={historico.datas}
+          dataSelecionada={dataSelecionada ?? undefined}
+          onNavegar={setDataOverride}
+          onEditarItem={editarItem}
+        />
+      )}
     </div>
   );
 }

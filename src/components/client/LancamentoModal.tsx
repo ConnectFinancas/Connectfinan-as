@@ -16,16 +16,20 @@ type Prefill = {
   categoria?: string;
   vencimento?: string;
   valor?: number;
+  status?: "pago";
+  dataPagamento?: string;
 };
 
 export function LancamentoModal({
   tipo,
   onClose,
+  onSaved,
   entry,
   prefill,
 }: {
   tipo: "pagar" | "receber";
   onClose: () => void;
+  onSaved?: () => void;
   entry?: Payable | Receivable;
   prefill?: Prefill;
 }) {
@@ -61,8 +65,10 @@ export function LancamentoModal({
   );
   const [parcelas, setParcelas] = useState(1);
   const [modoParcelas, setModoParcelas] = useState<"dividir" | "cheio">("dividir");
-  const [status, setStatus] = useState<"pendente" | "pago">(entryEraPago ? "pago" : "pendente");
-  const [dataPagamento, setDataPagamento] = useState(entryDataPagamento ?? "");
+  const [status, setStatus] = useState<"pendente" | "pago">(
+    entryEraPago ? "pago" : prefill?.status === "pago" ? "pago" : "pendente"
+  );
+  const [dataPagamento, setDataPagamento] = useState(entryDataPagamento || prefill?.dataPagamento || "");
   const [erro, setErro] = useState("");
 
   const grupoAtual = categorias.find((c) => c.classificacao === classificacao);
@@ -112,6 +118,7 @@ export function LancamentoModal({
           formaRecebimento: conta.trim() || undefined,
         });
       }
+      onSaved?.();
       onClose();
       return;
     }
@@ -149,6 +156,7 @@ export function LancamentoModal({
       finance.addReceivable(entries);
     }
 
+    onSaved?.();
     onClose();
   }
 
