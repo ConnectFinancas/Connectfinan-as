@@ -35,6 +35,7 @@ export function ConciliacaoResultado({
   dataSelecionada,
   onNavegar,
   onEditarItem,
+  onLancado,
 }: {
   resultado: ResultadoConciliacao | ResultadoSalvo;
   datas?: string[];
@@ -45,10 +46,14 @@ export function ConciliacaoResultado({
     index: number,
     patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
   ) => void;
+  onLancado?: (chave: string) => void;
 }) {
+  const migrados = "migrados" in resultado ? resultado.migrados ?? {} : {};
   const [taxaLancada, setTaxaLancada] = useState(false);
+  const [pagamentosLancados, setPagamentosLancados] = useState<Set<number>>(new Set());
   const [lancarTaxa, setLancarTaxa] = useState(false);
   const [lancarPagamento, setLancarPagamento] = useState<{
+    index: number;
     pessoa: string;
     descricao: string;
     valor: number;
@@ -164,7 +169,7 @@ export function ConciliacaoResultado({
             <p className="text-sm font-semibold text-warn-500">{formatCurrencyPrecise(cartao.diferenca)}</p>
           </div>
           <div className="flex items-end">
-            {taxaLancada ? (
+            {taxaLancada || migrados["cartao-taxa"] ? (
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent-100 px-3 py-2 text-xs font-medium text-accent-500">
                 <Check size={12} />
                 Taxa lançada
@@ -301,10 +306,16 @@ export function ConciliacaoResultado({
                   </td>
                   <td className="py-2 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {p.status === "pendente" && p.tipo === "pagamento" && (
+                      {p.status === "pendente" && p.tipo === "pagamento" && (pagamentosLancados.has(i) || migrados[`pagamento-${i}`] ? (
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-accent-100 px-2 py-1 text-[11px] font-medium text-accent-500">
+                          <Check size={11} />
+                          Lançado
+                        </span>
+                      ) : (
                         <button
                           onClick={() =>
                             setLancarPagamento({
+                              index: i,
                               pessoa: p.sugestao?.favorecido ?? "",
                               descricao: p.historico,
                               valor: p.valor,
@@ -316,7 +327,7 @@ export function ConciliacaoResultado({
                           <Plus size={11} />
                           Lançar despesa
                         </button>
-                      )}
+                      ))}
                       {onEditarItem && (
                         <button
                           onClick={() => {
@@ -349,7 +360,10 @@ export function ConciliacaoResultado({
         <LancamentoModal
           tipo="pagar"
           onClose={() => setLancarTaxa(false)}
-          onSaved={() => setTaxaLancada(true)}
+          onSaved={() => {
+            setTaxaLancada(true);
+            onLancado?.("cartao-taxa");
+          }}
           prefill={{
             descricao: `Taxa de maquininha - conciliação ${formatDateBR(resultado.data)}`,
             classificacao: "DESPESAS FINANCEIRAS",
@@ -365,6 +379,10 @@ export function ConciliacaoResultado({
         <LancamentoModal
           tipo="pagar"
           onClose={() => setLancarPagamento(null)}
+          onSaved={() => {
+            setPagamentosLancados((atual) => new Set(atual).add(lancarPagamento.index));
+            onLancado?.(`pagamento-${lancarPagamento.index}`);
+          }}
           prefill={{
             pessoa: lancarPagamento.pessoa,
             descricao: lancarPagamento.descricao,

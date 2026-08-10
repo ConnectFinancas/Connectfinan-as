@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { ResultadoConciliacao } from "./match";
 
-export type ResultadoSalvo = ResultadoConciliacao & { editadoManualmente?: boolean };
+export type ResultadoSalvo = ResultadoConciliacao & {
+  editadoManualmente?: boolean;
+  /** Mapa chave do item (ex.: "pix-0", "cartao", "cartao-taxa", "pagamento-2") -> id do lançamento criado em Contas a Receber/Pagar. */
+  migrados?: Record<string, string>;
+};
 
 function storageKey(slug: string) {
   return `cf-${slug}-conciliacao-historico-v1`;
@@ -31,8 +35,10 @@ export function useConciliacaoHistorico(slug: string) {
 
   function salvar(resultado: ResultadoConciliacao) {
     setHistorico((atual) => {
-      if (atual[resultado.data]?.editadoManualmente) return atual;
-      return { ...atual, [resultado.data]: resultado };
+      const atualR = atual[resultado.data];
+      if (atualR?.editadoManualmente) return atual;
+      // Preserva o mapa de itens já migrados p/ Contas a Receber/Pagar ao reprocessar o mesmo dia.
+      return { ...atual, [resultado.data]: { ...resultado, migrados: atualR?.migrados } };
     });
   }
 
@@ -44,7 +50,26 @@ export function useConciliacaoHistorico(slug: string) {
     });
   }
 
+  /** Registra que um item já foi lançado em Contas a Receber/Pagar, sem marcar o dia como editado manualmente. */
+  function marcarMigrados(data: string, novasChaves: Record<string, string>) {
+    setHistorico((atual) => {
+      const atualR = atual[data];
+      if (!atualR) return atual;
+      return { ...atual, [data]: { ...atualR, migrados: { ...atualR.migrados, ...novasChaves } } };
+    });
+  }
+
+  function desmarcarMigrado(data: string, chave: string) {
+    setHistorico((atual) => {
+      const atualR = atual[data];
+      if (!atualR?.migrados) return atual;
+      const migrados = { ...atualR.migrados };
+      delete migrados[chave];
+      return { ...atual, [data]: { ...atualR, migrados } };
+    });
+  }
+
   const datas = Object.keys(historico).sort().reverse();
 
-  return { historico, datas, salvar, atualizarItem };
+  return { historico, datas, salvar, atualizarItem, marcarMigrados, desmarcarMigrado };
 }

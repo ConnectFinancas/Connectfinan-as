@@ -5,7 +5,8 @@ import { Building2, FileImage, FileSpreadsheet, Landmark, Users } from "lucide-r
 import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
 import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
-import { useFinance } from "@/lib/store/FinanceContext";
+import { useFinance, genId } from "@/lib/store/FinanceContext";
+import { Receivable } from "@/lib/types";
 import { parseFaturamento, parseBradesco, parsePagBank } from "@/lib/reconciliation/parsers";
 import { conciliarDia } from "@/lib/reconciliation/match";
 import { CaixaFisicoExtraido, MovimentoCaixaFisico } from "@/lib/reconciliation/types";
@@ -21,6 +22,8 @@ function DocumentosMjPrime() {
   const historico = useConciliacaoHistorico(finance.client.slug);
   const [dataOverride, setDataOverride] = useState<string | null>(null);
   const [ultimoUpload, setUltimoUpload] = useState<string | null>(null);
+  const [filtroPendencias, setFiltroPendencias] = useState("");
+  const [verTodasPendencias, setVerTodasPendencias] = useState(false);
 
   const [faturamentoRaw, setFaturamentoRaw] = useState<Extraido>(null);
   const [pagbankRaw, setPagbankRaw] = useState<Extraido>(null);
@@ -105,12 +108,96 @@ function DocumentosMjPrime() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultadoExibido]);
 
+  // Assim que um item de recebimento fica "conciliado", ele é lançado automaticamente em
+  // Contas a Receber — sem precisar de botão. O mapa `migrados` evita lançar duas vezes.
+  useEffect(() => {
+    if (!resultadoExibido) return;
+    const data = resultadoExibido.data;
+    const migrados = resultadoExibido.migrados ?? {};
+    const novosReceivables: Receivable[] = [];
+    const novasChaves: Record<string, string> = {};
+
+    resultadoExibido.pix.forEach((item, i) => {
+      const chave = `pix-${i}`;
+      if (item.status !== "conciliado" || migrados[chave]) return;
+      const id = genId("r");
+      novasChaves[chave] = id;
+      novosReceivables.push({
+        id,
+        cliente: "—",
+        classificacao: "Faturamento",
+        categoria: "Faturamento Geral",
+        vencimento: data,
+        valor: item.vendaValor,
+        status: "recebido",
+        recebimento: data,
+        descricao: `Venda Pix${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
+        formaRecebimento: "Pix",
+      });
+    });
+
+    resultadoExibido.dinheiro.forEach((item, i) => {
+      const chave = `dinheiro-${i}`;
+      if (item.status !== "conciliado" || migrados[chave]) return;
+      const id = genId("r");
+      novasChaves[chave] = id;
+      novosReceivables.push({
+        id,
+        cliente: "—",
+        classificacao: "Faturamento",
+        categoria: "Faturamento Geral",
+        vencimento: data,
+        valor: item.vendaValor,
+        status: "recebido",
+        recebimento: data,
+        descricao: `Venda Dinheiro${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
+        formaRecebimento: "Dinheiro",
+      });
+    });
+
+    const { cartao } = resultadoExibido;
+    if (cartao.quantidadeBate && cartao.valorBate && cartao.faturamentoTotal > 0 && !migrados["cartao"]) {
+      const id = genId("r");
+      novasChaves["cartao"] = id;
+      novosReceivables.push({
+        id,
+        cliente: "—",
+        classificacao: "Faturamento",
+        categoria: "Faturamento Geral",
+        vencimento: data,
+        valor: cartao.faturamentoTotal,
+        status: "recebido",
+        recebimento: data,
+        descricao: "Vendas Cartão (Crédito + Débito)",
+        formaRecebimento: "Cartão",
+      });
+    }
+
+    if (novosReceivables.length > 0) {
+      finance.addReceivable(novosReceivables);
+      historico.marcarMigrados(data, novasChaves);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultadoExibido]);
+
   function editarItem(
     tipo: "pix" | "dinheiro" | "pagamento",
     index: number,
     patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
   ) {
     if (!dataSelecionada) return;
+
+    // Se o item já tinha sido lançado automaticamente e o usuário corrigiu de volta pra
+    // pendente, desfaz o lançamento em Contas a Receber pra não deixar duplicado/errado.
+    if ((tipo === "pix" || tipo === "dinheiro") && patch.status === "pendente") {
+      const chave = `${tipo}-${index}`;
+      const idMigrado = resultadoExibido?.migrados?.[chave];
+      if (idMigrado) {
+        finance.deleteReceivables([idMigrado]);
+        historico.desmarcarMigrado(dataSelecionada, chave);
+      }
+    }
+
     historico.atualizarItem(dataSelecionada, (r) => {
       if (tipo === "pagamento") {
         return {
@@ -135,14 +222,41 @@ function DocumentosMjPrime() {
     });
   }
 
+  const datasComPendencia = useMemo(
+    () => [...new Set(pendencias.map((p) => p.data))].sort().reverse(),
+    [pendencias]
+  );
+  const pendenciasFiltradas = filtroPendencias ? pendencias.filter((p) => p.data === filtroPendencias) : pendencias;
+  const pendenciasVisiveis =
+    filtroPendencias || verTodasPendencias ? pendenciasFiltradas : pendenciasFiltradas.slice(0, 5);
+
   return (
     <div className="flex flex-col gap-6">
       {pendencias.length > 0 && (
         <div className="rounded-lg border border-warn-500/30 bg-warn-100 px-4 py-3 text-sm text-warn-500">
-          <span className="font-medium">{pendencias.length} conciliaç{pendencias.length > 1 ? "ões pendentes" : "ão pendente"}</span> de
-          períodos anteriores.
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-medium">
+              {pendenciasFiltradas.length} conciliaç{pendenciasFiltradas.length > 1 ? "ões pendentes" : "ão pendente"}
+              {filtroPendencias ? ` em ${formatDateBR(filtroPendencias)}` : " de períodos anteriores"}
+            </span>
+            <select
+              value={filtroPendencias}
+              onChange={(e) => {
+                setFiltroPendencias(e.target.value);
+                setVerTodasPendencias(false);
+              }}
+              className="rounded-md border border-warn-500/30 bg-white px-2 py-1 text-xs font-medium text-warn-600"
+            >
+              <option value="">Todas as datas</option>
+              {datasComPendencia.map((d) => (
+                <option key={d} value={d}>
+                  {formatDateBR(d)}
+                </option>
+              ))}
+            </select>
+          </div>
           <ul className="mt-2 flex flex-col gap-0.5 text-xs">
-            {pendencias.slice(0, 5).map((p) => (
+            {pendenciasVisiveis.map((p) => (
               <li key={p.id}>
                 <button
                   onClick={() => historico.historico[p.data] && setDataOverride(p.data)}
@@ -154,6 +268,14 @@ function DocumentosMjPrime() {
               </li>
             ))}
           </ul>
+          {!filtroPendencias && pendenciasFiltradas.length > 5 && (
+            <button
+              onClick={() => setVerTodasPendencias((v) => !v)}
+              className="mt-2 text-xs font-medium text-warn-600 underline decoration-dotted"
+            >
+              {verTodasPendencias ? "Ver menos" : `Ver todas (${pendenciasFiltradas.length})`}
+            </button>
+          )}
         </div>
       )}
 
@@ -191,6 +313,7 @@ function DocumentosMjPrime() {
           dataSelecionada={dataSelecionada ?? undefined}
           onNavegar={setDataOverride}
           onEditarItem={editarItem}
+          onLancado={(chave) => dataSelecionada && historico.marcarMigrados(dataSelecionada, { [chave]: "lancado" })}
         />
       )}
     </div>
