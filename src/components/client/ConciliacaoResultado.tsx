@@ -44,7 +44,7 @@ type Item = {
     vencimento: string;
   };
   // dados brutos p/ ações de correção (recebimento)
-  correcao?: { tipo: "pix" | "dinheiro"; index: number; matchInfoAtual?: string };
+  correcao?: { tipo: "pix" | "dinheiro" | "cartaoVenda"; index: number; matchInfoAtual?: string };
 };
 
 function StatusPill({ jaMigrado, temMatch, naoRequerAcao }: { jaMigrado: boolean; temMatch: boolean; naoRequerAcao: boolean }) {
@@ -96,7 +96,7 @@ export function ConciliacaoResultado({
   dataSelecionada?: string;
   onNavegar?: (data: string) => void;
   onEditarItem?: (
-    tipo: "pix" | "dinheiro" | "pagamento",
+    tipo: "pix" | "dinheiro" | "cartaoVenda" | "pagamento",
     index: number,
     patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
   ) => void;
@@ -123,7 +123,7 @@ export function ConciliacaoResultado({
     valor: number;
     vencimento: string;
   } | null>(null);
-  const [editando, setEditando] = useState<{ tipo: "pix" | "dinheiro"; index: number } | null>(null);
+  const [editando, setEditando] = useState<{ tipo: "pix" | "dinheiro" | "cartaoVenda"; index: number } | null>(null);
   const [rascunho, setRascunho] = useState("");
   const [abaPrincipal, setAbaPrincipal] = useState<AbaPrincipal>("pendentes");
   const [abaTipo, setAbaTipo] = useState<AbaTipo>("todos");
@@ -132,10 +132,28 @@ export function ConciliacaoResultado({
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [verArquivados, setVerArquivados] = useState(false);
 
-  const { cartao, pix, dinheiro, pagamentos } = resultado;
+  const { cartao, cartaoVendas, pix, dinheiro, pagamentos } = resultado;
 
   const itens: Item[] = useMemo(() => {
     const lista: Item[] = [];
+
+    cartaoVendas.forEach((item, i) => {
+      const chave = `cartaoVenda-${i}`;
+      const bancoTxt = item.matchInfo || item.match?.descricao;
+      lista.push({
+        chave,
+        categoria: "recebimento",
+        rotulo: "Cartão",
+        jaMigrado: !!migrados[chave],
+        temMatch: item.status === "conciliado",
+        naoRequerAcao: false,
+        bancoValor: item.match?.valor ?? item.vendaValor,
+        bancoData: item.match?.data,
+        bancoDescricao: bancoTxt || "Ainda não encontrado no PagBank",
+        sistemaResumo: `Venda Cartão${item.vendaHora ? ` · ${item.vendaHora}` : ""} · ${formatCurrencyPrecise(item.vendaValor)}`,
+        correcao: { tipo: "cartaoVenda", index: i, matchInfoAtual: bancoTxt },
+      });
+    });
 
     pix.forEach((item, i) => {
       const chave = `pix-${i}`;
@@ -280,7 +298,7 @@ export function ConciliacaoResultado({
     setModoSelecao(false);
   }
 
-  function iniciarEdicao(tipo: "pix" | "dinheiro", index: number, atual?: string) {
+  function iniciarEdicao(tipo: "pix" | "dinheiro" | "cartaoVenda", index: number, atual?: string) {
     setEditando({ tipo, index });
     setRascunho(atual ?? "");
   }
@@ -393,23 +411,9 @@ export function ConciliacaoResultado({
             Quantidade de vendas no cartão ({cartao.faturamentoQtd}) diferente da quantidade de recebimentos no PagBank ({cartao.pagbankQtd}) — confira antes de lançar a taxa.
           </p>
         )}
-        {cartao.quantidadeBate && cartao.valorBate && cartao.faturamentoTotal > 0 && (
-          <div className="mt-3 flex items-center justify-between rounded-lg border border-border-subtle bg-surface-muted px-3 py-2">
-            <span className="text-xs text-muted">Faturamento do cartão conferido — pronto pra ir pro Contas a Receber</span>
-            {migrados["cartao"] ? (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-accent-500">
-                <Check size={12} /> Conciliado
-              </span>
-            ) : (
-              <button
-                onClick={() => onConciliar?.("cartao")}
-                className="rounded-lg bg-client-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
-              >
-                Conciliar
-              </button>
-            )}
-          </div>
-        )}
+        <p className="mt-3 text-xs text-faint">
+          Cada venda no cartão aparece baixa por baixa na lista abaixo, junto com Pix e Dinheiro.
+        </p>
       </div>
 
       {/* Abas + busca + seleção, estilo Conta Azul */}

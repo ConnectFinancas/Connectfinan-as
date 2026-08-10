@@ -53,11 +53,14 @@ function DocumentosMjPrime() {
     );
   }, [faturamento, pagbank, bradesco, caixa, dataReferencia, finance.payables]);
 
+  // Depende do objeto inteiro (não só da data): sem isso, enviar um documento novo ou
+  // digitar uma linha do caixa físico depois do primeiro salvamento do dia não atualizava
+  // o que ficava exibido — a tela ficava presa no primeiro resultado calculado.
   useEffect(() => {
     if (!resultado) return;
     historico.salvar(resultado);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resultado?.data]);
+  }, [resultado]);
 
   // Quando um novo upload traz um dia diferente, ele assume o foco automaticamente
   // (padrão sancionado do React p/ "resetar" estado durante o render, sem efeito).
@@ -76,6 +79,15 @@ function DocumentosMjPrime() {
     if (!resultadoExibido) return;
     const data = resultadoExibido.data;
     const novasPendencias = [
+      ...resultadoExibido.cartaoVendas
+        .filter((v) => v.status === "pendente")
+        .map((v, i) => ({
+          id: `cartaoVenda-${data}-${i}`,
+          data,
+          descricao: `Venda no cartão não identificada no PagBank (${v.vendaHora ?? ""})`,
+          valor: v.vendaValor,
+          tipo: "cartao" as const,
+        })),
       ...resultadoExibido.pix
         .filter((p) => p.status === "pendente")
         .map((p, i) => ({
@@ -109,7 +121,7 @@ function DocumentosMjPrime() {
   }, [resultadoExibido]);
 
   function editarItem(
-    tipo: "pix" | "dinheiro" | "pagamento",
+    tipo: "pix" | "dinheiro" | "cartaoVenda" | "pagamento",
     index: number,
     patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
   ) {
@@ -117,7 +129,7 @@ function DocumentosMjPrime() {
 
     // Se o item já tinha sido lançado automaticamente e o usuário corrigiu de volta pra
     // pendente, desfaz o lançamento em Contas a Receber pra não deixar duplicado/errado.
-    if ((tipo === "pix" || tipo === "dinheiro") && patch.status === "pendente") {
+    if (tipo !== "pagamento" && patch.status === "pendente") {
       const chave = `${tipo}-${index}`;
       const idMigrado = resultadoExibido?.migrados?.[chave];
       if (idMigrado) {
@@ -141,6 +153,14 @@ function DocumentosMjPrime() {
           ),
         };
       }
+      if (tipo === "cartaoVenda") {
+        return {
+          ...r,
+          cartaoVendas: r.cartaoVendas.map((it, i) =>
+            i === index ? { ...it, matchInfo: patch.matchInfo ?? it.matchInfo, status: patch.status ?? it.status } : it
+          ),
+        };
+      }
       return {
         ...r,
         dinheiro: r.dinheiro.map((it, i) =>
@@ -160,30 +180,13 @@ function DocumentosMjPrime() {
     const migrados = resultadoExibido.migrados ?? {};
     if (migrados[chave]) return null;
 
-    if (chave === "cartao") {
-      const { cartao } = resultadoExibido;
-      if (!(cartao.quantidadeBate && cartao.valorBate && cartao.faturamentoTotal > 0)) return null;
-      return {
-        receivable: {
-          id: genId("r"),
-          cliente: "—",
-          classificacao: "Faturamento",
-          categoria: "Faturamento Geral",
-          vencimento: data,
-          valor: cartao.faturamentoTotal,
-          status: "recebido",
-          recebimento: data,
-          descricao: "Vendas Cartão (Crédito + Débito)",
-          formaRecebimento: "Cartão",
-        },
-      };
-    }
-
-    if (chave.startsWith("pix-") || chave.startsWith("dinheiro-")) {
-      const tipo = chave.startsWith("pix-") ? "pix" : "dinheiro";
+    if (chave.startsWith("pix-") || chave.startsWith("dinheiro-") || chave.startsWith("cartaoVenda-")) {
+      const tipo = chave.startsWith("pix-") ? "pix" : chave.startsWith("dinheiro-") ? "dinheiro" : "cartaoVenda";
       const idx = Number(chave.split("-")[1]);
-      const item = tipo === "pix" ? resultadoExibido.pix[idx] : resultadoExibido.dinheiro[idx];
+      const item =
+        tipo === "pix" ? resultadoExibido.pix[idx] : tipo === "dinheiro" ? resultadoExibido.dinheiro[idx] : resultadoExibido.cartaoVendas[idx];
       if (!item || item.status !== "conciliado") return null;
+      const rotulo = tipo === "pix" ? "Pix" : tipo === "dinheiro" ? "Dinheiro" : "Cartão";
       return {
         receivable: {
           id: genId("r"),
@@ -194,8 +197,8 @@ function DocumentosMjPrime() {
           valor: item.vendaValor,
           status: "recebido",
           recebimento: data,
-          descricao: `Venda ${tipo === "pix" ? "Pix" : "Dinheiro"}${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
-          formaRecebimento: tipo === "pix" ? "Pix" : "Dinheiro",
+          descricao: `Venda ${rotulo}${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
+          formaRecebimento: rotulo,
         },
       };
     }
@@ -277,8 +280,8 @@ function DocumentosMjPrime() {
   // item pra pendente — pra depois buscar outro lançamento ou criar um novo.
   function desvincularItem(chave: string) {
     if (!dataSelecionada) return;
-    if (chave.startsWith("pix-") || chave.startsWith("dinheiro-")) {
-      const tipo = chave.startsWith("pix-") ? "pix" : "dinheiro";
+    if (chave.startsWith("pix-") || chave.startsWith("dinheiro-") || chave.startsWith("cartaoVenda-")) {
+      const tipo = chave.startsWith("pix-") ? "pix" : chave.startsWith("dinheiro-") ? "dinheiro" : "cartaoVenda";
       const idx = Number(chave.split("-")[1]);
       editarItem(tipo, idx, { status: "pendente", matchInfo: "" });
       return;

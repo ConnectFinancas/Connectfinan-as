@@ -1,5 +1,13 @@
 import { Payable } from "@/lib/types";
-import { BradescoExtraido, CaixaFisicoExtraido, FaturamentoExtraido, MovimentoBradesco, MovimentoCaixaFisico, PagBankExtraido } from "./types";
+import {
+  BradescoExtraido,
+  CaixaFisicoExtraido,
+  FaturamentoExtraido,
+  MovimentoBradesco,
+  MovimentoCaixaFisico,
+  MovimentoPagBank,
+  PagBankExtraido,
+} from "./types";
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
@@ -36,6 +44,7 @@ export type ResultadoConciliacao = {
     quantidadeBate: boolean;
     valorBate: boolean;
   };
+  cartaoVendas: ItemConferencia<MovimentoPagBank>[];
   pix: ItemConferencia<MovimentoBradesco>[];
   dinheiro: ItemConferencia<MovimentoCaixaFisico>[];
   pagamentos: PagamentoConciliacao[];
@@ -99,6 +108,16 @@ export function conciliarDia(
     quantidadeBate: vendasCartao.length === creditosPagBank.length,
     valorBate: diferenca >= 0, // negativo indicaria PagBank creditando mais que o faturado — sinal de algo errado
   };
+
+  // Baixa por baixa: cada venda no cartão casada com o crédito correspondente no PagBank,
+  // igual ao Pix/Dinheiro — permite conciliar uma por uma em vez de só no agregado.
+  const cartaoCasados = casarPorValor(vendasCartao, creditosPagBank);
+  const cartaoVendas: ItemConferencia<MovimentoPagBank>[] = cartaoCasados.map(({ a, b }) => ({
+    vendaValor: a.valor,
+    vendaHora: a.hora,
+    match: b,
+    status: b ? "conciliado" : "pendente",
+  }));
 
   // ---------- Pix: vendas faturadas x recebidos no Bradesco ----------
   const vendasPix = faturamento.vendas.filter((v) => v.forma === "PIX");
@@ -176,10 +195,10 @@ export function conciliarDia(
   }
 
   const totalPendencias =
+    cartaoVendas.filter((v) => v.status === "pendente").length +
     pix.filter((p) => p.status === "pendente").length +
     dinheiro.filter((d) => d.status === "pendente").length +
-    pagamentos.filter((p) => p.status === "pendente").length +
-    (cartao.quantidadeBate && cartao.valorBate ? 0 : 1);
+    pagamentos.filter((p) => p.status === "pendente" && p.tipo === "pagamento").length;
 
-  return { data, cartao, pix, dinheiro, pagamentos, totalPendencias };
+  return { data, cartao, cartaoVendas, pix, dinheiro, pagamentos, totalPendencias };
 }
