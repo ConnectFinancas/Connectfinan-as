@@ -88,7 +88,7 @@ export default function ContasAReceberPage() {
         <div className="flex flex-wrap items-end gap-3">
           <button
             onClick={() => setModalAberto(true)}
-            className="rounded-lg bg-m4-accent px-4 py-2.5 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors whitespace-nowrap"
+            className="rounded-lg bg-client-accent px-4 py-2.5 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors whitespace-nowrap"
           >
             + Nova conta a receber
           </button>

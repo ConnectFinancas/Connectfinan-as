@@ -19,7 +19,7 @@ export default async function ClientLayout({ children, params }: LayoutProps<"/c
 
   return (
     <div
-      className="cf-dark min-h-screen bg-background"
+      className={`min-h-screen bg-background ${client.theme === "light" ? "" : "cf-dark"}`}
       style={
         {
           "--client-accent": client.accent,

@@ -349,7 +349,7 @@ export function LancamentoModal({
             )}
             <button
               onClick={handleSalvar}
-              className="flex-1 rounded-lg bg-m4-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-m4-accent-dark transition-colors"
+              className="flex-1 rounded-lg bg-client-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-client-accent-dark transition-colors"
             >
               {isEdit ? "Salvar alterações" : "Salvar"}
             </button>

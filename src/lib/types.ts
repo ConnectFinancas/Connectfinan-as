@@ -12,6 +12,8 @@ export type Client = {
   status: ClientStatus;
   responsible: string;
   regime: string;
+  // Tema do painel (depois de selecionar o cliente). "dark" é o padrão.
+  theme?: "dark" | "light";
 };
 
 export type MonthlyFinancials = {

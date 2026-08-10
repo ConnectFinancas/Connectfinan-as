@@ -111,6 +111,9 @@
   --color-m4-accent: var(--m4-accent);
   --color-m4-accent-dark: var(--m4-accent-dark);
 
+  --color-client-accent: var(--client-accent, var(--m4-accent));
+  --color-client-accent-dark: var(--client-accent-dark, var(--m4-accent-dark));
+
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
   --color-border-subtle: var(--border-subtle);

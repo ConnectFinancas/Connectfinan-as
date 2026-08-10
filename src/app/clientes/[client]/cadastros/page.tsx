@@ -60,7 +60,7 @@ function GroupCard({ group, tipo }: { group: CategoryGroup; tipo: "pagar" | "rec
         />
         <button
           onClick={adicionar}
-          className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-m4-accent px-3 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors"
+          className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
         >
           <Plus size={13} />
           Categoria
@@ -89,7 +89,7 @@ export default function CadastrosPage() {
         <button
           onClick={() => setTab("pagar")}
           className={`rounded-md px-4 py-2 text-xs font-semibold transition-colors ${
-            tab === "pagar" ? "bg-m4-accent text-white" : "text-muted hover:text-brand-900"
+            tab === "pagar" ? "bg-client-accent text-white" : "text-muted hover:text-brand-900"
           }`}
         >
           Contas a Pagar
@@ -97,7 +97,7 @@ export default function CadastrosPage() {
         <button
           onClick={() => setTab("receber")}
           className={`rounded-md px-4 py-2 text-xs font-semibold transition-colors ${
-            tab === "receber" ? "bg-m4-accent text-white" : "text-muted hover:text-brand-900"
+            tab === "receber" ? "bg-client-accent text-white" : "text-muted hover:text-brand-900"
           }`}
         >
           Contas a Receber
@@ -132,7 +132,7 @@ export default function CadastrosPage() {
           />
           <button
             onClick={adicionarClassificacao}
-            className="whitespace-nowrap rounded-lg bg-m4-accent px-4 py-2 text-xs font-semibold text-white hover:bg-m4-accent-dark transition-colors"
+            className="whitespace-nowrap rounded-lg bg-client-accent px-4 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
           >
             Adicionar classificação
           </button>

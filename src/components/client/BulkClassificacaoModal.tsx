@@ -73,7 +73,7 @@ export function BulkClassificacaoModal({
           <button
             onClick={handleAplicar}
             disabled={!classificacao || !categoria}
-            className="mt-1 rounded-lg bg-m4-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-m4-accent-dark transition-colors disabled:opacity-50"
+            className="mt-1 rounded-lg bg-client-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-client-accent-dark transition-colors disabled:opacity-50"
           >
             Aplicar a {ids.length} lançamento{ids.length > 1 ? "s" : ""}
           </button>
