@@ -79,7 +79,7 @@ function DocumentosMjPrime() {
     if (!resultadoExibido) return;
     const data = resultadoExibido.data;
     const novasPendencias = [
-      ...resultadoExibido.cartaoVendas
+      ...(resultadoExibido.cartaoVendas ?? [])
         .filter((v) => v.status === "pendente")
         .map((v, i) => ({
           id: `cartaoVenda-${data}-${i}`,
@@ -156,7 +156,7 @@ function DocumentosMjPrime() {
       if (tipo === "cartaoVenda") {
         return {
           ...r,
-          cartaoVendas: r.cartaoVendas.map((it, i) =>
+          cartaoVendas: (r.cartaoVendas ?? []).map((it, i) =>
             i === index ? { ...it, matchInfo: patch.matchInfo ?? it.matchInfo, status: patch.status ?? it.status } : it
           ),
         };
@@ -184,7 +184,7 @@ function DocumentosMjPrime() {
       const tipo = chave.startsWith("pix-") ? "pix" : chave.startsWith("dinheiro-") ? "dinheiro" : "cartaoVenda";
       const idx = Number(chave.split("-")[1]);
       const item =
-        tipo === "pix" ? resultadoExibido.pix[idx] : tipo === "dinheiro" ? resultadoExibido.dinheiro[idx] : resultadoExibido.cartaoVendas[idx];
+        tipo === "pix" ? resultadoExibido.pix[idx] : tipo === "dinheiro" ? resultadoExibido.dinheiro[idx] : (resultadoExibido.cartaoVendas ?? [])[idx];
       if (!item || item.status !== "conciliado") return null;
       const rotulo = tipo === "pix" ? "Pix" : tipo === "dinheiro" ? "Dinheiro" : "Cartão";
       return {

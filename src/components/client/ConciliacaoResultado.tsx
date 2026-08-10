@@ -132,7 +132,9 @@ export function ConciliacaoResultado({
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [verArquivados, setVerArquivados] = useState(false);
 
-  const { cartao, cartaoVendas, pix, dinheiro, pagamentos } = resultado;
+  // "cartaoVendas" é campo novo — resultados salvos no navegador antes dessa versão não têm
+  // essa chave, então cai pra [] em vez de quebrar com "undefined".
+  const { cartao, cartaoVendas = [], pix, dinheiro, pagamentos } = resultado;
 
   const itens: Item[] = useMemo(() => {
     const lista: Item[] = [];
