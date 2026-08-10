@@ -8,14 +8,26 @@ import { Payable, Receivable, Status } from "@/lib/types";
 
 const NOVA_CATEGORIA = "__nova__";
 
+type Prefill = {
+  pessoa?: string;
+  conta?: string;
+  descricao?: string;
+  classificacao?: string;
+  categoria?: string;
+  vencimento?: string;
+  valor?: number;
+};
+
 export function LancamentoModal({
   tipo,
   onClose,
   entry,
+  prefill,
 }: {
   tipo: "pagar" | "receber";
   onClose: () => void;
   entry?: Payable | Receivable;
+  prefill?: Prefill;
 }) {
   const finance = useFinance();
   const isEdit = !!entry;
@@ -36,14 +48,17 @@ export function LancamentoModal({
     : "";
   const entryEraPago = entry ? entry.status === "pago" || entry.status === "recebido" : false;
 
-  const [pessoa, setPessoa] = useState(entryPessoa === "—" ? "" : entryPessoa);
-  const [conta, setConta] = useState(entryConta ?? "");
-  const [descricao, setDescricao] = useState(entry?.descricao ?? "");
-  const [classificacao, setClassificacao] = useState(entry?.classificacao ?? categorias[0]?.classificacao ?? "");
-  const [categoria, setCategoria] = useState(entry?.categoria ?? "");
+  const pessoaInicial = entry ? (entryPessoa === "—" ? "" : entryPessoa) : (prefill?.pessoa ?? "");
+  const [pessoa, setPessoa] = useState(pessoaInicial);
+  const [conta, setConta] = useState(entry ? entryConta ?? "" : prefill?.conta ?? "");
+  const [descricao, setDescricao] = useState(entry?.descricao ?? prefill?.descricao ?? "");
+  const [classificacao, setClassificacao] = useState(entry?.classificacao ?? prefill?.classificacao ?? categorias[0]?.classificacao ?? "");
+  const [categoria, setCategoria] = useState(entry?.categoria ?? prefill?.categoria ?? "");
   const [novaCategoriaNome, setNovaCategoriaNome] = useState("");
-  const [vencimento, setVencimento] = useState(entry?.vencimento ?? toISO(HOJE));
-  const [valor, setValor] = useState(entry ? String(entry.valor).replace(".", ",") : "");
+  const [vencimento, setVencimento] = useState(entry?.vencimento ?? prefill?.vencimento ?? toISO(HOJE));
+  const [valor, setValor] = useState(
+    entry ? String(entry.valor).replace(".", ",") : prefill?.valor ? String(prefill.valor).replace(".", ",") : ""
+  );
   const [parcelas, setParcelas] = useState(1);
   const [modoParcelas, setModoParcelas] = useState<"dividir" | "cheio">("dividir");
   const [status, setStatus] = useState<"pendente" | "pago">(entryEraPago ? "pago" : "pendente");
