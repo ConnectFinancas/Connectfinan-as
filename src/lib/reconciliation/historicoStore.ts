@@ -5,8 +5,14 @@ import { ResultadoConciliacao } from "./match";
 
 export type ResultadoSalvo = ResultadoConciliacao & {
   editadoManualmente?: boolean;
-  /** Mapa chave do item (ex.: "pix-0", "cartao", "cartao-taxa", "pagamento-2") -> id do lançamento criado em Contas a Receber/Pagar. */
+  /** Mapa chave do item (ex.: "pix-0", "cartao", "cartao-taxa", "pagamento-2") -> id do lançamento criado em Contas a Receber/Pagar (ou "lancado" quando não há id rastreável). */
   migrados?: Record<string, string>;
+  /** Chaves de itens arquivados (erro de leitura) — somem da listagem, mas continuam consultáveis. */
+  arquivados?: string[];
+  /** Chaves de "pagamento" cujo lançamento correspondente encontrado automaticamente foi desvinculado pelo usuário. */
+  ignorados?: string[];
+  /** Última vez que esse dia foi processado ou alterado. */
+  atualizadoEm?: string;
 };
 
 function storageKey(slug: string) {
@@ -37,8 +43,17 @@ export function useConciliacaoHistorico(slug: string) {
     setHistorico((atual) => {
       const atualR = atual[resultado.data];
       if (atualR?.editadoManualmente) return atual;
-      // Preserva o mapa de itens já migrados p/ Contas a Receber/Pagar ao reprocessar o mesmo dia.
-      return { ...atual, [resultado.data]: { ...resultado, migrados: atualR?.migrados } };
+      // Preserva o que já foi migrado/arquivado/ignorado ao reprocessar o mesmo dia.
+      return {
+        ...atual,
+        [resultado.data]: {
+          ...resultado,
+          migrados: atualR?.migrados,
+          arquivados: atualR?.arquivados,
+          ignorados: atualR?.ignorados,
+          atualizadoEm: new Date().toISOString(),
+        },
+      };
     });
   }
 
@@ -46,7 +61,7 @@ export function useConciliacaoHistorico(slug: string) {
     setHistorico((atual) => {
       const atualR = atual[data];
       if (!atualR) return atual;
-      return { ...atual, [data]: { ...updater(atualR), editadoManualmente: true } };
+      return { ...atual, [data]: { ...updater(atualR), editadoManualmente: true, atualizadoEm: new Date().toISOString() } };
     });
   }
 
@@ -55,7 +70,10 @@ export function useConciliacaoHistorico(slug: string) {
     setHistorico((atual) => {
       const atualR = atual[data];
       if (!atualR) return atual;
-      return { ...atual, [data]: { ...atualR, migrados: { ...atualR.migrados, ...novasChaves } } };
+      return {
+        ...atual,
+        [data]: { ...atualR, migrados: { ...atualR.migrados, ...novasChaves }, atualizadoEm: new Date().toISOString() },
+      };
     });
   }
 
@@ -69,11 +87,34 @@ export function useConciliacaoHistorico(slug: string) {
     });
   }
 
+  function arquivarItem(data: string, chave: string) {
+    atualizarItem(data, (r) => ({ ...r, arquivados: [...new Set([...(r.arquivados ?? []), chave])] }));
+  }
+
+  function desarquivarItem(data: string, chave: string) {
+    atualizarItem(data, (r) => ({ ...r, arquivados: (r.arquivados ?? []).filter((c) => c !== chave) }));
+  }
+
+  function desvincularMatch(data: string, chave: string) {
+    atualizarItem(data, (r) => ({ ...r, ignorados: [...new Set([...(r.ignorados ?? []), chave])] }));
+  }
+
   function limparTudo() {
     setHistorico({});
   }
 
   const datas = Object.keys(historico).sort().reverse();
 
-  return { historico, datas, salvar, atualizarItem, marcarMigrados, desmarcarMigrado, limparTudo };
+  return {
+    historico,
+    datas,
+    salvar,
+    atualizarItem,
+    marcarMigrados,
+    desmarcarMigrado,
+    arquivarItem,
+    desarquivarItem,
+    desvincularMatch,
+    limparTudo,
+  };
 }

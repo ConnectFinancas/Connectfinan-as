@@ -1,35 +1,80 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Pencil, Plus, RotateCcw, Sparkles, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  Archive,
+  ArrowRight,
+  Check,
+  CheckSquare,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Search,
+  Square,
+  Unlink,
+  X,
+} from "lucide-react";
 import { ResultadoConciliacao } from "@/lib/reconciliation/match";
 import { ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
 import { LancamentoModal } from "@/components/client/LancamentoModal";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 
-function StatusPill({ ok }: { ok: boolean }) {
-  return ok ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-accent-100 px-2 py-0.5 text-[11px] font-medium text-accent-500">
-      <Check size={11} /> Conciliado
-    </span>
-  ) : (
+type AbaPrincipal = "pendentes" | "movimentacoes";
+type AbaTipo = "todos" | "recebimentos" | "pagamentos";
+
+type Item = {
+  chave: string;
+  categoria: "recebimento" | "pagamento";
+  rotulo: string; // "Pix" | "Dinheiro" | "Bradesco" | "PagBank"
+  jaMigrado: boolean;
+  temMatch: boolean; // banco encontrado (recebimento) ou lançamento encontrado (pagamento)
+  naoRequerAcao: boolean; // transferência entre contas
+  bancoValor: number;
+  bancoData?: string;
+  bancoDescricao: string;
+  sistemaResumo: string;
+  sistemaSemMatchTexto?: string; // exibido quando pagamento não achou lançamento
+  prefillNovoLancamento?: {
+    pessoa?: string;
+    descricao: string;
+    classificacao?: string;
+    valor: number;
+    vencimento: string;
+  };
+  // dados brutos p/ ações de correção (recebimento)
+  correcao?: { tipo: "pix" | "dinheiro"; index: number; matchInfoAtual?: string };
+};
+
+function StatusPill({ jaMigrado, temMatch, naoRequerAcao }: { jaMigrado: boolean; temMatch: boolean; naoRequerAcao: boolean }) {
+  if (naoRequerAcao) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted">
+        Transferência
+      </span>
+    );
+  }
+  if (jaMigrado) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-accent-100 px-2 py-0.5 text-[11px] font-medium text-accent-500">
+        <Check size={11} /> Conciliado
+      </span>
+    );
+  }
+  if (temMatch) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-client-accent/10 px-2 py-0.5 text-[11px] font-medium text-client-accent">
+        Pronto pra conciliar
+      </span>
+    );
+  }
+  return (
     <span className="inline-flex items-center gap-1 rounded-full bg-warn-100 px-2 py-0.5 text-[11px] font-medium text-warn-500">
       <AlertTriangle size={11} /> Pendente
     </span>
   );
 }
-
-type RecebimentoItem = {
-  forma: "Pix" | "Dinheiro";
-  vendaValor: number;
-  vendaHora?: string;
-  matchInfo?: string;
-  status: "conciliado" | "pendente";
-  index: number;
-};
-
-type Visao = "todos" | "pendentes" | "conciliados";
 
 export function ConciliacaoResultado({
   resultado,
@@ -38,7 +83,13 @@ export function ConciliacaoResultado({
   onNavegar,
   onEditarItem,
   onLancado,
-  onFinalizar,
+  onConciliar,
+  onConciliarLote,
+  onDesvincular,
+  onDesvincularLote,
+  onArquivar,
+  onArquivarLote,
+  onDesarquivar,
 }: {
   resultado: ResultadoConciliacao | ResultadoSalvo;
   datas?: string[];
@@ -50,58 +101,186 @@ export function ConciliacaoResultado({
     patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
   ) => void;
   onLancado?: (chave: string) => void;
-  onFinalizar?: () => number;
+  onConciliar?: (chave: string) => void;
+  onConciliarLote?: (chaves: string[]) => void;
+  onDesvincular?: (chave: string) => void;
+  onDesvincularLote?: (chaves: string[]) => void;
+  onArquivar?: (chave: string) => void;
+  onArquivarLote?: (chaves: string[]) => void;
+  onDesarquivar?: (chave: string) => void;
 }) {
   const migrados = "migrados" in resultado ? resultado.migrados ?? {} : {};
+  const arquivados = "arquivados" in resultado ? resultado.arquivados ?? [] : [];
+  const ignorados = "ignorados" in resultado ? resultado.ignorados ?? [] : [];
+  const atualizadoEm = "atualizadoEm" in resultado ? resultado.atualizadoEm : undefined;
+
   const [taxaLancada, setTaxaLancada] = useState(false);
-  const [pagamentosLancados, setPagamentosLancados] = useState<Set<number>>(new Set());
   const [lancarTaxa, setLancarTaxa] = useState(false);
   const [lancarPagamento, setLancarPagamento] = useState<{
-    index: number;
+    chave: string;
     pessoa: string;
     descricao: string;
     valor: number;
     vencimento: string;
   } | null>(null);
-  const [editando, setEditando] = useState<{ tipo: "pix" | "dinheiro" | "pagamento"; index: number } | null>(null);
+  const [editando, setEditando] = useState<{ tipo: "pix" | "dinheiro"; index: number } | null>(null);
   const [rascunho, setRascunho] = useState("");
-  const [visao, setVisao] = useState<Visao>("todos");
-  const [mensagemFinalizar, setMensagemFinalizar] = useState<string | null>(null);
+  const [abaPrincipal, setAbaPrincipal] = useState<AbaPrincipal>("pendentes");
+  const [abaTipo, setAbaTipo] = useState<AbaTipo>("todos");
+  const [busca, setBusca] = useState("");
+  const [modoSelecao, setModoSelecao] = useState(false);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [verArquivados, setVerArquivados] = useState(false);
 
   const { cartao, pix, dinheiro, pagamentos } = resultado;
 
-  const recebimentos: RecebimentoItem[] = [
-    ...pix.map((item, i) => ({
-      forma: "Pix" as const,
-      vendaValor: item.vendaValor,
-      vendaHora: item.vendaHora,
-      matchInfo: item.matchInfo ?? item.match?.historico,
-      status: item.status,
-      index: i,
-    })),
-    ...dinheiro.map((item, i) => ({
-      forma: "Dinheiro" as const,
-      vendaValor: item.vendaValor,
-      vendaHora: item.vendaHora,
-      matchInfo: item.matchInfo ?? item.match?.historico,
-      status: item.status,
-      index: i,
-    })),
-  ];
+  const itens: Item[] = useMemo(() => {
+    const lista: Item[] = [];
 
-  const totalItens = recebimentos.length + pagamentos.length;
-  const totalPendentes =
-    recebimentos.filter((r) => r.status === "pendente").length + pagamentos.filter((p) => p.status === "pendente").length;
-  const totalConciliados = totalItens - totalPendentes;
+    pix.forEach((item, i) => {
+      const chave = `pix-${i}`;
+      // "||" (não "??"): matchInfo pode ser "" depois de um "Desvincular" — nesse caso
+      // deve voltar pro texto padrão, não ficar em branco.
+      const bancoTxt = item.matchInfo || item.match?.historico;
+      lista.push({
+        chave,
+        categoria: "recebimento",
+        rotulo: "Pix",
+        jaMigrado: !!migrados[chave],
+        temMatch: item.status === "conciliado",
+        naoRequerAcao: false,
+        bancoValor: item.match?.valor ?? item.vendaValor,
+        bancoData: item.match?.data,
+        bancoDescricao: bancoTxt || "Ainda não encontrado no extrato do Bradesco",
+        sistemaResumo: `Venda Pix${item.vendaHora ? ` · ${item.vendaHora}` : ""} · ${formatCurrencyPrecise(item.vendaValor)}`,
+        correcao: { tipo: "pix", index: i, matchInfoAtual: bancoTxt },
+      });
+    });
 
-  const recebimentosVisiveis = recebimentos.filter((r) => visao === "todos" || (visao === "pendentes") === (r.status === "pendente"));
-  const pagamentosVisiveis = pagamentos.filter((p) => visao === "todos" || (visao === "pendentes") === (p.status === "pendente"));
+    dinheiro.forEach((item, i) => {
+      const chave = `dinheiro-${i}`;
+      const bancoTxt = item.matchInfo || item.match?.historico;
+      lista.push({
+        chave,
+        categoria: "recebimento",
+        rotulo: "Dinheiro",
+        jaMigrado: !!migrados[chave],
+        temMatch: item.status === "conciliado",
+        naoRequerAcao: false,
+        bancoValor: item.match?.entrada ?? item.vendaValor,
+        bancoData: item.match?.data,
+        bancoDescricao: bancoTxt || "Ainda não encontrado no caixa físico",
+        sistemaResumo: `Venda Dinheiro${item.vendaHora ? ` · ${item.vendaHora}` : ""} · ${formatCurrencyPrecise(item.vendaValor)}`,
+        correcao: { tipo: "dinheiro", index: i, matchInfoAtual: bancoTxt },
+      });
+    });
+
+    pagamentos.forEach((p, i) => {
+      const chave = `pagamento-${i}`;
+      if (p.tipo === "transferencia") {
+        lista.push({
+          chave,
+          categoria: "pagamento",
+          rotulo: p.origem === "bradesco" ? "Bradesco" : "PagBank",
+          jaMigrado: true,
+          temMatch: true,
+          naoRequerAcao: true,
+          bancoValor: p.valor,
+          bancoData: p.data,
+          bancoDescricao: p.historico,
+          sistemaResumo: "Transferência entre contas da própria empresa — não entra no Contas a Pagar",
+        });
+        return;
+      }
+      const ignorado = ignorados.includes(chave);
+      const match = ignorado ? undefined : p.matchLancamento;
+      lista.push({
+        chave,
+        categoria: "pagamento",
+        rotulo: p.origem === "bradesco" ? "Bradesco" : "PagBank",
+        jaMigrado: !!migrados[chave],
+        temMatch: !!match,
+        naoRequerAcao: false,
+        bancoValor: p.valor,
+        bancoData: p.data,
+        bancoDescricao: p.historico,
+        sistemaResumo: match
+          ? `${match.favorecido} · ${match.classificacao} / ${match.categoria} · ${formatCurrencyPrecise(match.valor)}`
+          : "",
+        sistemaSemMatchTexto: !match ? "Nenhum lançamento encontrado em Contas a Pagar com esse valor" : undefined,
+        prefillNovoLancamento: !match
+          ? {
+              pessoa: p.sugestao?.favorecido,
+              descricao: p.historico,
+              classificacao: "DESPESAS ADMINISTRATIVAS",
+              valor: p.valor,
+              vencimento: p.data,
+            }
+          : undefined,
+      });
+    });
+
+    return lista;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultado]);
+
+  const itensAtivos = itens.filter((i) => !arquivados.includes(i.chave));
+  const itensArquivados = itens.filter((i) => arquivados.includes(i.chave));
+
+  const totalPendentes = itensAtivos.filter((i) => !i.jaMigrado && !i.naoRequerAcao).length;
+  const totalMovimentacoes = itensAtivos.length;
+
+  const buscaNum = busca.trim() ? Number(busca.trim().replace(",", ".")) : null;
+  function combina(item: Item) {
+    if (!busca.trim()) return true;
+    const termo = busca.trim().toLowerCase();
+    if (item.bancoDescricao.toLowerCase().includes(termo) || item.sistemaResumo.toLowerCase().includes(termo)) return true;
+    if (buscaNum !== null && !Number.isNaN(buscaNum)) {
+      return Math.abs(item.bancoValor - buscaNum) < 0.01;
+    }
+    return false;
+  }
+
+  const itensVisiveis = itensAtivos
+    .filter((i) => (abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true))
+    .filter((i) => abaTipo === "todos" || (abaTipo === "recebimentos" ? i.categoria === "recebimento" : i.categoria === "pagamento"))
+    .filter(combina);
+
+  const contagemTodos = itensAtivos.filter((i) => abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true).length;
+  const contagemRecebimentos = itensAtivos.filter(
+    (i) => i.categoria === "recebimento" && (abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true)
+  ).length;
+  const contagemPagamentos = itensAtivos.filter(
+    (i) => i.categoria === "pagamento" && (abaPrincipal === "pendentes" ? !i.jaMigrado && !i.naoRequerAcao : true)
+  ).length;
+
+  const valorPendente = itensAtivos
+    .filter((i) => !i.jaMigrado && !i.naoRequerAcao)
+    .reduce((acc, i) => acc + i.bancoValor, 0);
 
   const idx = datas && dataSelecionada ? datas.indexOf(dataSelecionada) : -1;
   const podeAnterior = datas && idx !== -1 && idx < datas.length - 1;
   const podeProximo = datas && idx > 0;
 
-  function iniciarEdicao(tipo: "pix" | "dinheiro" | "pagamento", index: number, atual?: string) {
+  function toggleSelecionado(chave: string) {
+    setSelecionados((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(chave)) novo.delete(chave);
+      else novo.add(chave);
+      return novo;
+    });
+  }
+
+  function selecionarTodosVisiveis() {
+    setSelecionados(new Set(itensVisiveis.map((i) => i.chave)));
+  }
+
+  function limparSelecao() {
+    setSelecionados(new Set());
+    setModoSelecao(false);
+  }
+
+  function iniciarEdicao(tipo: "pix" | "dinheiro", index: number, atual?: string) {
     setEditando({ tipo, index });
     setRascunho(atual ?? "");
   }
@@ -110,19 +289,6 @@ export function ConciliacaoResultado({
     if (!editando || !onEditarItem) return;
     onEditarItem(editando.tipo, editando.index, { matchInfo: rascunho, status: rascunho.trim() ? "conciliado" : "pendente" });
     setEditando(null);
-  }
-
-  function reabrir(tipo: "pix" | "dinheiro", index: number) {
-    onEditarItem?.(tipo, index, { status: "pendente", matchInfo: "" });
-  }
-
-  function finalizarDia() {
-    const qtd = onFinalizar?.() ?? 0;
-    setMensagemFinalizar(
-      qtd > 0
-        ? `${qtd} despesa${qtd > 1 ? "s" : ""} enviada${qtd > 1 ? "s" : ""} para Contas a Pagar.`
-        : "Nada pendente pra enviar — esse dia já está tudo migrado."
-    );
   }
 
   return (
@@ -153,9 +319,7 @@ export function ConciliacaoResultado({
                 key={d}
                 onClick={() => onNavegar?.(d)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  d === dataSelecionada
-                    ? "bg-client-accent text-white"
-                    : "bg-surface-muted text-muted hover:bg-border-subtle"
+                  d === dataSelecionada ? "bg-client-accent text-white" : "bg-surface-muted text-muted hover:bg-border-subtle"
                 }`}
               >
                 {formatDateBR(d)}
@@ -165,51 +329,32 @@ export function ConciliacaoResultado({
         </div>
       )}
 
-      {resultado.totalPendencias > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-warn-500/30 bg-warn-100 px-4 py-3 text-sm text-warn-500">
-          <AlertTriangle size={15} />
-          <span className="font-medium">
-            {resultado.totalPendencias} conciliaç{resultado.totalPendencias > 1 ? "ões pendentes" : "ão pendente"} em {formatDateBR(resultado.data)}
-          </span>
+      {/* Barra de informações, no estilo Conta Azul */}
+      <div className="card flex flex-wrap items-center justify-between gap-4 p-4">
+        <div className="text-xs text-muted">
+          <p>
+            Data da conciliação: <span className="font-medium text-brand-900">{formatDateBR(resultado.data)}</span>
+          </p>
+          {atualizadoEm && (
+            <p className="mt-0.5">
+              Última atualização:{" "}
+              <span className="font-medium text-brand-900">
+                {new Date(atualizadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+              </span>
+            </p>
+          )}
         </div>
-      )}
-
-      {/* Barra de visão + finalizar, no estilo Conta Azul (Filtros / Conciliação / Todos conciliados) */}
-      <div className="card flex flex-wrap items-center justify-between gap-3 p-3">
-        <div className="flex gap-1.5">
-          {([
-            ["todos", `Todos (${totalItens})`],
-            ["pendentes", `Pendentes (${totalPendentes})`],
-            ["conciliados", `Conciliados (${totalConciliados})`],
-          ] as const).map(([v, label]) => (
-            <button
-              key={v}
-              onClick={() => setVisao(v)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                visao === v ? "bg-client-accent text-white" : "text-muted hover:bg-surface-muted"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          {mensagemFinalizar && <span className="text-xs text-faint">{mensagemFinalizar}</span>}
-          <button
-            onClick={finalizarDia}
-            className="flex items-center gap-1.5 rounded-lg border border-client-accent px-3 py-1.5 text-xs font-semibold text-client-accent hover:bg-client-accent/10 transition-colors"
-          >
-            <Sparkles size={13} />
-            Finalizar conciliação do dia
-          </button>
+        <div className="text-right text-xs text-muted">
+          <p>Valor pendente de conciliação</p>
+          <p className="text-lg font-semibold text-warn-500">{formatCurrencyPrecise(valorPendente)}</p>
         </div>
       </div>
 
-      {/* Cartão */}
+      {/* Cartão — mantido como já estava */}
       <div className="card p-5">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-brand-900">Cartão (Crédito + Débito)</h3>
-          <StatusPill ok={cartao.quantidadeBate} />
+          <StatusPill jaMigrado={!!migrados["cartao"]} temMatch={cartao.quantidadeBate} naoRequerAcao={false} />
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
@@ -248,180 +393,314 @@ export function ConciliacaoResultado({
             Quantidade de vendas no cartão ({cartao.faturamentoQtd}) diferente da quantidade de recebimentos no PagBank ({cartao.pagbankQtd}) — confira antes de lançar a taxa.
           </p>
         )}
-        {cartao.quantidadeBate && migrados["cartao"] && (
-          <p className="mt-3 flex items-center gap-1 text-xs text-accent-500">
-            <Check size={12} />
-            Faturamento do cartão já enviado para Contas a Receber.
-          </p>
+        {cartao.quantidadeBate && cartao.valorBate && cartao.faturamentoTotal > 0 && (
+          <div className="mt-3 flex items-center justify-between rounded-lg border border-border-subtle bg-surface-muted px-3 py-2">
+            <span className="text-xs text-muted">Faturamento do cartão conferido — pronto pra ir pro Contas a Receber</span>
+            {migrados["cartao"] ? (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-accent-500">
+                <Check size={12} /> Conciliado
+              </span>
+            ) : (
+              <button
+                onClick={() => onConciliar?.("cartao")}
+                className="rounded-lg bg-client-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
+              >
+                Conciliar
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Pix + Dinheiro unificados */}
-      <div className="card overflow-hidden">
-        <div className="p-5 pb-3">
-          <h3 className="text-sm font-semibold text-brand-900">Recebimentos (Pix e Dinheiro)</h3>
-          <p className="text-xs text-faint">
-            Faturamento × extrato Bradesco (Pix) e caixa físico (Dinheiro) — só o que está pendente pode ser corrigido
-          </p>
+      {/* Abas + busca + seleção, estilo Conta Azul */}
+      <div className="card flex flex-col gap-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-1.5 border-b border-border-subtle">
+            <button
+              onClick={() => setAbaPrincipal("pendentes")}
+              className={`border-b-2 px-3 pb-2 text-sm transition-colors ${
+                abaPrincipal === "pendentes" ? "border-client-accent font-medium text-brand-900" : "border-transparent text-muted hover:text-brand-900"
+              }`}
+            >
+              Conciliações pendentes <span className="ml-1 rounded-full bg-surface-muted px-1.5 py-0.5 text-[11px]">{totalPendentes}</span>
+            </button>
+            <button
+              onClick={() => setAbaPrincipal("movimentacoes")}
+              className={`border-b-2 px-3 pb-2 text-sm transition-colors ${
+                abaPrincipal === "movimentacoes" ? "border-client-accent font-medium text-brand-900" : "border-transparent text-muted hover:text-brand-900"
+              }`}
+            >
+              Movimentações <span className="ml-1 rounded-full bg-surface-muted px-1.5 py-0.5 text-[11px]">{totalMovimentacoes}</span>
+            </button>
+          </div>
+          <div className="relative w-full max-w-[220px]">
+            <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Pesquisar por valor ou descrição"
+              className="w-full rounded-lg border border-border-subtle bg-surface-muted py-1.5 pl-7 pr-2 text-xs text-brand-900 placeholder:text-faint"
+            />
+          </div>
         </div>
-        <div className="overflow-x-auto px-5 pb-5">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-left text-xs text-faint">
-                <th className="pb-2 font-medium">Forma</th>
-                <th className="pb-2 font-medium">Informação do faturamento</th>
-                <th className="pb-2 font-medium">Informação dos outros documentos</th>
-                <th className="pb-2 font-medium text-right">Status</th>
-                <th className="pb-2 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {recebimentosVisiveis.map((item) => {
-                const tipo = item.forma === "Pix" ? "pix" : "dinheiro";
-                const emEdicao = editando?.tipo === tipo && editando.index === item.index;
-                const conciliado = item.status === "conciliado";
-                return (
-                  <tr key={`${item.forma}-${item.index}`} className="border-b border-border-subtle last:border-0">
-                    <td className="py-2 text-muted">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                          item.forma === "Pix" ? "bg-client-accent/10 text-client-accent" : "bg-surface-muted text-muted"
-                        }`}
-                      >
-                        {item.forma}
-                      </span>
-                    </td>
-                    <td className="py-2 tabular-nums text-brand-900">
-                      {formatCurrencyPrecise(item.vendaValor)} <span className="text-faint">· {item.vendaHora}</span>
-                    </td>
-                    <td className="py-2 text-muted">
-                      {emEdicao ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            autoFocus
-                            value={rascunho}
-                            onChange={(e) => setRascunho(e.target.value)}
-                            placeholder="Descreva onde foi encontrado, ou deixe vazio p/ pendente"
-                            className="w-full rounded-md border border-border-subtle bg-surface-muted px-2 py-1 text-xs text-brand-900 placeholder:text-faint"
-                          />
-                          <button onClick={salvarEdicao} className="shrink-0 text-accent-500 hover:text-accent-600">
-                            <Check size={14} />
-                          </button>
-                          <button onClick={() => setEditando(null)} className="shrink-0 text-faint hover:text-danger-500">
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        item.matchInfo || "—"
-                      )}
-                    </td>
-                    <td className="py-2 text-right">
-                      <StatusPill ok={conciliado} />
-                    </td>
-                    <td className="py-2 text-right">
-                      {!emEdicao && onEditarItem && (
-                        conciliado ? (
-                          <button
-                            onClick={() => reabrir(tipo, item.index)}
-                            className="text-faint hover:text-warn-500 transition-colors"
-                            title="Não é isso? Reabrir para corrigir"
-                          >
-                            <RotateCcw size={13} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => iniciarEdicao(tipo, item.index, item.matchInfo)}
-                            className="text-faint hover:text-brand-900 transition-colors"
-                            title="Corrigir"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                        )
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {recebimentosVisiveis.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-4 text-center text-xs text-faint">
-                    Nenhum item nessa visão.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-1.5">
+            {([
+              ["todos", `Todos (${contagemTodos})`],
+              ["recebimentos", `Recebimentos (${contagemRecebimentos})`],
+              ["pagamentos", `Pagamentos (${contagemPagamentos})`],
+            ] as const).map(([v, label]) => (
+              <button
+                key={v}
+                onClick={() => setAbaTipo(v)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  abaTipo === v ? "bg-client-accent text-white" : "text-muted hover:bg-surface-muted"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {modoSelecao ? (
+              <>
+                <span className="text-xs text-faint">{selecionados.size} selecionado{selecionados.size !== 1 ? "s" : ""}</span>
+                <button
+                  onClick={selecionarTodosVisiveis}
+                  className="rounded-lg border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+                >
+                  Selecionar tudo
+                </button>
+                <button
+                  disabled={selecionados.size === 0}
+                  onClick={() => {
+                    onConciliarLote?.([...selecionados]);
+                    limparSelecao();
+                  }}
+                  className="flex items-center gap-1 rounded-lg bg-client-accent px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors disabled:opacity-40"
+                >
+                  <Check size={12} />
+                  Conciliar
+                </button>
+                <button
+                  disabled={selecionados.size === 0}
+                  onClick={() => {
+                    onDesvincularLote?.([...selecionados]);
+                    limparSelecao();
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors disabled:opacity-40"
+                >
+                  <Unlink size={12} />
+                  Desvincular
+                </button>
+                <button
+                  disabled={selecionados.size === 0}
+                  onClick={() => {
+                    onArquivarLote?.([...selecionados]);
+                    limparSelecao();
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors disabled:opacity-40"
+                >
+                  <Archive size={12} />
+                  Arquivar
+                </button>
+                <button onClick={limparSelecao} className="text-faint hover:text-danger-500 transition-colors">
+                  <X size={14} />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setModoSelecao(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+              >
+                <CheckSquare size={13} />
+                Selecionar lançamentos
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Pagamentos / saídas */}
-      <div className="card overflow-hidden">
-        <div className="p-5 pb-3">
-          <h3 className="text-sm font-semibold text-brand-900">Saídas (Bradesco + PagBank)</h3>
-          <p className="text-xs text-faint">Transferências entre contas não entram no Contas a Pagar nem no DRE</p>
-        </div>
-        <div className="overflow-x-auto px-5 pb-5">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-left text-xs text-faint">
-                <th className="pb-2 font-medium">Origem</th>
-                <th className="pb-2 font-medium">Histórico</th>
-                <th className="pb-2 font-medium">Tipo</th>
-                <th className="pb-2 font-medium text-right">Valor</th>
-                <th className="pb-2 font-medium text-right">Status</th>
-                <th className="pb-2 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagamentosVisiveis.map((p) => {
-                const i = pagamentos.indexOf(p);
-                return (
-                  <tr key={i} className="border-b border-border-subtle last:border-0">
-                    <td className="py-2 text-muted capitalize">{p.origem}</td>
-                    <td className="py-2 text-brand-900">{p.historico}</td>
-                    <td className="py-2 text-muted">{p.tipo === "transferencia" ? "Transferência" : "Pagamento"}</td>
-                    <td className="py-2 text-right tabular-nums text-brand-900">{formatCurrencyPrecise(p.valor)}</td>
-                    <td className="py-2 text-right">
-                      <StatusPill ok={p.status === "conciliado"} />
-                    </td>
-                    <td className="py-2 text-right">
-                      {p.status === "pendente" && p.tipo === "pagamento" && (pagamentosLancados.has(i) || migrados[`pagamento-${i}`] ? (
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-accent-100 px-2 py-1 text-[11px] font-medium text-accent-500">
-                          <Check size={11} />
-                          Lançado
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            setLancarPagamento({
-                              index: i,
-                              pessoa: p.sugestao?.favorecido ?? "",
-                              descricao: p.historico,
-                              valor: p.valor,
-                              vencimento: p.data,
-                            })
-                          }
-                          className="flex items-center gap-1 rounded-lg border border-border-subtle px-2 py-1 text-[11px] font-medium text-brand-700 hover:bg-surface-muted transition-colors"
-                        >
-                          <Plus size={11} />
-                          Lançar despesa
-                        </button>
-                      ))}
-                    </td>
-                  </tr>
-                );
-              })}
-              {pagamentosVisiveis.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-4 text-center text-xs text-faint">
-                    Nenhum item nessa visão.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Lista de itens em pares de quadrados: banco x sistema */}
+      <div className="flex flex-col gap-3">
+        {itensVisiveis.length === 0 && (
+          <div className="card card-dashed flex items-center justify-center p-8 text-center text-sm text-muted">
+            {abaPrincipal === "pendentes" ? "Nenhuma conciliação pendente nessa visão." : "Nenhum movimento nessa visão."}
+          </div>
+        )}
+        {itensVisiveis.map((item) => (
+          <div key={item.chave} className="card p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {modoSelecao && !item.naoRequerAcao && (
+                  <button onClick={() => toggleSelecionado(item.chave)} className="text-muted hover:text-brand-900 transition-colors">
+                    {selecionados.has(item.chave) ? <CheckSquare size={15} /> : <Square size={15} />}
+                  </button>
+                )}
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    item.categoria === "recebimento" ? "bg-client-accent/10 text-client-accent" : "bg-surface-muted text-muted"
+                  }`}
+                >
+                  {item.rotulo}
+                </span>
+              </div>
+              <StatusPill jaMigrado={item.jaMigrado} temMatch={item.temMatch} naoRequerAcao={item.naoRequerAcao} />
+            </div>
+
+            <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+              {/* Lançamento do banco */}
+              <div className="rounded-lg border border-border-subtle bg-surface-muted p-3">
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-faint">Lançamento do banco</p>
+                {item.correcao && editando?.tipo === item.correcao.tipo && editando.index === item.correcao.index ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      autoFocus
+                      value={rascunho}
+                      onChange={(e) => setRascunho(e.target.value)}
+                      placeholder="Descreva onde foi encontrado"
+                      className="w-full rounded-md border border-border-subtle bg-white px-2 py-1 text-xs text-brand-900 placeholder:text-faint"
+                    />
+                    <button onClick={salvarEdicao} className="shrink-0 text-accent-500 hover:text-accent-600">
+                      <Check size={14} />
+                    </button>
+                    <button onClick={() => setEditando(null)} className="shrink-0 text-faint hover:text-danger-500">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="truncate text-sm text-brand-900">{item.bancoDescricao}</p>
+                    <p className="mt-0.5 text-xs tabular-nums text-muted">
+                      {formatCurrencyPrecise(item.bancoValor)}
+                      {item.bancoData && <span className="text-faint"> · {formatDateBR(item.bancoData)}</span>}
+                    </p>
+                    {item.correcao && !item.jaMigrado && (
+                      <button
+                        onClick={() => iniciarEdicao(item.correcao!.tipo, item.correcao!.index, item.correcao!.matchInfoAtual)}
+                        className="mt-1 text-[11px] font-medium text-client-accent hover:underline"
+                      >
+                        {item.temMatch ? "Corrigir" : "Buscar / informar manualmente"}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Botão central */}
+              <div className="flex items-center justify-center">
+                {item.naoRequerAcao ? (
+                  <ArrowRight size={16} className="text-faint" />
+                ) : item.jaMigrado ? (
+                  <Check size={18} className="text-accent-500" />
+                ) : item.categoria === "recebimento" ? (
+                  item.temMatch ? (
+                    <button
+                      onClick={() => onConciliar?.(item.chave)}
+                      className="rounded-lg bg-client-accent px-4 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
+                    >
+                      Conciliar
+                    </button>
+                  ) : (
+                    <ArrowRight size={16} className="text-faint" />
+                  )
+                ) : item.temMatch ? (
+                  <button
+                    onClick={() => onConciliar?.(item.chave)}
+                    className="rounded-lg bg-client-accent px-4 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
+                  >
+                    Conciliar
+                  </button>
+                ) : (
+                  <ArrowRight size={16} className="text-faint" />
+                )}
+              </div>
+
+              {/* Lançamento do sistema */}
+              <div className="rounded-lg border border-border-subtle bg-surface-muted p-3">
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-faint">Lançamento do sistema</p>
+                {item.sistemaSemMatchTexto ? (
+                  <>
+                    <p className="text-xs text-faint">{item.sistemaSemMatchTexto}</p>
+                    {!item.jaMigrado && (
+                      <button
+                        onClick={() =>
+                          setLancarPagamento({
+                            chave: item.chave,
+                            pessoa: item.prefillNovoLancamento?.pessoa ?? "",
+                            descricao: item.prefillNovoLancamento?.descricao ?? "",
+                            valor: item.prefillNovoLancamento?.valor ?? item.bancoValor,
+                            vencimento: item.prefillNovoLancamento?.vencimento ?? resultado.data,
+                          })
+                        }
+                        className="mt-1.5 flex items-center gap-1 rounded-lg border border-client-accent px-2.5 py-1.5 text-[11px] font-semibold text-client-accent hover:bg-client-accent/10 transition-colors"
+                      >
+                        <Plus size={11} />
+                        Criar novo lançamento
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-brand-900">{item.sistemaResumo}</p>
+                )}
+              </div>
+            </div>
+
+            {!item.naoRequerAcao && !item.jaMigrado && (
+              <div className="mt-2 flex justify-end">
+                {item.temMatch && (
+                  <button
+                    onClick={() => onDesvincular?.(item.chave)}
+                    className="flex items-center gap-1 text-[11px] font-medium text-faint hover:text-warn-500 transition-colors"
+                    title="Desfaz essa correspondência"
+                  >
+                    <Unlink size={11} />
+                    Desvincular
+                  </button>
+                )}
+                <button
+                  onClick={() => onArquivar?.(item.chave)}
+                  className={`flex items-center gap-1 text-[11px] font-medium text-faint hover:text-danger-500 transition-colors ${item.temMatch ? "ml-3" : ""}`}
+                  title="Arquiva esse item (erro de leitura)"
+                >
+                  <Archive size={11} />
+                  Arquivar
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
+
+      {itensArquivados.length > 0 && (
+        <div className="card p-4">
+          <button
+            onClick={() => setVerArquivados((v) => !v)}
+            className="text-xs font-medium text-client-accent hover:underline"
+          >
+            {verArquivados ? "Ocultar" : `Ver lançamentos arquivados (${itensArquivados.length})`}
+          </button>
+          {verArquivados && (
+            <ul className="mt-3 flex flex-col gap-1.5">
+              {itensArquivados.map((item) => (
+                <li key={item.chave} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="truncate text-muted">
+                    {item.bancoDescricao} · {formatCurrencyPrecise(item.bancoValor)}
+                  </span>
+                  <button
+                    onClick={() => onDesarquivar?.(item.chave)}
+                    className="shrink-0 font-medium text-client-accent hover:underline"
+                  >
+                    Desarquivar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {lancarTaxa && (
         <LancamentoModal
@@ -446,16 +725,15 @@ export function ConciliacaoResultado({
         <LancamentoModal
           tipo="pagar"
           onClose={() => setLancarPagamento(null)}
-          onSaved={() => {
-            setPagamentosLancados((atual) => new Set(atual).add(lancarPagamento.index));
-            onLancado?.(`pagamento-${lancarPagamento.index}`);
-          }}
+          onSaved={() => onLancado?.(lancarPagamento.chave)}
           prefill={{
             pessoa: lancarPagamento.pessoa,
             descricao: lancarPagamento.descricao,
             classificacao: "DESPESAS ADMINISTRATIVAS",
             valor: lancarPagamento.valor,
             vencimento: lancarPagamento.vencimento,
+            status: "pago",
+            dataPagamento: lancarPagamento.vencimento,
           }}
         />
       )}

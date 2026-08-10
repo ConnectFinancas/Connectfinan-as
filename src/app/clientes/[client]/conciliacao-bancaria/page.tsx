@@ -108,78 +108,6 @@ function DocumentosMjPrime() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultadoExibido]);
 
-  // Assim que um item de recebimento fica "conciliado", ele é lançado automaticamente em
-  // Contas a Receber — sem precisar de botão. O mapa `migrados` evita lançar duas vezes.
-  useEffect(() => {
-    if (!resultadoExibido) return;
-    const data = resultadoExibido.data;
-    const migrados = resultadoExibido.migrados ?? {};
-    const novosReceivables: Receivable[] = [];
-    const novasChaves: Record<string, string> = {};
-
-    resultadoExibido.pix.forEach((item, i) => {
-      const chave = `pix-${i}`;
-      if (item.status !== "conciliado" || migrados[chave]) return;
-      const id = genId("r");
-      novasChaves[chave] = id;
-      novosReceivables.push({
-        id,
-        cliente: "—",
-        classificacao: "Faturamento",
-        categoria: "Faturamento Geral",
-        vencimento: data,
-        valor: item.vendaValor,
-        status: "recebido",
-        recebimento: data,
-        descricao: `Venda Pix${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
-        formaRecebimento: "Pix",
-      });
-    });
-
-    resultadoExibido.dinheiro.forEach((item, i) => {
-      const chave = `dinheiro-${i}`;
-      if (item.status !== "conciliado" || migrados[chave]) return;
-      const id = genId("r");
-      novasChaves[chave] = id;
-      novosReceivables.push({
-        id,
-        cliente: "—",
-        classificacao: "Faturamento",
-        categoria: "Faturamento Geral",
-        vencimento: data,
-        valor: item.vendaValor,
-        status: "recebido",
-        recebimento: data,
-        descricao: `Venda Dinheiro${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
-        formaRecebimento: "Dinheiro",
-      });
-    });
-
-    const { cartao } = resultadoExibido;
-    if (cartao.quantidadeBate && cartao.valorBate && cartao.faturamentoTotal > 0 && !migrados["cartao"]) {
-      const id = genId("r");
-      novasChaves["cartao"] = id;
-      novosReceivables.push({
-        id,
-        cliente: "—",
-        classificacao: "Faturamento",
-        categoria: "Faturamento Geral",
-        vencimento: data,
-        valor: cartao.faturamentoTotal,
-        status: "recebido",
-        recebimento: data,
-        descricao: "Vendas Cartão (Crédito + Débito)",
-        formaRecebimento: "Cartão",
-      });
-    }
-
-    if (novosReceivables.length > 0) {
-      finance.addReceivable(novosReceivables);
-      historico.marcarMigrados(data, novasChaves);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resultadoExibido]);
-
   function editarItem(
     tipo: "pix" | "dinheiro" | "pagamento",
     index: number,
@@ -222,41 +150,158 @@ function DocumentosMjPrime() {
     });
   }
 
-  // "Finalizar conciliação do dia": envia as saídas que ainda não foram identificadas/lançadas
-  // pra Contas a Pagar já como pagas (o extrato confirma que o dinheiro saiu), com uma
-  // categoria genérica "A Classificar" pra o contador ajustar depois. Recebimentos (pix,
-  // dinheiro, cartão) já migram sozinhos assim que ficam conciliados — não precisa repetir aqui.
-  function finalizarDia(): number {
-    if (!resultadoExibido || !dataSelecionada) return 0;
+  // Prepara o(s) lançamento(s) equivalentes a uma chave (ex.: "pix-0", "cartao", "pagamento-2")
+  // sem gravar nada ainda — usado tanto pelo clique individual quanto pelo lote.
+  function prepararMigracao(
+    chave: string
+  ): { receivable?: Receivable; payable?: Payable; precisaCategoriaFallback?: boolean } | null {
+    if (!resultadoExibido) return null;
     const data = resultadoExibido.data;
     const migrados = resultadoExibido.migrados ?? {};
+    if (migrados[chave]) return null;
+
+    if (chave === "cartao") {
+      const { cartao } = resultadoExibido;
+      if (!(cartao.quantidadeBate && cartao.valorBate && cartao.faturamentoTotal > 0)) return null;
+      return {
+        receivable: {
+          id: genId("r"),
+          cliente: "—",
+          classificacao: "Faturamento",
+          categoria: "Faturamento Geral",
+          vencimento: data,
+          valor: cartao.faturamentoTotal,
+          status: "recebido",
+          recebimento: data,
+          descricao: "Vendas Cartão (Crédito + Débito)",
+          formaRecebimento: "Cartão",
+        },
+      };
+    }
+
+    if (chave.startsWith("pix-") || chave.startsWith("dinheiro-")) {
+      const tipo = chave.startsWith("pix-") ? "pix" : "dinheiro";
+      const idx = Number(chave.split("-")[1]);
+      const item = tipo === "pix" ? resultadoExibido.pix[idx] : resultadoExibido.dinheiro[idx];
+      if (!item || item.status !== "conciliado") return null;
+      return {
+        receivable: {
+          id: genId("r"),
+          cliente: "—",
+          classificacao: "Faturamento",
+          categoria: "Faturamento Geral",
+          vencimento: data,
+          valor: item.vendaValor,
+          status: "recebido",
+          recebimento: data,
+          descricao: `Venda ${tipo === "pix" ? "Pix" : "Dinheiro"}${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
+          formaRecebimento: tipo === "pix" ? "Pix" : "Dinheiro",
+        },
+      };
+    }
+
+    if (chave.startsWith("pagamento-")) {
+      const idx = Number(chave.split("-")[1]);
+      const p = resultadoExibido.pagamentos[idx];
+      if (!p || p.tipo !== "pagamento") return null;
+      const ignorado = (resultadoExibido.ignorados ?? []).includes(chave);
+      const match = ignorado ? undefined : p.matchLancamento;
+      if (match) return { payable: { ...match, id: match.id } };
+      return {
+        payable: {
+          id: genId("p"),
+          favorecido: p.sugestao?.favorecido || "—",
+          classificacao: "DESPESAS ADMINISTRATIVAS",
+          categoria: "A Classificar",
+          vencimento: p.data,
+          valor: p.valor,
+          status: "pago",
+          pagamento: p.data,
+          descricao: p.historico,
+        },
+        precisaCategoriaFallback: true,
+      };
+    }
+
+    return null;
+  }
+
+  // Clique em "Conciliar" num item: só cria o lançamento quando ainda não existe (pagamento já
+  // vinculado a um lançamento existente apenas confirma o vínculo, sem duplicar).
+  function conciliarItem(chave: string) {
+    if (!dataSelecionada) return;
+    const preparo = prepararMigracao(chave);
+    if (!preparo) return;
+    if (preparo.receivable) finance.addReceivable([preparo.receivable]);
+    if (preparo.payable) {
+      const jaExiste = finance.payables.some((p) => p.id === preparo.payable!.id);
+      if (!jaExiste) {
+        if (preparo.precisaCategoriaFallback) finance.addCategoria("pagar", "DESPESAS ADMINISTRATIVAS", "A Classificar");
+        finance.addPayable([preparo.payable]);
+      }
+    }
+    const id = preparo.receivable?.id ?? preparo.payable?.id;
+    if (id) historico.marcarMigrados(dataSelecionada, { [chave]: id });
+  }
+
+  // Mesma lógica em lote, usada pela seleção múltipla ("Selecionar lançamentos" + Conciliar).
+  function conciliarLote(chaves: string[]) {
+    if (!dataSelecionada) return;
+    const novosReceivables: Receivable[] = [];
     const novosPayables: Payable[] = [];
     const novasChaves: Record<string, string> = {};
+    let precisaCategoriaFallback = false;
 
-    resultadoExibido.pagamentos.forEach((p, i) => {
-      const chave = `pagamento-${i}`;
-      if (p.tipo !== "pagamento" || p.status !== "pendente" || migrados[chave]) return;
-      const id = genId("p");
-      novasChaves[chave] = id;
-      novosPayables.push({
-        id,
-        favorecido: p.sugestao?.favorecido || "—",
-        classificacao: "DESPESAS ADMINISTRATIVAS",
-        categoria: "A Classificar",
-        vencimento: p.data,
-        valor: p.valor,
-        status: "pago",
-        pagamento: p.data,
-        descricao: p.historico,
-      });
+    chaves.forEach((chave) => {
+      const preparo = prepararMigracao(chave);
+      if (!preparo) return;
+      if (preparo.receivable) novosReceivables.push(preparo.receivable);
+      if (preparo.payable) {
+        const jaExiste = finance.payables.some((p) => p.id === preparo.payable!.id);
+        if (!jaExiste) {
+          novosPayables.push(preparo.payable);
+          if (preparo.precisaCategoriaFallback) precisaCategoriaFallback = true;
+        }
+      }
+      const id = preparo.receivable?.id ?? preparo.payable?.id;
+      if (id) novasChaves[chave] = id;
     });
 
-    if (novosPayables.length > 0) {
-      finance.addCategoria("pagar", "DESPESAS ADMINISTRATIVAS", "A Classificar");
-      finance.addPayable(novosPayables);
-      historico.marcarMigrados(data, novasChaves);
+    if (precisaCategoriaFallback) finance.addCategoria("pagar", "DESPESAS ADMINISTRATIVAS", "A Classificar");
+    if (novosReceivables.length > 0) finance.addReceivable(novosReceivables);
+    if (novosPayables.length > 0) finance.addPayable(novosPayables);
+    if (Object.keys(novasChaves).length > 0) historico.marcarMigrados(dataSelecionada, novasChaves);
+  }
+
+  // "Desvincular": desfaz uma correspondência encontrada (automática ou manual), voltando o
+  // item pra pendente — pra depois buscar outro lançamento ou criar um novo.
+  function desvincularItem(chave: string) {
+    if (!dataSelecionada) return;
+    if (chave.startsWith("pix-") || chave.startsWith("dinheiro-")) {
+      const tipo = chave.startsWith("pix-") ? "pix" : "dinheiro";
+      const idx = Number(chave.split("-")[1]);
+      editarItem(tipo, idx, { status: "pendente", matchInfo: "" });
+      return;
     }
-    return novosPayables.length;
+    if (chave.startsWith("pagamento-")) {
+      historico.desvincularMatch(dataSelecionada, chave);
+    }
+  }
+
+  function desvincularLote(chaves: string[]) {
+    chaves.forEach(desvincularItem);
+  }
+
+  function arquivarItem(chave: string) {
+    if (dataSelecionada) historico.arquivarItem(dataSelecionada, chave);
+  }
+
+  function arquivarLote(chaves: string[]) {
+    chaves.forEach(arquivarItem);
+  }
+
+  function desarquivarItem(chave: string) {
+    if (dataSelecionada) historico.desarquivarItem(dataSelecionada, chave);
   }
 
   // Apaga pendências + histórico salvo da conciliação (e os lançamentos que foram criados
@@ -390,7 +435,13 @@ function DocumentosMjPrime() {
           onNavegar={setDataOverride}
           onEditarItem={editarItem}
           onLancado={(chave) => dataSelecionada && historico.marcarMigrados(dataSelecionada, { [chave]: "lancado" })}
-          onFinalizar={finalizarDia}
+          onConciliar={conciliarItem}
+          onConciliarLote={conciliarLote}
+          onDesvincular={desvincularItem}
+          onDesvincularLote={desvincularLote}
+          onArquivar={arquivarItem}
+          onArquivarLote={arquivarLote}
+          onDesarquivar={desarquivarItem}
         />
       )}
     </div>

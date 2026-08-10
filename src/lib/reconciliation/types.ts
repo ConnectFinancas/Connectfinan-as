@@ -40,6 +40,8 @@ export type MovimentoCaixaFisico = {
   historico: string;
   entrada?: number;
   saida?: number;
+  classificacao?: string; // só se saida
+  categoria?: string; // só se saida
 };
 
 export type CaixaFisicoExtraido = {
