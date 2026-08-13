@@ -221,7 +221,10 @@ export function conciliarDia(
   }
 
   // ---------- Saídas do Bradesco: pagamentos a fornecedor / despesas ----------
-  const saidasBradesco = bradesco.movimentos.filter((m) => m.valor < 0);
+  // Inclui também lançamentos com valor não lido pelo OCR (valorLegivel === false) — o
+  // valor chega como 0, mas o usuário precisa VER esse lançamento na tela pra poder
+  // corrigi-lo manualmente, em vez de ele simplesmente desaparecer da conciliação.
+  const saidasBradesco = bradesco.movimentos.filter((m) => m.valor < 0 || m.valorLegivel === false);
   for (const saida of saidasBradesco) {
     const valorAbs = Math.abs(saida.valor);
     const ehTransferenciaMesmoTitular = ehMesmoTitular(saida.historico);

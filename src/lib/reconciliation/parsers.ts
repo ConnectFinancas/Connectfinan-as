@@ -121,7 +121,9 @@ function parseBradescoPdf(text: string, anoReferencia: string): { data: string; 
 // já com os 2 últimos dígitos sendo os centavos) — por isso o sinal (crédito/débito) é
 // decidido pelo TIPO do histórico, não por caracteres do valor, que às vezes viram lixo
 // (aspas, letras soltas). Quando sobram menos de 3 dígitos aproveitáveis no valor, o
-// lançamento é descartado — melhor não lançar do que lançar com valor inventado.
+// lançamento NÃO é mais descartado — melhor mostrar pro usuário com valor R$ 0,00 e um
+// aviso, pra ele corrigir manualmente (ver "editar leitura" na tela), do que sumir com um
+// pagamento real do extrato.
 const HISTORICOS_CREDITO_OCR = ["PIX RECEBIDO", "TED-TRANSFELETDISPON", "TED TRANSFELETDISPON"];
 const HISTORICOS_DEBITO_OCR = ["PAGTO ELETRON COBRANCA", "TRANSF CC PARA CC"];
 const HISTORICOS_IGNORAR_OCR = ["SALDO ANTERIOR", "SALDO TOTAL"];
@@ -149,18 +151,24 @@ function parseBradescoOcr(text: string, anoReferencia: string): { data: string; 
     if (!dataAtual) continue;
 
     const digitos = valorToken.replace(/\D/g, "");
-    if (digitos.length < 3) continue;
-    const valorAbs = Number(digitos) / 100;
-    if (!valorAbs) continue;
+    const valorLegivel = digitos.length >= 3;
+    const valorAbs = valorLegivel ? Number(digitos) / 100 : 0;
+    if (valorLegivel && !valorAbs) continue;
 
     const proxima = linhas[i + 1];
     const ehDetalhe = proxima && !/^docto\b/i.test(proxima);
     const detalhe = ehDetalhe ? proxima.replace(/\s+\d{2}\/\d{2}$/, "").trim() : "";
 
     const ehCredito = HISTORICOS_CREDITO_OCR.some((h) => h.toLowerCase() === historicoTipo.toLowerCase());
-    const historico = detalhe ? `${historicoTipo} ${detalhe}` : historicoTipo;
+    const historicoBase = detalhe ? `${historicoTipo} ${detalhe}` : historicoTipo;
+    const historico = valorLegivel ? historicoBase : `${historicoBase} (valor não lido — corrija manualmente)`;
 
-    movimentos.push({ data: dataAtual, historico, valor: ehCredito ? valorAbs : -valorAbs });
+    movimentos.push({
+      data: dataAtual,
+      historico,
+      valor: valorLegivel ? (ehCredito ? valorAbs : -valorAbs) : 0,
+      ...(valorLegivel ? {} : { valorLegivel: false }),
+    });
   }
 
   return movimentos;

@@ -46,6 +46,8 @@ type Item = {
   };
   // dados brutos p/ ações de correção (recebimento)
   correcao?: { tipo: "pix" | "dinheiro" | "cartaoVenda"; index: number; matchInfoAtual?: string };
+  // dados brutos p/ correção manual do lado do banco (pagamento) — leitura de OCR/PDF ruim
+  correcaoPagamento?: { index: number };
   isCartao?: boolean; // só aparece detalhado na aba "Movimentações"
 };
 
@@ -94,6 +96,7 @@ export function ConciliacaoResultado({
   onDesarquivar,
   onDesfazer,
   onDesfazerLote,
+  onEditarPagamentoBanco,
 }: {
   resultado: ResultadoConciliacao | ResultadoSalvo;
   datas?: string[];
@@ -104,6 +107,7 @@ export function ConciliacaoResultado({
     index: number,
     patch: { status?: "conciliado" | "pendente"; matchInfo?: string }
   ) => void;
+  onEditarPagamentoBanco?: (index: number, patch: { historico?: string; valor?: number }) => void;
   onLancado?: (chave: string) => void;
   onConciliar?: (chave: string) => void;
   onConciliarLote?: (chaves: string[]) => void;
@@ -129,6 +133,9 @@ export function ConciliacaoResultado({
   } | null>(null);
   const [editando, setEditando] = useState<{ tipo: "pix" | "dinheiro" | "cartaoVenda"; index: number } | null>(null);
   const [rascunho, setRascunho] = useState("");
+  const [editandoPagamento, setEditandoPagamento] = useState<number | null>(null);
+  const [rascunhoDescricao, setRascunhoDescricao] = useState("");
+  const [rascunhoValor, setRascunhoValor] = useState("");
   const [abaPrincipal, setAbaPrincipal] = useState<AbaPrincipal>("pendentes");
   const [abaTipo, setAbaTipo] = useState<AbaTipo>("todos");
   const [busca, setBusca] = useState("");
@@ -235,6 +242,7 @@ export function ConciliacaoResultado({
         bancoValor: p.valor,
         bancoData: p.data,
         bancoDescricao: p.historico,
+        correcaoPagamento: { index: i },
         sistemaResumo: match
           ? `${match.favorecido} · ${match.classificacao} / ${match.categoria} · ${formatCurrencyPrecise(match.valor)}`
           : "",
@@ -343,6 +351,22 @@ export function ConciliacaoResultado({
     if (!editando || !onEditarItem) return;
     onEditarItem(editando.tipo, editando.index, { matchInfo: rascunho, status: rascunho.trim() ? "conciliado" : "pendente" });
     setEditando(null);
+  }
+
+  function iniciarEdicaoPagamento(index: number, descricaoAtual: string, valorAtual: number) {
+    setEditandoPagamento(index);
+    setRascunhoDescricao(descricaoAtual);
+    setRascunhoValor(String(valorAtual || "").replace(".", ","));
+  }
+
+  function salvarEdicaoPagamento() {
+    if (editandoPagamento === null || !onEditarPagamentoBanco) return;
+    const valorNum = Number(rascunhoValor.replace(",", "."));
+    onEditarPagamentoBanco(editandoPagamento, {
+      historico: rascunhoDescricao.trim() || undefined,
+      valor: valorNum > 0 ? valorNum : undefined,
+    });
+    setEditandoPagamento(null);
   }
 
   return (
@@ -633,6 +657,31 @@ export function ConciliacaoResultado({
                       <X size={14} />
                     </button>
                   </div>
+                ) : item.correcaoPagamento && editandoPagamento === item.correcaoPagamento.index ? (
+                  <div className="flex flex-col gap-1.5">
+                    <input
+                      autoFocus
+                      value={rascunhoDescricao}
+                      onChange={(e) => setRascunhoDescricao(e.target.value)}
+                      placeholder="Descrição do lançamento"
+                      className="w-full rounded-md border border-border-subtle bg-white px-2 py-1 text-xs text-brand-900 placeholder:text-faint"
+                    />
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        inputMode="decimal"
+                        value={rascunhoValor}
+                        onChange={(e) => setRascunhoValor(e.target.value)}
+                        placeholder="Valor (ex.: 1200,00)"
+                        className="w-full rounded-md border border-border-subtle bg-white px-2 py-1 text-xs text-brand-900 placeholder:text-faint"
+                      />
+                      <button onClick={salvarEdicaoPagamento} className="shrink-0 text-accent-500 hover:text-accent-600">
+                        <Check size={14} />
+                      </button>
+                      <button onClick={() => setEditandoPagamento(null)} className="shrink-0 text-faint hover:text-danger-500">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <p className="truncate text-sm text-brand-900">{item.bancoDescricao}</p>
@@ -646,6 +695,14 @@ export function ConciliacaoResultado({
                         className="mt-1 text-[11px] font-medium text-client-accent hover:underline"
                       >
                         {item.temMatch ? "Corrigir" : "Buscar / informar manualmente"}
+                      </button>
+                    )}
+                    {item.correcaoPagamento && !item.jaMigrado && (
+                      <button
+                        onClick={() => iniciarEdicaoPagamento(item.correcaoPagamento!.index, item.bancoDescricao, item.bancoValor)}
+                        className="mt-1 text-[11px] font-medium text-client-accent hover:underline"
+                      >
+                        Corrigir leitura
                       </button>
                     )}
                   </>

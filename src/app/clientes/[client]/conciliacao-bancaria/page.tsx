@@ -373,6 +373,17 @@ function DocumentosMjPrime() {
     if (dataSelecionada) historico.desarquivarItem(dataSelecionada, chave);
   }
 
+  // Corrige manualmente a descrição/valor de um lançamento do extrato bancário quando a
+  // leitura automática (OCR/PDF) não foi boa — hoje é o único tipo de item sem nenhum
+  // "match" de valor confiável do lado da venda, então é o que mais precisa de correção.
+  function editarPagamentoBanco(index: number, patch: { historico?: string; valor?: number }) {
+    if (!dataSelecionada) return;
+    historico.atualizarItem(dataSelecionada, (r) => ({
+      ...r,
+      pagamentos: r.pagamentos.map((p, i) => (i === index ? { ...p, ...patch } : p)),
+    }));
+  }
+
   // Apaga pendências + histórico salvo da conciliação (e os lançamentos que foram criados
   // automaticamente a partir dele, pra não duplicar ao refazer), voltando a tela ao zero.
   function limparConciliacao() {
@@ -503,6 +514,7 @@ function DocumentosMjPrime() {
           dataSelecionada={dataSelecionada ?? undefined}
           onNavegar={setDataOverride}
           onEditarItem={editarItem}
+          onEditarPagamentoBanco={editarPagamentoBanco}
           onLancado={(chave) => dataSelecionada && historico.marcarMigrados(dataSelecionada, { [chave]: "lancado" })}
           onConciliar={conciliarItem}
           onConciliarLote={conciliarLote}

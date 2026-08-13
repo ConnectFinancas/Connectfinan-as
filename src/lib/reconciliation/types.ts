@@ -27,7 +27,9 @@ export type PagBankExtraido = {
 export type MovimentoBradesco = {
   data: string; // ISO
   historico: string;
-  valor: number; // positivo = entrada, negativo = saída
+  valor: number; // positivo = entrada, negativo = saída; 0 quando valorLegivel é false
+  /** false quando o OCR não conseguiu ler o valor com confiança — precisa ser corrigido manualmente. */
+  valorLegivel?: boolean;
 };
 
 export type BradescoExtraido = {
