@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertTriangle, Loader2, LucideIcon, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Copy, Loader2, LucideIcon, Upload, X } from "lucide-react";
 import { extractText, isPdf } from "@/lib/reconciliation/extractText";
 
 export function UploadBox({
@@ -19,15 +19,20 @@ export function UploadBox({
   const [file, setFile] = useState<File | null>(null);
   const [arrastando, setArrastando] = useState(false);
   const [status, setStatus] = useState<"idle" | "lendo" | "ok" | "erro">("idle");
+  const [textoLido, setTextoLido] = useState("");
+  const [mostrarTexto, setMostrarTexto] = useState(false);
+  const [copiado, setCopiado] = useState(false);
 
   async function handleFiles(files: FileList | null) {
     const f = files?.[0];
     if (!f) return;
     setFile(f);
     setStatus("lendo");
+    setTextoLido("");
     try {
       const { text, viaOcr } = await extractText(f);
       setStatus("ok");
+      setTextoLido(text);
       onExtracted?.({ text, viaOcr, file: f });
     } catch {
       setStatus("erro");
@@ -38,8 +43,20 @@ export function UploadBox({
   function limpar() {
     setFile(null);
     setStatus("idle");
+    setTextoLido("");
+    setMostrarTexto(false);
     if (inputRef.current) inputRef.current.value = "";
     onExtracted?.(null);
+  }
+
+  async function copiarTexto() {
+    try {
+      await navigator.clipboard.writeText(textoLido);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // navegador sem permissão de clipboard — ignora, usuário pode selecionar manualmente
+    }
   }
 
   return (
@@ -80,7 +97,34 @@ export function UploadBox({
               {isPdf(file) ? "Lendo PDF..." : "Lendo imagem (OCR)..."}
             </p>
           )}
-          {status === "ok" && <p className="text-[11px] text-accent-500">Lido com sucesso{!isPdf(file) ? " (OCR — confira os valores)" : ""}</p>}
+          {status === "ok" && (
+            <>
+              <p className="text-[11px] text-accent-500">Lido com sucesso{!isPdf(file) ? " (OCR — confira os valores)" : ""}</p>
+              <button
+                onClick={() => setMostrarTexto((v) => !v)}
+                className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+              >
+                {mostrarTexto ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                {mostrarTexto ? "Ocultar texto lido" : "Ver texto lido"}
+              </button>
+              {mostrarTexto && (
+                <div className="flex flex-col gap-1.5 text-left">
+                  <textarea
+                    readOnly
+                    value={textoLido || "(nenhum texto foi extraído)"}
+                    className="h-40 w-full resize-y rounded-lg border border-border-subtle bg-white p-2 font-mono text-[10px] text-brand-900"
+                  />
+                  <button
+                    onClick={copiarTexto}
+                    className="flex items-center justify-center gap-1 self-start rounded-lg border border-border-subtle px-2 py-1 text-[11px] font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+                  >
+                    {copiado ? <Check size={11} className="text-accent-500" /> : <Copy size={11} />}
+                    {copiado ? "Copiado!" : "Copiar texto"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
           {status === "erro" && (
             <p className="flex items-center justify-center gap-1 text-[11px] text-danger-500">
               <AlertTriangle size={11} />
