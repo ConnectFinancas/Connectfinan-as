@@ -60,16 +60,16 @@ export function parsePagBank(text: string): PagBankExtraido {
   return { movimentos };
 }
 
-// ---------- Extrato Bradesco (PDF texto ou imagem via OCR) ----------
+// ---------- Extrato Bradesco: PDF (texto "achatado", sem quebra de linha) ----------
 // Estrutura observada: marcadores de data "DD/MM" seguidos de um ou mais lançamentos
-// (histórico + valor, às vezes com "Docto NNNNNN" no meio). Como o texto pode vir de OCR
-// (imperfeito), o parser é tolerante: usa os valores monetários como âncora e associa o
-// texto entre dois valores como histórico, carregando a última data vista.
+// (histórico + valor, às vezes com "Docto NNNNNN" no meio). Usa os valores monetários
+// como âncora e associa o texto entre dois valores como histórico, carregando a última
+// data vista.
 //
 // PIX RECEBIDO é tratado à parte porque o histórico traz a própria data no final
 // ("REM: Fulano 05/08") — se não for extraído antes, esse "05/08" embutido é confundido
 // com um novo marcador de data pelo parser genérico e o lançamento inteiro se perde.
-export function parseBradesco(text: string, anoReferencia: string): BradescoExtraido {
+function parseBradescoPdf(text: string, anoReferencia: string): { data: string; historico: string; valor: number }[] {
   const pixRe = /PIX RECEBIDO\s+REM:?\s*(.+?)\s+(\d{2}\/\d{2})\s*(?:Docto\s*\d+)?\s*([\d.,]+)/g;
   const movimentos: { data: string; historico: string; valor: number }[] = [...text.matchAll(pixRe)].map((m) => ({
     data: dateBRtoISO(`${m[2]}/${anoReferencia}`),
@@ -108,6 +108,66 @@ export function parseBradesco(text: string, anoReferencia: string): BradescoExtr
     movimentos.push({ data: dataAtual, historico, valor: toNumberBR(valorStr) });
   }
 
+  return movimentos;
+}
+
+// ---------- Extrato Bradesco: imagem via OCR (preserva quebra de linha) ----------
+// Formato observado, uma "linha" por transação seguida de 1-2 linhas de detalhe:
+//   [DD/MM ][— ]HISTORICO_TIPO VALOR_SEM_PONTUACAO
+//   REM: Fulano de Tal DD/MM        (ou REMET.Empresa / Favorecido — texto livre)
+//   Docto NNNNNN
+// O Tesseract não reconhece bem a vírgula/ponto decimal nem o sinal de "-" em valores
+// negativos: o valor chega como uma sequência de dígitos (ex.: "120000" = R$ 1.200,00,
+// já com os 2 últimos dígitos sendo os centavos) — por isso o sinal (crédito/débito) é
+// decidido pelo TIPO do histórico, não por caracteres do valor, que às vezes viram lixo
+// (aspas, letras soltas). Quando sobram menos de 3 dígitos aproveitáveis no valor, o
+// lançamento é descartado — melhor não lançar do que lançar com valor inventado.
+const HISTORICOS_CREDITO_OCR = ["PIX RECEBIDO", "TED-TRANSFELETDISPON", "TED TRANSFELETDISPON"];
+const HISTORICOS_DEBITO_OCR = ["PAGTO ELETRON COBRANCA", "TRANSF CC PARA CC"];
+const HISTORICOS_IGNORAR_OCR = ["SALDO ANTERIOR", "SALDO TOTAL"];
+const HISTORICOS_OCR = [...HISTORICOS_CREDITO_OCR, ...HISTORICOS_DEBITO_OCR, ...HISTORICOS_IGNORAR_OCR];
+
+function parseBradescoOcr(text: string, anoReferencia: string): { data: string; historico: string; valor: number }[] {
+  const linhas = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const inicioRe = new RegExp(`^(?:(\\d{2}\\/\\d{2})\\s*(?:—|-)?\\s*)?(${HISTORICOS_OCR.join("|")})\\s+(\\S+)$`, "i");
+
+  const movimentos: { data: string; historico: string; valor: number }[] = [];
+  let dataAtual = "";
+
+  for (let i = 0; i < linhas.length; i++) {
+    const m = linhas[i].match(inicioRe);
+    if (!m) continue;
+    const [, dataStr, historicoTipoRaw, valorToken] = m;
+    if (dataStr) dataAtual = dateBRtoISO(`${dataStr}/${anoReferencia}`);
+    const historicoTipo = HISTORICOS_OCR.find((h) => h.toLowerCase() === historicoTipoRaw.toLowerCase()) ?? historicoTipoRaw;
+
+    if (HISTORICOS_IGNORAR_OCR.some((h) => h.toLowerCase() === historicoTipo.toLowerCase())) continue;
+    if (!dataAtual) continue;
+
+    const digitos = valorToken.replace(/\D/g, "");
+    if (digitos.length < 3) continue;
+    const valorAbs = Number(digitos) / 100;
+    if (!valorAbs) continue;
+
+    const proxima = linhas[i + 1];
+    const ehDetalhe = proxima && !/^docto\b/i.test(proxima);
+    const detalhe = ehDetalhe ? proxima.replace(/\s+\d{2}\/\d{2}$/, "").trim() : "";
+
+    const ehCredito = HISTORICOS_CREDITO_OCR.some((h) => h.toLowerCase() === historicoTipo.toLowerCase());
+    const historico = detalhe ? `${historicoTipo} ${detalhe}` : historicoTipo;
+
+    movimentos.push({ data: dataAtual, historico, valor: ehCredito ? valorAbs : -valorAbs });
+  }
+
+  return movimentos;
+}
+
+export function parseBradesco(text: string, anoReferencia: string, viaOcr = false): BradescoExtraido {
+  const movimentos = viaOcr ? parseBradescoOcr(text, anoReferencia) : parseBradescoPdf(text, anoReferencia);
   movimentos.sort((a, b) => a.data.localeCompare(b.data));
-  return { movimentos, viaOcr: false };
+  return { movimentos, viaOcr };
 }

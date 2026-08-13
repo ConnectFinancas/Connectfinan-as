@@ -34,7 +34,7 @@ function DocumentosMjPrime() {
   const pagbank = useMemo(() => (pagbankRaw ? parsePagBank(pagbankRaw.text) : null), [pagbankRaw]);
   const anoReferencia = faturamento?.vendas[0]?.data.slice(0, 4) ?? String(new Date().getFullYear());
   const bradesco = useMemo(
-    () => (bradescoRaw ? parseBradesco(bradescoRaw.text, anoReferencia) : null),
+    () => (bradescoRaw ? parseBradesco(bradescoRaw.text, anoReferencia, bradescoRaw.viaOcr) : null),
     [bradescoRaw, anoReferencia]
   );
   const caixa: CaixaFisicoExtraido = useMemo(() => ({ movimentos: caixaMovs }), [caixaMovs]);
