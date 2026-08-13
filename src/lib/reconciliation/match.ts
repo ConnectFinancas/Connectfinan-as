@@ -76,6 +76,36 @@ function diasEntre(a: string, b: string): number {
   return Math.round(diffMs / 86400000);
 }
 
+// Casa cada venda no cartão com o crédito do PagBank mais próximo (só um pouco menor —
+// a diferença é a taxa da maquineta), em vez de por posição/ordem de chegada: crédito e
+// débito costumam ter prazos de liquidação diferentes, então a ordem no PagBank não bate
+// necessariamente com a ordem das vendas do dia. Tolerância generosa (até 20% de taxa)
+// cobre parcelamento; nunca casa um crédito MAIOR que a venda (sinal de venda errada).
+const TOLERANCIA_TAXA_MAQUINETA = 0.2;
+
+function casarCartaoPorTaxa(
+  vendas: { valor: number; hora: string }[],
+  creditos: MovimentoPagBank[]
+): { a: { valor: number; hora: string }; b?: MovimentoPagBank }[] {
+  const usados = new Set<number>();
+  return vendas.map((venda) => {
+    let melhorIdx = -1;
+    let melhorDiferenca = Infinity;
+    creditos.forEach((credito, i) => {
+      if (usados.has(i)) return;
+      const diferenca = venda.valor - credito.valor;
+      if (diferenca < -0.01 || diferenca > venda.valor * TOLERANCIA_TAXA_MAQUINETA) return;
+      if (diferenca < melhorDiferenca) {
+        melhorDiferenca = diferenca;
+        melhorIdx = i;
+      }
+    });
+    if (melhorIdx === -1) return { a: venda };
+    usados.add(melhorIdx);
+    return { a: venda, b: creditos[melhorIdx] };
+  });
+}
+
 const TITULAR_KEYWORDS = ["MJ PRIME", "MJ ELETRO"];
 
 function ehMesmoTitular(historico: string): boolean {
@@ -127,21 +157,15 @@ export function conciliarDia(
     valorBate: diferenca >= 0, // negativo indicaria PagBank creditando mais que o faturado — sinal de algo errado
   };
 
-  // Baixa por baixa: diferente de Pix/Dinheiro, o crédito de cada venda no PagBank normalmente
-  // NÃO chega com o mesmo valor da venda (a maquininha desconta a taxa por transação, ou os
-  // valores vêm antecipados/agrupados de outro jeito) — casar por valor exato deixava tudo
-  // como "pendente" mesmo quando a quantidade batia certinho. Em vez disso, casa por posição
-  // (ordem de chegada) quando a quantidade de vendas bate com a quantidade de créditos — é o
-  // mesmo critério que já validava o card-resumo do cartão (quantidadeBate).
-  const cartaoVendas: ItemConferencia<MovimentoPagBank>[] = vendasCartao.map((venda, i) => {
-    const match = vendasCartao.length === creditosPagBank.length ? creditosPagBank[i] : undefined;
-    return {
-      vendaValor: venda.valor,
-      vendaHora: venda.hora,
-      match,
-      status: match ? "conciliado" : "pendente",
-    };
-  });
+  // Baixa por baixa: cada venda casa com o crédito do PagBank mais próximo, respeitando que
+  // o valor recebido só pode ser MENOR (a diferença é a taxa da maquineta).
+  const cartaoCasados = casarCartaoPorTaxa(vendasCartao, creditosPagBank);
+  const cartaoVendas: ItemConferencia<MovimentoPagBank>[] = cartaoCasados.map(({ a, b }) => ({
+    vendaValor: a.valor,
+    vendaHora: a.hora,
+    match: b,
+    status: b ? "conciliado" : "pendente",
+  }));
 
   // ---------- Pix: vendas faturadas x recebidos no Bradesco ----------
   const vendasPix = faturamento.vendas.filter((v) => v.forma === "PIX");

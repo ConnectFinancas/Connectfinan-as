@@ -170,11 +170,11 @@ function DocumentosMjPrime() {
     });
   }
 
-  // Prepara o(s) lançamento(s) equivalentes a uma chave (ex.: "pix-0", "cartao", "pagamento-2")
+  // Prepara o(s) lançamento(s) equivalentes a uma chave (ex.: "pix-0", "cartaoVenda-2", "pagamento-2")
   // sem gravar nada ainda — usado tanto pelo clique individual quanto pelo lote.
   function prepararMigracao(
     chave: string
-  ): { receivable?: Receivable; payable?: Payable; precisaCategoriaFallback?: boolean } | null {
+  ): { receivable?: Receivable; payable?: Payable; payableExtra?: Payable; precisaCategoriaFallback?: boolean } | null {
     if (!resultadoExibido) return null;
     const data = resultadoExibido.data;
     const migrados = resultadoExibido.migrados ?? {};
@@ -187,20 +187,45 @@ function DocumentosMjPrime() {
         tipo === "pix" ? resultadoExibido.pix[idx] : tipo === "dinheiro" ? resultadoExibido.dinheiro[idx] : (resultadoExibido.cartaoVendas ?? [])[idx];
       if (!item || item.status !== "conciliado") return null;
       const rotulo = tipo === "pix" ? "Pix" : tipo === "dinheiro" ? "Dinheiro" : "Cartão";
-      return {
-        receivable: {
-          id: genId("r"),
-          cliente: "—",
-          classificacao: "Faturamento",
-          categoria: "Faturamento Geral",
-          vencimento: data,
-          valor: item.vendaValor,
-          status: "recebido",
-          recebimento: data,
-          descricao: `Venda ${rotulo}${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
-          formaRecebimento: rotulo,
-        },
+      const receivable: Receivable = {
+        id: genId("r"),
+        cliente: "—",
+        classificacao: "Faturamento",
+        categoria: "Faturamento Geral",
+        vencimento: data,
+        valor: item.vendaValor,
+        status: "recebido",
+        recebimento: data,
+        descricao: `Venda ${rotulo}${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
+        formaRecebimento: rotulo,
       };
+
+      // Cartão: a diferença entre o valor vendido e o valor recebido no PagBank é a taxa
+      // da maquineta — vira automaticamente uma despesa em Contas a Pagar, já paga (a taxa
+      // é descontada na hora), pra ficar registrada junto com a venda.
+      if (tipo === "cartaoVenda") {
+        const cartaoItem = (resultadoExibido.cartaoVendas ?? [])[idx];
+        const recebido = cartaoItem?.match?.valor;
+        const taxa = recebido !== undefined ? Math.round((item.vendaValor - recebido) * 100) / 100 : 0;
+        if (taxa > 0.01) {
+          return {
+            receivable,
+            payableExtra: {
+              id: genId("p"),
+              favorecido: "—",
+              classificacao: "DESPESAS FINANCEIRAS",
+              categoria: "Tarifas de Maquininhas",
+              vencimento: data,
+              valor: taxa,
+              status: "pago",
+              pagamento: data,
+              descricao: `Taxa maquineta - venda cartão${item.vendaHora ? ` ${item.vendaHora}` : ""}`,
+            },
+          };
+        }
+      }
+
+      return { receivable };
     }
 
     if (chave.startsWith("pagamento-")) {
@@ -243,8 +268,12 @@ function DocumentosMjPrime() {
         finance.addPayable([preparo.payable]);
       }
     }
+    if (preparo.payableExtra) finance.addPayable([preparo.payableExtra]);
     const id = preparo.receivable?.id ?? preparo.payable?.id;
-    if (id) historico.marcarMigrados(dataSelecionada, { [chave]: id });
+    const chaves: Record<string, string> = {};
+    if (id) chaves[chave] = id;
+    if (preparo.payableExtra) chaves[`${chave}-taxa`] = preparo.payableExtra.id;
+    if (Object.keys(chaves).length > 0) historico.marcarMigrados(dataSelecionada, chaves);
   }
 
   // Mesma lógica em lote, usada pela seleção múltipla ("Selecionar lançamentos" + Conciliar).
@@ -265,6 +294,10 @@ function DocumentosMjPrime() {
           novosPayables.push(preparo.payable);
           if (preparo.precisaCategoriaFallback) precisaCategoriaFallback = true;
         }
+      }
+      if (preparo.payableExtra) {
+        novosPayables.push(preparo.payableExtra);
+        novasChaves[`${chave}-taxa`] = preparo.payableExtra.id;
       }
       const id = preparo.receivable?.id ?? preparo.payable?.id;
       if (id) novasChaves[chave] = id;
@@ -319,6 +352,13 @@ function DocumentosMjPrime() {
       if (!eraVinculoExistente) finance.deletePayables([id]);
       historico.desmarcarMigrado(dataSelecionada, chave);
       return;
+    }
+
+    // cartaoVenda pode ter uma taxa da maquineta lançada junto — desfaz os dois.
+    const idTaxa = migrados[`${chave}-taxa`];
+    if (idTaxa) {
+      finance.deletePayables([idTaxa]);
+      historico.desmarcarMigrado(dataSelecionada, `${chave}-taxa`);
     }
 
     finance.deleteReceivables([id]);

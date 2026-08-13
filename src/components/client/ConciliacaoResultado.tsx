@@ -120,8 +120,6 @@ export function ConciliacaoResultado({
   const ignorados = "ignorados" in resultado ? resultado.ignorados ?? [] : [];
   const atualizadoEm = "atualizadoEm" in resultado ? resultado.atualizadoEm : undefined;
 
-  const [taxaLancada, setTaxaLancada] = useState(false);
-  const [lancarTaxa, setLancarTaxa] = useState(false);
   const [lancarPagamento, setLancarPagamento] = useState<{
     chave: string;
     pessoa: string;
@@ -148,6 +146,12 @@ export function ConciliacaoResultado({
     cartaoVendas.forEach((item, i) => {
       const chave = `cartaoVenda-${i}`;
       const bancoTxt = item.matchInfo || item.match?.descricao;
+      const recebido = item.match?.valor;
+      const taxa = recebido !== undefined ? Math.round((item.vendaValor - recebido) * 100) / 100 : undefined;
+      const sistemaResumo =
+        taxa !== undefined && taxa > 0.01
+          ? `Venda Cartão${item.vendaHora ? ` · ${item.vendaHora}` : ""} · Bruto ${formatCurrencyPrecise(item.vendaValor)} − Taxa ${formatCurrencyPrecise(taxa)} = Líquido ${formatCurrencyPrecise(recebido!)}`
+          : `Venda Cartão${item.vendaHora ? ` · ${item.vendaHora}` : ""} · ${formatCurrencyPrecise(item.vendaValor)}`;
       lista.push({
         chave,
         categoria: "recebimento",
@@ -158,7 +162,7 @@ export function ConciliacaoResultado({
         bancoValor: item.match?.valor ?? item.vendaValor,
         bancoData: item.match?.data,
         bancoDescricao: bancoTxt || "Ainda não encontrado no PagBank",
-        sistemaResumo: `Venda Cartão${item.vendaHora ? ` · ${item.vendaHora}` : ""} · ${formatCurrencyPrecise(item.vendaValor)}`,
+        sistemaResumo,
         correcao: { tipo: "cartaoVenda", index: i, matchInfoAtual: bancoTxt },
         isCartao: true,
       });
@@ -250,6 +254,22 @@ export function ConciliacaoResultado({
     return lista;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultado]);
+
+  // Quantas vendas de cartão já tiveram a taxa da maquineta lançada em Contas a Pagar
+  // (automático ao clicar "Conciliar" em cada venda, na aba Movimentações) vs quantas ainda faltam.
+  const cartaoTaxaInfo = useMemo(() => {
+    let esperadas = 0;
+    let lancadas = 0;
+    cartaoVendas.forEach((item, i) => {
+      const recebido = item.match?.valor;
+      const taxa = recebido !== undefined ? Math.round((item.vendaValor - recebido) * 100) / 100 : 0;
+      if (taxa > 0.01) {
+        esperadas++;
+        if (migrados[`cartaoVenda-${i}-taxa`]) lancadas++;
+      }
+    });
+    return { esperadas, lancadas };
+  }, [cartaoVendas, migrados]);
 
   const itensAtivos = itens.filter((i) => !arquivados.includes(i.chave));
   const itensArquivados = itens.filter((i) => arquivados.includes(i.chave));
@@ -425,30 +445,22 @@ export function ConciliacaoResultado({
             <p className="text-[11px] uppercase text-faint">Diferença (taxa maquineta)</p>
             <p className="text-sm font-semibold text-warn-500">{formatCurrencyPrecise(cartao.diferenca)}</p>
           </div>
-          <div className="flex items-end">
-            {taxaLancada || migrados["cartao-taxa"] ? (
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent-100 px-3 py-2 text-xs font-medium text-accent-500">
-                <Check size={12} />
-                Taxa lançada
-              </span>
-            ) : (
-              <button
-                onClick={() => setLancarTaxa(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
-              >
-                <Plus size={12} />
-                Lançar taxa da maquineta
-              </button>
-            )}
+          <div>
+            <p className="text-[11px] uppercase text-faint">Taxas por venda</p>
+            <p className="text-sm font-semibold text-brand-900">
+              {cartaoTaxaInfo.lancadas} / {cartaoTaxaInfo.esperadas} lançadas
+            </p>
+            <p className="text-[11px] text-faint">automático ao conciliar cada venda</p>
           </div>
         </div>
         {!cartao.quantidadeBate && (
           <p className="mt-3 text-xs text-warn-500">
-            Quantidade de vendas no cartão ({cartao.faturamentoQtd}) diferente da quantidade de recebimentos no PagBank ({cartao.pagbankQtd}) — confira antes de lançar a taxa.
+            Quantidade de vendas no cartão ({cartao.faturamentoQtd}) diferente da quantidade de recebimentos no PagBank ({cartao.pagbankQtd}) — confira antes de conciliar.
           </p>
         )}
         <p className="mt-3 text-xs text-faint">
-          Cada venda no cartão aparece baixa por baixa na aba <strong>Movimentações</strong> abaixo.
+          Cada venda no cartão aparece baixa por baixa na aba <strong>Movimentações</strong> abaixo: ao clicar em <strong>Conciliar</strong>, o
+          valor total da venda entra em Contas a Receber e a diferença (taxa da maquineta) entra automaticamente em Contas a Pagar.
         </p>
       </div>
 
@@ -765,25 +777,6 @@ export function ConciliacaoResultado({
         </div>
       )}
 
-      {lancarTaxa && (
-        <LancamentoModal
-          tipo="pagar"
-          onClose={() => setLancarTaxa(false)}
-          onSaved={() => {
-            setTaxaLancada(true);
-            onLancado?.("cartao-taxa");
-          }}
-          prefill={{
-            descricao: `Taxa de maquininha - conciliação ${formatDateBR(resultado.data)}`,
-            classificacao: "DESPESAS FINANCEIRAS",
-            categoria: "Tarifas de Maquininhas",
-            valor: cartao.diferenca,
-            vencimento: resultado.data,
-            status: "pago",
-            dataPagamento: resultado.data,
-          }}
-        />
-      )}
       {lancarPagamento && (
         <LancamentoModal
           tipo="pagar"
