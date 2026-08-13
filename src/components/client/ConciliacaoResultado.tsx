@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  RotateCcw,
   Search,
   Square,
   Unlink,
@@ -91,6 +92,8 @@ export function ConciliacaoResultado({
   onArquivar,
   onArquivarLote,
   onDesarquivar,
+  onDesfazer,
+  onDesfazerLote,
 }: {
   resultado: ResultadoConciliacao | ResultadoSalvo;
   datas?: string[];
@@ -109,6 +112,8 @@ export function ConciliacaoResultado({
   onArquivar?: (chave: string) => void;
   onArquivarLote?: (chaves: string[]) => void;
   onDesarquivar?: (chave: string) => void;
+  onDesfazer?: (chave: string) => void;
+  onDesfazerLote?: (chaves: string[]) => void;
 }) {
   const migrados = "migrados" in resultado ? resultado.migrados ?? {} : {};
   const arquivados = "arquivados" in resultado ? resultado.arquivados ?? [] : [];
@@ -281,6 +286,12 @@ export function ConciliacaoResultado({
     .filter((i) => !i.jaMigrado && !i.naoRequerAcao && !i.isCartao)
     .reduce((acc, i) => acc + i.bancoValor, 0);
 
+  // Painel de contadores do dia inteiro (independe da aba selecionada).
+  const dashTotal = itensAtivos.length;
+  const dashConciliados = itensAtivos.filter((i) => i.jaMigrado || i.naoRequerAcao).length;
+  const dashPendentes = itensAtivos.filter((i) => !i.jaMigrado && !i.naoRequerAcao).length;
+  const dashTransferencias = itensAtivos.filter((i) => i.naoRequerAcao).length;
+
   const idx = datas && dataSelecionada ? datas.indexOf(dataSelecionada) : -1;
   const podeAnterior = datas && idx !== -1 && idx < datas.length - 1;
   const podeProximo = datas && idx > 0;
@@ -370,6 +381,26 @@ export function ConciliacaoResultado({
         <div className="text-right text-xs text-muted">
           <p>Valor pendente de conciliação</p>
           <p className="text-lg font-semibold text-warn-500">{formatCurrencyPrecise(valorPendente)}</p>
+        </div>
+      </div>
+
+      {/* Painel de contadores do dia */}
+      <div className="card grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
+        <div>
+          <p className="text-[11px] uppercase text-faint">Total</p>
+          <p className="text-lg font-semibold text-brand-900">{dashTotal}</p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase text-faint">Conciliados</p>
+          <p className="text-lg font-semibold text-accent-500">{dashConciliados}</p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase text-faint">Pendentes</p>
+          <p className="text-lg font-semibold text-warn-500">{dashPendentes}</p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase text-faint">Transferências</p>
+          <p className="text-lg font-semibold text-muted">{dashTransferencias}</p>
         </div>
       </div>
 
@@ -514,6 +545,17 @@ export function ConciliacaoResultado({
                 >
                   <Archive size={12} />
                   Arquivar
+                </button>
+                <button
+                  disabled={selecionados.size === 0}
+                  onClick={() => {
+                    onDesfazerLote?.([...selecionados]);
+                    limparSelecao();
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors disabled:opacity-40"
+                >
+                  <RotateCcw size={12} />
+                  Desfazer
                 </button>
                 <button onClick={limparSelecao} className="text-faint hover:text-danger-500 transition-colors">
                   <X size={14} />
@@ -676,6 +718,18 @@ export function ConciliacaoResultado({
                 >
                   <Archive size={11} />
                   Arquivar
+                </button>
+              </div>
+            )}
+            {!item.naoRequerAcao && item.jaMigrado && (
+              <div className="mt-2 flex justify-end">
+                <button
+                  onClick={() => onDesfazer?.(item.chave)}
+                  className="flex items-center gap-1 text-[11px] font-medium text-faint hover:text-warn-500 transition-colors"
+                  title="Desfaz essa conciliação — remove o lançamento se ele foi criado por aqui"
+                >
+                  <RotateCcw size={11} />
+                  Desfazer conciliação
                 </button>
               </div>
             )}

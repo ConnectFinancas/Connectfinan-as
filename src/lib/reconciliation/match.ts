@@ -67,11 +67,29 @@ function casarPorValor<A extends { valor: number }, B extends { valor: number }>
   });
 }
 
+// Tolerância de dias ao buscar um lançamento existente em Contas a Pagar pra uma saída do
+// banco — o vencimento cadastrado nem sempre é exatamente o dia em que o banco debitou.
+const TOLERANCIA_DIAS_PAGAMENTO = 3;
+
+function diasEntre(a: string, b: string): number {
+  const diffMs = Math.abs(new Date(`${a}T00:00:00`).getTime() - new Date(`${b}T00:00:00`).getTime());
+  return Math.round(diffMs / 86400000);
+}
+
 const TITULAR_KEYWORDS = ["MJ PRIME", "MJ ELETRO"];
 
 function ehMesmoTitular(historico: string): boolean {
   const upper = historico.toUpperCase();
   return TITULAR_KEYWORDS.some((k) => upper.includes(k));
+}
+
+// Busca o Contas a Pagar existente mais próximo (mesmo valor, dentro da tolerância de dias) —
+// entre os candidatos empatados, prefere o de data mais próxima da saída bancária.
+function buscarLancamentoProximo(payables: Payable[], valorAbs: number, dataReferencia: string): Payable | undefined {
+  const candidatos = payables
+    .filter((p) => Math.abs(p.valor - valorAbs) < 0.01 && diasEntre(p.vencimento, dataReferencia) <= TOLERANCIA_DIAS_PAGAMENTO)
+    .sort((a, b) => diasEntre(a.vencimento, dataReferencia) - diasEntre(b.vencimento, dataReferencia));
+  return candidatos[0];
 }
 
 function sugerirFavorecido(historico: string): string {
@@ -183,7 +201,7 @@ export function conciliarDia(
   for (const saida of saidasBradesco) {
     const valorAbs = Math.abs(saida.valor);
     const ehTransferenciaMesmoTitular = ehMesmoTitular(saida.historico);
-    const matchLancamento = payablesExistentes.find((p) => Math.abs(p.valor - valorAbs) < 0.01 && p.vencimento === data);
+    const matchLancamento = buscarLancamentoProximo(payablesExistentes, valorAbs, data);
 
     pagamentos.push({
       origem: "bradesco",

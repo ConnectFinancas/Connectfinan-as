@@ -303,6 +303,32 @@ function DocumentosMjPrime() {
     chaves.forEach(arquivarItem);
   }
 
+  // "Desfazer conciliação": item já migrado volta a ficar pendente de confirmação. Se o
+  // lançamento foi CRIADO pela conciliação, apaga ele; se era um lançamento que já existia
+  // em Contas a Pagar (só foi vinculado), mantém — desfaz só o vínculo, sem apagar nada real.
+  function desfazerConciliacao(chave: string) {
+    if (!resultadoExibido || !dataSelecionada) return;
+    const migrados = resultadoExibido.migrados ?? {};
+    const id = migrados[chave];
+    if (!id) return;
+
+    if (chave.startsWith("pagamento-")) {
+      const idx = Number(chave.split("-")[1]);
+      const p = resultadoExibido.pagamentos[idx];
+      const eraVinculoExistente = p?.matchLancamento?.id === id;
+      if (!eraVinculoExistente) finance.deletePayables([id]);
+      historico.desmarcarMigrado(dataSelecionada, chave);
+      return;
+    }
+
+    finance.deleteReceivables([id]);
+    historico.desmarcarMigrado(dataSelecionada, chave);
+  }
+
+  function desfazerConciliacaoLote(chaves: string[]) {
+    chaves.forEach(desfazerConciliacao);
+  }
+
   function desarquivarItem(chave: string) {
     if (dataSelecionada) historico.desarquivarItem(dataSelecionada, chave);
   }
@@ -445,6 +471,8 @@ function DocumentosMjPrime() {
           onArquivar={arquivarItem}
           onArquivarLote={arquivarLote}
           onDesarquivar={desarquivarItem}
+          onDesfazer={desfazerConciliacao}
+          onDesfazerLote={desfazerConciliacaoLote}
         />
       )}
     </div>
