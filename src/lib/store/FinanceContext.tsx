@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { getFinanceData } from "@/lib/data/financeRegistry";
-import { computeContasPagarKpis, computeContasReceberKpis, computeFinanceSummary } from "@/lib/derive";
+import { computeContasPagarKpis, computeContasReceberKpis, computeFinanceSummary, computeFluxoCaixa } from "@/lib/derive";
 import { CategoryGroup, Client, ClientFinanceData, Payable, Receivable } from "@/lib/types";
 
 const PALETTE = ["#22d3a0", "#5b93fd", "#f2665c", "#a78bfa", "#f2a93c", "#f472b6", "#38bdf8", "#94a3b8"];
@@ -157,25 +157,28 @@ export function FinanceProvider({ client, children }: { client: Client; children
   );
   const contasPagarKpis = useMemo(() => computeContasPagarKpis(state.payables), [state.payables]);
   const contasReceberKpis = useMemo(() => computeContasReceberKpis(state.receivables), [state.receivables]);
+  // Fluxo de Caixa é por regime de caixa (recebimento/pagamento efetivo) — recalculado a partir
+  // dos lançamentos reais (inclusive os que a conciliação bancária cria), não do seed estático.
+  const fluxoCaixa = useMemo(() => computeFluxoCaixa(state.payables, state.receivables), [state.payables, state.receivables]);
 
   const fluxoDiario = useMemo(() => {
-    const { saldoInicial, saldoFinal } = seed.fluxoCaixaKpis;
+    const { saldoInicial, saldoFinal } = fluxoCaixa.fluxoCaixaKpis;
     return Array.from({ length: 31 }, (_, i) => ({
       dia: String(i + 1).padStart(2, "0"),
       saldo: i < 3 ? saldoInicial : saldoFinal,
     }));
-  }, [seed.fluxoCaixaKpis]);
+  }, [fluxoCaixa.fluxoCaixaKpis]);
 
   const value: FinanceContextValue = {
     ...state,
     client,
-    fluxoCaixaPeriodo: seed.fluxoCaixaPeriodo,
-    fluxoCaixaKpis: seed.fluxoCaixaKpis,
+    fluxoCaixaPeriodo: fluxoCaixa.fluxoCaixaPeriodo,
+    fluxoCaixaKpis: fluxoCaixa.fluxoCaixaKpis,
     fluxoDiario,
-    faturamentoXRecebimentos: seed.faturamentoXRecebimentos,
-    maioresRecebimentos: seed.maioresRecebimentos,
-    maioresPagamentos: seed.maioresPagamentos,
-    indicesFinanceiros: seed.indicesFinanceiros,
+    faturamentoXRecebimentos: fluxoCaixa.faturamentoXRecebimentos,
+    maioresRecebimentos: fluxoCaixa.maioresRecebimentos,
+    maioresPagamentos: fluxoCaixa.maioresPagamentos,
+    indicesFinanceiros: fluxoCaixa.indicesFinanceiros,
     destaquesPeriodo: seed.destaquesPeriodo,
     resumoExecutivo: seed.resumoExecutivo,
     pontoDeAtencao: seed.pontoDeAtencao,

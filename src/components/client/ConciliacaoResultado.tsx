@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
-  Archive,
   ArrowRight,
   Check,
   ChevronLeft,
@@ -12,6 +11,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Trash2,
   Unlink,
   X,
 } from "lucide-react";
@@ -106,11 +106,9 @@ function LinhaConciliacao({
   linha,
   secaoId,
   ordemNatural,
-  arquivado,
   onConciliar,
   onDesvincular,
-  onArquivar,
-  onDesarquivar,
+  onExcluir,
   onDesfazer,
   onEditarItem,
   onEditarPagamentoBanco,
@@ -120,11 +118,9 @@ function LinhaConciliacao({
   linha: Linha;
   secaoId: string;
   ordemNatural: string[];
-  arquivado: boolean;
   onConciliar?: (chave: string) => void;
   onDesvincular?: (chave: string) => void;
-  onArquivar?: (chave: string) => void;
-  onDesarquivar?: (chave: string) => void;
+  onExcluir?: (chave: string) => void;
   onDesfazer?: (chave: string) => void;
   onEditarItem?: (
     tipo: "pix" | "dinheiro" | "cartaoVenda" | "pagamento",
@@ -179,7 +175,7 @@ function LinhaConciliacao({
         const origem = e.dataTransfer.getData("text/plain");
         if (origem && origem !== linha.chave) onReordenar?.(secaoId, ordemNatural, origem, linha.chave);
       }}
-      className={`card p-4 transition-shadow ${arrastandoSobre ? "ring-2 ring-client-accent" : ""} ${arquivado ? "opacity-60" : ""}`}
+      className={`card p-4 transition-shadow ${arrastandoSobre ? "ring-2 ring-client-accent" : ""}`}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex cursor-grab items-center gap-1.5 text-faint active:cursor-grabbing" title="Arraste pra trocar de posição">
@@ -315,34 +311,27 @@ function LinhaConciliacao({
             </button>
           )}
           <button
-            onClick={() => onArquivar?.(linha.chave)}
+            onClick={() => {
+              if (window.confirm("Excluir esse lançamento da conciliação? Ele não vai mais aparecer aqui.")) onExcluir?.(linha.chave);
+            }}
             className={`flex items-center gap-1 text-[11px] font-medium text-faint hover:text-danger-500 transition-colors ${temMatch ? "ml-3" : ""}`}
-            title="Arquiva esse item (erro de leitura)"
+            title="Exclui esse lançamento da conciliação"
           >
-            <Archive size={11} />
-            Arquivar
+            <Trash2 size={11} />
+            Excluir
           </button>
         </div>
       )}
       {linha.jaMigrado && (
         <div className="mt-2 flex justify-end">
-          {arquivado ? (
-            <button
-              onClick={() => onDesarquivar?.(linha.chave)}
-              className="text-[11px] font-medium text-client-accent hover:underline"
-            >
-              Desarquivar
-            </button>
-          ) : (
-            <button
-              onClick={() => onDesfazer?.(linha.chave)}
-              className="flex items-center gap-1 text-[11px] font-medium text-faint hover:text-warn-500 transition-colors"
-              title="Desfaz essa conciliação — remove o lançamento se ele foi criado por aqui"
-            >
-              <RotateCcw size={11} />
-              Desfazer conciliação
-            </button>
-          )}
+          <button
+            onClick={() => onDesfazer?.(linha.chave)}
+            className="flex items-center gap-1 text-[11px] font-medium text-faint hover:text-warn-500 transition-colors"
+            title="Desfaz essa conciliação — remove o lançamento se ele foi criado por aqui"
+          >
+            <RotateCcw size={11} />
+            Desfazer conciliação
+          </button>
         </div>
       )}
 
@@ -379,8 +368,7 @@ export function ConciliacaoResultado({
   onLancado,
   onConciliar,
   onDesvincular,
-  onArquivar,
-  onDesarquivar,
+  onExcluir,
   onDesfazer,
   onEditarPagamentoBanco,
   onReordenar,
@@ -401,8 +389,7 @@ export function ConciliacaoResultado({
   onLancado?: (chave: string) => void;
   onConciliar?: (chave: string) => void;
   onDesvincular?: (chave: string) => void;
-  onArquivar?: (chave: string) => void;
-  onDesarquivar?: (chave: string) => void;
+  onExcluir?: (chave: string) => void;
   onDesfazer?: (chave: string) => void;
   onReordenar?: (secao: string, ordemNatural: string[], chaveA: string, chaveB: string) => void;
   taxasCartaoPendentes: { chave: string; hora?: string; taxa: number }[];
@@ -416,7 +403,6 @@ export function ConciliacaoResultado({
   const atualizadoEm = "atualizadoEm" in resultado ? resultado.atualizadoEm : undefined;
 
   const [busca, setBusca] = useState("");
-  const [verArquivados, setVerArquivados] = useState(false);
 
   const { cartaoVendas = [], pix, dinheiro, pagamentos } = resultado;
 
@@ -562,7 +548,6 @@ export function ConciliacaoResultado({
 
   const todasLinhas = secoes.flatMap((s) => s.linhas);
   const linhasAtivas = todasLinhas.filter((l) => !arquivados.includes(l.chave));
-  const linhasArquivadas = todasLinhas.filter((l) => arquivados.includes(l.chave));
 
   const dashTotal = linhasAtivas.length;
   const dashConciliados = linhasAtivas.filter((l) => l.jaMigrado).length;
@@ -692,11 +677,9 @@ export function ConciliacaoResultado({
                     linha={linha}
                     secaoId={secao.id}
                     ordemNatural={secao.linhas.map((l) => l.chave)}
-                    arquivado={false}
                     onConciliar={onConciliar}
                     onDesvincular={onDesvincular}
-                    onArquivar={onArquivar}
-                    onDesarquivar={onDesarquivar}
+                    onExcluir={onExcluir}
                     onDesfazer={onDesfazer}
                     onEditarItem={onEditarItem}
                     onEditarPagamentoBanco={onEditarPagamentoBanco}
@@ -709,28 +692,6 @@ export function ConciliacaoResultado({
           </div>
         );
       })}
-
-      {linhasArquivadas.length > 0 && (
-        <div className="card p-4">
-          <button onClick={() => setVerArquivados((v) => !v)} className="text-xs font-medium text-client-accent hover:underline">
-            {verArquivados ? "Ocultar" : `Ver lançamentos arquivados (${linhasArquivadas.length})`}
-          </button>
-          {verArquivados && (
-            <div className="mt-3 flex flex-col gap-2">
-              {linhasArquivadas.map((linha) => (
-                <div key={linha.chave} className="flex items-center justify-between gap-2 rounded-lg border border-border-subtle p-2.5 text-xs">
-                  <span className="truncate text-muted">
-                    {(linha.esquerda?.descricao ?? linha.direita?.descricao) || "—"} · {formatCurrencyPrecise(linha.direita?.valor ?? linha.esquerda?.valor ?? 0)}
-                  </span>
-                  <button onClick={() => onDesarquivar?.(linha.chave)} className="shrink-0 font-medium text-client-accent hover:underline">
-                    Desarquivar
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Lançamento conjunto da taxa da maquineta — soma todas as diferenças de cartão do dia */}
       {taxasCartaoPendentes.length > 0 && (

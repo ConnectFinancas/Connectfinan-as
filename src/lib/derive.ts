@@ -1,6 +1,6 @@
 import { categoryColor } from "@/lib/categoryColor";
 import { dreMonths, fullMonthNames } from "@/lib/constants";
-import { HOJE, isVencido, parseISO } from "@/lib/today";
+import { formatDateBR, HOJE, isVencido, parseISO } from "@/lib/today";
 import { CategoryGroup, DreGridRow, ExpenseSlice, MonthlyFinancials, Payable, Receivable, Status } from "@/lib/types";
 
 type DeducoesManuais = { impostos: number; inadimplencia: number; investimentos: number };
@@ -308,6 +308,70 @@ export function computeFinanceSummary(
     receitaPorServico: computeReceitaPorServico(receivables),
     dreGrid,
     cmv,
+  };
+}
+
+// Fluxo de Caixa é por regime de CAIXA (data de recebimento/pagamento efetivo), diferente do
+// resto do sistema (DRE/Resumo), que é por competência (vencimento) — por isso tem uma conta
+// própria em vez de reusar computeFinanceSummary. Sem saldo bancário inicial cadastrado no
+// sistema ainda, o saldo inicial do período fica em zero (só a geração líquida do período conta).
+export function computeFluxoCaixa(payables: Payable[], receivables: Receivable[]) {
+  const recebidos = receivables.filter((r) => r.status === "recebido" && r.recebimento);
+  const pagos = payables.filter((p) => p.status === "pago" && p.pagamento);
+
+  const mesesComMovimento = new Set<number>();
+  recebidos.forEach((r) => mesesComMovimento.add(monthIndex(r.recebimento!)));
+  pagos.forEach((p) => mesesComMovimento.add(monthIndex(p.pagamento!)));
+  let mesReferencia = HOJE.getMonth();
+  for (let i = Math.min(HOJE.getMonth(), 11); i >= 0; i--) {
+    if (mesesComMovimento.has(i)) {
+      mesReferencia = i;
+      break;
+    }
+  }
+  const fluxoCaixaPeriodo = `${fullMonthNames[mesReferencia]}/2026`;
+
+  const recebidosMes = recebidos.filter((r) => monthIndex(r.recebimento!) === mesReferencia);
+  const pagosMes = pagos.filter((p) => monthIndex(p.pagamento!) === mesReferencia);
+  const recebimentos = round2(recebidosMes.reduce((a, r) => a + r.valor, 0));
+  const pagamentos = round2(pagosMes.reduce((a, p) => a + p.valor, 0));
+  const geracaoLiquida = round2(recebimentos - pagamentos);
+  const geracaoLiquidaPct = recebimentos > 0 ? round2((geracaoLiquida / recebimentos) * 100) : 0;
+
+  const saldoInicial = 0;
+  const saldoFinal = round2(saldoInicial + geracaoLiquida);
+  const crescimentoCaixa = recebimentos > 0 || pagamentos > 0 ? geracaoLiquidaPct : 0;
+
+  const faturamentoMes = round2(
+    receivables.filter((r) => monthIndex(r.vencimento) === mesReferencia).reduce((a, r) => a + r.valor, 0)
+  );
+  const conversaoEmCaixa = faturamentoMes > 0 ? round2((recebimentos / faturamentoMes) * 100) : 0;
+  const diferenca = round2(faturamentoMes - recebimentos);
+
+  const maioresRecebimentos = [...recebidosMes]
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 5)
+    .map((r) => ({ data: formatDateBR(r.recebimento!), valor: r.valor, pctTotal: recebimentos > 0 ? round2((r.valor / recebimentos) * 100) : 0 }));
+
+  const maioresPagamentos = [...pagosMes]
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 5)
+    .map((p) => ({ data: formatDateBR(p.pagamento!), valor: p.valor, pctTotal: pagamentos > 0 ? round2((p.valor / pagamentos) * 100) : 0 }));
+
+  const indicesFinanceiros = [
+    { label: "Índice de geração de caixa", value: recebimentos > 0 ? `${geracaoLiquidaPct.toFixed(1)}%` : "—" },
+    { label: "Índice de consumo de caixa", value: recebimentos > 0 ? `${round2((pagamentos / recebimentos) * 100).toFixed(1)}%` : "—" },
+    { label: "Conversão do faturamento", value: faturamentoMes > 0 ? `${conversaoEmCaixa.toFixed(1)}%` : "—" },
+    { label: "Variação do caixa no período", value: `${crescimentoCaixa >= 0 ? "+" : ""}${crescimentoCaixa.toFixed(1)}%` },
+  ];
+
+  return {
+    fluxoCaixaPeriodo,
+    fluxoCaixaKpis: { saldoInicial, recebimentos, pagamentos, geracaoLiquida, geracaoLiquidaPct, saldoFinal, crescimentoCaixa },
+    faturamentoXRecebimentos: { faturamento: faturamentoMes, recebido: recebimentos, conversaoEmCaixa, diferenca },
+    maioresRecebimentos,
+    maioresPagamentos,
+    indicesFinanceiros,
   };
 }
 

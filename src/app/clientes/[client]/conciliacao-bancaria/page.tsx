@@ -82,38 +82,45 @@ function DocumentosMjPrime() {
   useEffect(() => {
     if (!resultadoExibido) return;
     const data = resultadoExibido.data;
+    const arquivados = resultadoExibido.arquivados ?? [];
+    const migrados = resultadoExibido.migrados ?? {};
+    const naoResolvido = (chave: string) => !arquivados.includes(chave) && !migrados[chave];
     const novasPendencias = [
       ...(resultadoExibido.cartaoVendas ?? [])
-        .filter((v) => v.status === "pendente")
-        .map((v, i) => ({
-          id: `cartaoVenda-${data}-${i}`,
+        .map((v, i) => ({ v, chave: `cartaoVenda-${i}` }))
+        .filter(({ v, chave }) => v.status === "pendente" && naoResolvido(chave))
+        .map(({ v, chave }) => ({
+          id: `${chave}-${data}`,
           data,
           descricao: `Venda no cartão não identificada no PagBank (${v.vendaHora ?? ""})`,
           valor: v.vendaValor ?? 0,
           tipo: "cartao" as const,
         })),
       ...resultadoExibido.pix
-        .filter((p) => p.status === "pendente")
-        .map((p, i) => ({
-          id: `pix-${data}-${i}`,
+        .map((p, i) => ({ p, chave: `pix-${i}` }))
+        .filter(({ p, chave }) => p.status === "pendente" && naoResolvido(chave))
+        .map(({ p, chave }) => ({
+          id: `${chave}-${data}`,
           data,
           descricao: `Pix não identificado no Bradesco (${p.vendaHora ?? ""})`,
           valor: p.vendaValor ?? 0,
           tipo: "pix" as const,
         })),
       ...resultadoExibido.dinheiro
-        .filter((d) => d.status === "pendente")
-        .map((d, i) => ({
-          id: `dinheiro-${data}-${i}`,
+        .map((d, i) => ({ d, chave: `dinheiro-${i}` }))
+        .filter(({ d, chave }) => d.status === "pendente" && naoResolvido(chave))
+        .map(({ d, chave }) => ({
+          id: `${chave}-${data}`,
           data,
           descricao: `Dinheiro não identificado no caixa físico (${d.vendaHora ?? ""})`,
           valor: d.vendaValor ?? 0,
           tipo: "dinheiro" as const,
         })),
       ...resultadoExibido.pagamentos
-        .filter((p) => p.status === "pendente" && p.tipo === "pagamento")
-        .map((p, i) => ({
-          id: `pagamento-${data}-${i}`,
+        .map((p, i) => ({ p, chave: `pagamento-${i}` }))
+        .filter(({ p, chave }) => p.status === "pendente" && p.tipo === "pagamento" && naoResolvido(chave))
+        .map(({ p, chave }) => ({
+          id: `${chave}-${data}`,
           data,
           descricao: `[${p.origem}] ${p.historico}`,
           valor: p.valor,
@@ -293,7 +300,10 @@ function DocumentosMjPrime() {
     }
   }
 
-  function arquivarItem(chave: string) {
+  // "Excluir": remove o lançamento da conciliação — não aparece mais em nenhuma seção nem
+  // na mensagem de pendências. Diferente de "Desfazer", não mexe em nada que já foi criado
+  // em Contas a Receber/Pagar (só se aplica a itens ainda não conciliados).
+  function excluirItem(chave: string) {
     if (dataSelecionada) historico.arquivarItem(dataSelecionada, chave);
   }
 
@@ -317,10 +327,6 @@ function DocumentosMjPrime() {
 
     if (id !== "lancado") finance.deleteReceivables([id]);
     historico.desmarcarMigrado(dataSelecionada, chave);
-  }
-
-  function desarquivarItem(chave: string) {
-    if (dataSelecionada) historico.desarquivarItem(dataSelecionada, chave);
   }
 
   // Corrige manualmente a descrição/valor de um lançamento do extrato bancário quando a
@@ -534,8 +540,7 @@ function DocumentosMjPrime() {
           onLancado={(chave) => dataSelecionada && historico.marcarMigrados(dataSelecionada, { [chave]: "lancado" })}
           onConciliar={conciliarItem}
           onDesvincular={desvincularItem}
-          onArquivar={arquivarItem}
-          onDesarquivar={desarquivarItem}
+          onExcluir={excluirItem}
           onDesfazer={desfazerConciliacao}
           onReordenar={trocarOrdem}
           taxasCartaoPendentes={taxasCartaoPendentes()}
