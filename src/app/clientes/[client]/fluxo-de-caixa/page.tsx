@@ -154,8 +154,8 @@ export default function FluxoDeCaixaPage() {
               </tr>
             </thead>
             <tbody>
-              {maioresRecebimentos.map((r) => (
-                <tr key={r.data} className="border-t border-border-subtle">
+              {maioresRecebimentos.map((r, i) => (
+                <tr key={`${r.data}-${i}`} className="border-t border-border-subtle">
                   <td className="py-2 text-muted">{r.data}</td>
                   <td className="py-2 text-right font-medium text-accent-500">{formatCurrencyPrecise(r.valor)}</td>
                   <td className="py-2 pl-2 text-right text-muted">{r.pctTotal.toFixed(1)}%</td>
@@ -180,8 +180,8 @@ export default function FluxoDeCaixaPage() {
           ) : (
             <table className="w-full text-xs">
               <tbody>
-                {maioresPagamentos.map((p) => (
-                  <tr key={p.data} className="border-t border-border-subtle">
+                {maioresPagamentos.map((p, i) => (
+                  <tr key={`${p.data}-${i}`} className="border-t border-border-subtle">
                     <td className="py-2 text-muted">{p.data}</td>
                     <td className="py-2 text-right font-medium text-danger-500">{formatCurrencyPrecise(p.valor)}</td>
                     <td className="py-2 pl-2 text-right text-muted">{p.pctTotal.toFixed(1)}%</td>
