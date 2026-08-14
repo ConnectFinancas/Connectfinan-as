@@ -5,12 +5,13 @@ import { Client } from "@/lib/types";
 
 export function ClientCard({ client }: { client: Client }) {
   const active = client.status === "ativo";
+  const isBlackGold = client.theme === "black-gold";
 
   const content = (
     <div
       className={`card group relative flex flex-col gap-4 p-5 transition-all ${
         active ? "hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5 cursor-pointer" : "opacity-70"
-      }`}
+      } ${isBlackGold ? "cf-black-gold" : ""}`}
     >
       <div className="flex items-center justify-between">
         <ClientMonogram
@@ -26,7 +27,7 @@ export function ClientCard({ client }: { client: Client }) {
             Painel ativo
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-slate-500">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-muted">
             <Clock size={11} />
             Em breve
           </span>
@@ -35,10 +36,10 @@ export function ClientCard({ client }: { client: Client }) {
 
       <div>
         <h3 className="text-base font-semibold text-brand-900">{client.name}</h3>
-        <p className="text-sm text-slate-500">{client.segment}</p>
+        <p className="text-sm text-muted">{client.segment}</p>
       </div>
 
-      <div className="flex items-center justify-between border-t border-border-subtle pt-3 text-xs text-slate-400">
+      <div className="flex items-center justify-between border-t border-border-subtle pt-3 text-xs text-faint">
         <span>{client.cnpj}</span>
         {active && (
           <span className="inline-flex items-center gap-1 font-medium text-brand-600 group-hover:gap-1.5 transition-all">

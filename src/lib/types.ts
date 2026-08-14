@@ -13,7 +13,8 @@ export type Client = {
   responsible: string;
   regime: string;
   // Tema do painel (depois de selecionar o cliente). "dark" é o padrão.
-  theme?: "dark" | "light";
+  // "black-gold" é o tema exclusivo preto + dourado (usado pela Connect).
+  theme?: "dark" | "light" | "black-gold";
 };
 
 export type MonthlyFinancials = {

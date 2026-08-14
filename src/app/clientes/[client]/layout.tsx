@@ -5,11 +5,18 @@ import { ClientFooter } from "@/components/client/ClientFooter";
 import { clients, getClient } from "@/lib/data/clients";
 import { getFinanceData } from "@/lib/data/financeRegistry";
 import { FinanceProvider } from "@/lib/store/FinanceContext";
+import { Client } from "@/lib/types";
 
 // Pré-gera cada cliente conhecido como página estática em tempo de build,
 // para que a troca entre abas seja instantânea (sem SSR a cada navegação).
 export function generateStaticParams() {
   return clients.filter((c) => c.status === "ativo" && getFinanceData(c.slug)).map((c) => ({ client: c.slug }));
+}
+
+function themeClass(theme: Client["theme"]) {
+  if (theme === "light") return "";
+  if (theme === "black-gold") return "cf-black-gold";
+  return "cf-dark";
 }
 
 export default async function ClientLayout({ children, params }: LayoutProps<"/clientes/[client]">) {
@@ -19,7 +26,7 @@ export default async function ClientLayout({ children, params }: LayoutProps<"/c
 
   return (
     <div
-      className={`min-h-screen bg-background ${client.theme === "light" ? "" : "cf-dark"}`}
+      className={`min-h-screen bg-background ${themeClass(client.theme)}`}
       style={
         {
           "--client-accent": client.accent,
