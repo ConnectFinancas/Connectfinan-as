@@ -13,6 +13,9 @@ export type ResultadoSalvo = ResultadoConciliacao & {
   ignorados?: string[];
   /** Última vez que esse dia foi processado ou alterado. */
   atualizadoEm?: string;
+  /** Ordem visual dos quadrados dentro de cada seção (chave da seção -> lista de chaves de item),
+   * só preenchida quando o usuário arrasta algo pra trocar de lugar. Sem entrada = ordem natural. */
+  ordens?: Record<string, string[]>;
 };
 
 function storageKey(slug: string) {
@@ -99,6 +102,19 @@ export function useConciliacaoHistorico(slug: string) {
     atualizarItem(data, (r) => ({ ...r, ignorados: [...new Set([...(r.ignorados ?? []), chave])] }));
   }
 
+  /** Troca a posição de dois quadrados dentro da mesma seção (drag & drop de reordenação). */
+  function trocarOrdem(data: string, secao: string, ordemNatural: string[], chaveA: string, chaveB: string) {
+    if (chaveA === chaveB) return;
+    atualizarItem(data, (r) => {
+      const base = [...(r.ordens?.[secao] ?? ordemNatural)];
+      const idxA = base.indexOf(chaveA);
+      const idxB = base.indexOf(chaveB);
+      if (idxA === -1 || idxB === -1) return r;
+      [base[idxA], base[idxB]] = [base[idxB], base[idxA]];
+      return { ...r, ordens: { ...r.ordens, [secao]: base } };
+    });
+  }
+
   function limparTudo() {
     setHistorico({});
   }
@@ -115,6 +131,7 @@ export function useConciliacaoHistorico(slug: string) {
     arquivarItem,
     desarquivarItem,
     desvincularMatch,
+    trocarOrdem,
     limparTudo,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, FileSpreadsheet, Landmark, Trash2, Users } from "lucide-react";
+import { Building2, FileSpreadsheet, Landmark, Send, Trash2, Users } from "lucide-react";
 import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
 import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
@@ -12,6 +12,7 @@ import { conciliarDia } from "@/lib/reconciliation/match";
 import { CaixaFisicoExtraido, MovimentoCaixaFisico } from "@/lib/reconciliation/types";
 import { usePendencias } from "@/lib/reconciliation/pendenciasStore";
 import { useConciliacaoHistorico, ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
+import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 
 type Extraido = { text: string; viaOcr: boolean; file: File } | null;
@@ -29,6 +30,9 @@ function DocumentosMjPrime() {
   const [pagbankRaw, setPagbankRaw] = useState<Extraido>(null);
   const [bradescoRaw, setBradescoRaw] = useState<Extraido>(null);
   const [caixaMovs, setCaixaMovs] = useState<MovimentoCaixaFisico[]>([]);
+  // Só monta a conciliação depois que o usuário clicar em "Enviar informações" — evita ficar
+  // recalculando/reorganizando as colunas a cada arquivo anexado, um por um.
+  const [enviado, setEnviado] = useState(false);
 
   const faturamento = useMemo(() => (faturamentoRaw ? parseFaturamento(faturamentoRaw.text) : null), [faturamentoRaw]);
   const pagbank = useMemo(() => (pagbankRaw ? parsePagBank(pagbankRaw.text) : null), [pagbankRaw]);
@@ -42,7 +46,7 @@ function DocumentosMjPrime() {
   const dataReferencia = faturamento?.vendas[0]?.data ?? null;
 
   const resultado = useMemo(() => {
-    if (!faturamento || !dataReferencia) return null;
+    if (!enviado || !faturamento || !dataReferencia) return null;
     return conciliarDia(
       dataReferencia,
       faturamento,
@@ -51,7 +55,7 @@ function DocumentosMjPrime() {
       caixa,
       finance.payables
     );
-  }, [faturamento, pagbank, bradesco, caixa, dataReferencia, finance.payables]);
+  }, [enviado, faturamento, pagbank, bradesco, caixa, dataReferencia, finance.payables]);
 
   // Depende do objeto inteiro (não só da data): sem isso, enviar um documento novo ou
   // digitar uma linha do caixa físico depois do primeiro salvamento do dia não atualizava
@@ -85,7 +89,7 @@ function DocumentosMjPrime() {
           id: `cartaoVenda-${data}-${i}`,
           data,
           descricao: `Venda no cartão não identificada no PagBank (${v.vendaHora ?? ""})`,
-          valor: v.vendaValor,
+          valor: v.vendaValor ?? 0,
           tipo: "cartao" as const,
         })),
       ...resultadoExibido.pix
@@ -94,7 +98,7 @@ function DocumentosMjPrime() {
           id: `pix-${data}-${i}`,
           data,
           descricao: `Pix não identificado no Bradesco (${p.vendaHora ?? ""})`,
-          valor: p.vendaValor,
+          valor: p.vendaValor ?? 0,
           tipo: "pix" as const,
         })),
       ...resultadoExibido.dinheiro
@@ -103,15 +107,15 @@ function DocumentosMjPrime() {
           id: `dinheiro-${data}-${i}`,
           data,
           descricao: `Dinheiro não identificado no caixa físico (${d.vendaHora ?? ""})`,
-          valor: d.vendaValor,
+          valor: d.vendaValor ?? 0,
           tipo: "dinheiro" as const,
         })),
       ...resultadoExibido.pagamentos
-        .filter((p) => p.status === "pendente")
+        .filter((p) => p.status === "pendente" && p.tipo === "pagamento")
         .map((p, i) => ({
           id: `pagamento-${data}-${i}`,
           data,
-          descricao: p.historico,
+          descricao: `[${p.origem}] ${p.historico}`,
           valor: p.valor,
           tipo: "pagamento" as const,
         })),
@@ -171,10 +175,13 @@ function DocumentosMjPrime() {
   }
 
   // Prepara o(s) lançamento(s) equivalentes a uma chave (ex.: "pix-0", "cartaoVenda-2", "pagamento-2")
-  // sem gravar nada ainda — usado tanto pelo clique individual quanto pelo lote.
+  // sem gravar nada ainda — usado pelo clique em "Conciliar". Itens "sobra" (só do banco, sem
+  // venda correspondente) e pagamentos sem lançamento encontrado não passam por aqui — esses usam
+  // o fluxo de "Criar novo lançamento" (modal), que já entra na Contas a Receber/Pagar com o
+  // usuário revisando classificação/categoria antes de salvar.
   function prepararMigracao(
     chave: string
-  ): { receivable?: Receivable; payable?: Payable; payableExtra?: Payable; precisaCategoriaFallback?: boolean } | null {
+  ): { receivable?: Receivable; payable?: Payable; apenasMarcar?: boolean; precisaCategoriaFallback?: boolean } | null {
     if (!resultadoExibido) return null;
     const data = resultadoExibido.data;
     const migrados = resultadoExibido.migrados ?? {};
@@ -183,55 +190,49 @@ function DocumentosMjPrime() {
     if (chave.startsWith("pix-") || chave.startsWith("dinheiro-") || chave.startsWith("cartaoVenda-")) {
       const tipo = chave.startsWith("pix-") ? "pix" : chave.startsWith("dinheiro-") ? "dinheiro" : "cartaoVenda";
       const idx = Number(chave.split("-")[1]);
-      const item =
-        tipo === "pix" ? resultadoExibido.pix[idx] : tipo === "dinheiro" ? resultadoExibido.dinheiro[idx] : (resultadoExibido.cartaoVendas ?? [])[idx];
-      if (!item || item.status !== "conciliado") return null;
       const rotulo = tipo === "pix" ? "Pix" : tipo === "dinheiro" ? "Dinheiro" : "Cartão";
+
+      let valor: number | undefined;
+      let vendaHora: string | undefined;
+      if (tipo === "pix") {
+        const it = resultadoExibido.pix[idx];
+        if (!it || it.status !== "conciliado" || it.vendaValor === undefined) return null;
+        valor = it.vendaValor;
+        vendaHora = it.vendaHora;
+      } else if (tipo === "dinheiro") {
+        const it = resultadoExibido.dinheiro[idx];
+        if (!it || it.status !== "conciliado" || it.vendaValor === undefined) return null;
+        valor = it.vendaValor;
+        vendaHora = it.vendaHora;
+      } else {
+        const it = (resultadoExibido.cartaoVendas ?? [])[idx];
+        if (!it || it.status !== "conciliado" || it.vendaValor === undefined) return null;
+        valor = it.vendaValor;
+        vendaHora = it.vendaHora;
+      }
+      if (valor === undefined) return null;
+
       const receivable: Receivable = {
         id: genId("r"),
         cliente: "—",
         classificacao: "Faturamento",
         categoria: "Faturamento Geral",
         vencimento: data,
-        valor: item.vendaValor,
+        valor,
         status: "recebido",
         recebimento: data,
-        descricao: `Venda ${rotulo}${item.vendaHora ? ` - ${item.vendaHora}` : ""}`,
+        descricao: `Venda ${rotulo}${vendaHora ? ` - ${vendaHora}` : ""}`,
         formaRecebimento: rotulo,
       };
-
-      // Cartão: a diferença entre o valor vendido e o valor recebido no PagBank é a taxa
-      // da maquineta — vira automaticamente uma despesa em Contas a Pagar, já paga (a taxa
-      // é descontada na hora), pra ficar registrada junto com a venda.
-      if (tipo === "cartaoVenda") {
-        const cartaoItem = (resultadoExibido.cartaoVendas ?? [])[idx];
-        const recebido = cartaoItem?.match?.valor;
-        const taxa = recebido !== undefined ? Math.round((item.vendaValor - recebido) * 100) / 100 : 0;
-        if (taxa > 0.01) {
-          return {
-            receivable,
-            payableExtra: {
-              id: genId("p"),
-              favorecido: "—",
-              classificacao: "DESPESAS FINANCEIRAS",
-              categoria: "Tarifas de Maquininhas",
-              vencimento: data,
-              valor: taxa,
-              status: "pago",
-              pagamento: data,
-              descricao: `Taxa maquineta - venda cartão${item.vendaHora ? ` ${item.vendaHora}` : ""}`,
-            },
-          };
-        }
-      }
-
       return { receivable };
     }
 
     if (chave.startsWith("pagamento-")) {
       const idx = Number(chave.split("-")[1]);
       const p = resultadoExibido.pagamentos[idx];
-      if (!p || p.tipo !== "pagamento") return null;
+      if (!p) return null;
+      if (p.tipo === "transferencia") return { apenasMarcar: true };
+      if (p.tipo !== "pagamento") return null;
       const ignorado = (resultadoExibido.ignorados ?? []).includes(chave);
       const match = ignorado ? undefined : p.matchLancamento;
       if (match) return { payable: { ...match, id: match.id } };
@@ -239,15 +240,15 @@ function DocumentosMjPrime() {
         payable: {
           id: genId("p"),
           favorecido: p.sugestao?.favorecido || "—",
-          classificacao: "DESPESAS ADMINISTRATIVAS",
-          categoria: "A Classificar",
+          classificacao: p.sugestao?.classificacao || "DESPESAS ADMINISTRATIVAS",
+          categoria: p.sugestao?.categoria || "A Classificar",
           vencimento: p.data,
           valor: p.valor,
           status: "pago",
           pagamento: p.data,
           descricao: p.historico,
         },
-        precisaCategoriaFallback: true,
+        precisaCategoriaFallback: !p.sugestao?.categoria,
       };
     }
 
@@ -255,58 +256,26 @@ function DocumentosMjPrime() {
   }
 
   // Clique em "Conciliar" num item: só cria o lançamento quando ainda não existe (pagamento já
-  // vinculado a um lançamento existente apenas confirma o vínculo, sem duplicar).
+  // vinculado a um lançamento existente apenas confirma o vínculo, sem duplicar). Transferência
+  // entre contas não cria lançamento nenhum — só marca como conferida.
   function conciliarItem(chave: string) {
     if (!dataSelecionada) return;
     const preparo = prepararMigracao(chave);
     if (!preparo) return;
+    if (preparo.apenasMarcar) {
+      historico.marcarMigrados(dataSelecionada, { [chave]: "confirmado" });
+      return;
+    }
     if (preparo.receivable) finance.addReceivable([preparo.receivable]);
     if (preparo.payable) {
       const jaExiste = finance.payables.some((p) => p.id === preparo.payable!.id);
       if (!jaExiste) {
-        if (preparo.precisaCategoriaFallback) finance.addCategoria("pagar", "DESPESAS ADMINISTRATIVAS", "A Classificar");
+        if (preparo.precisaCategoriaFallback) finance.addCategoria("pagar", preparo.payable.classificacao, preparo.payable.categoria);
         finance.addPayable([preparo.payable]);
       }
     }
-    if (preparo.payableExtra) finance.addPayable([preparo.payableExtra]);
     const id = preparo.receivable?.id ?? preparo.payable?.id;
-    const chaves: Record<string, string> = {};
-    if (id) chaves[chave] = id;
-    if (preparo.payableExtra) chaves[`${chave}-taxa`] = preparo.payableExtra.id;
-    if (Object.keys(chaves).length > 0) historico.marcarMigrados(dataSelecionada, chaves);
-  }
-
-  // Mesma lógica em lote, usada pela seleção múltipla ("Selecionar lançamentos" + Conciliar).
-  function conciliarLote(chaves: string[]) {
-    if (!dataSelecionada) return;
-    const novosReceivables: Receivable[] = [];
-    const novosPayables: Payable[] = [];
-    const novasChaves: Record<string, string> = {};
-    let precisaCategoriaFallback = false;
-
-    chaves.forEach((chave) => {
-      const preparo = prepararMigracao(chave);
-      if (!preparo) return;
-      if (preparo.receivable) novosReceivables.push(preparo.receivable);
-      if (preparo.payable) {
-        const jaExiste = finance.payables.some((p) => p.id === preparo.payable!.id);
-        if (!jaExiste) {
-          novosPayables.push(preparo.payable);
-          if (preparo.precisaCategoriaFallback) precisaCategoriaFallback = true;
-        }
-      }
-      if (preparo.payableExtra) {
-        novosPayables.push(preparo.payableExtra);
-        novasChaves[`${chave}-taxa`] = preparo.payableExtra.id;
-      }
-      const id = preparo.receivable?.id ?? preparo.payable?.id;
-      if (id) novasChaves[chave] = id;
-    });
-
-    if (precisaCategoriaFallback) finance.addCategoria("pagar", "DESPESAS ADMINISTRATIVAS", "A Classificar");
-    if (novosReceivables.length > 0) finance.addReceivable(novosReceivables);
-    if (novosPayables.length > 0) finance.addPayable(novosPayables);
-    if (Object.keys(novasChaves).length > 0) historico.marcarMigrados(dataSelecionada, novasChaves);
+    if (id) historico.marcarMigrados(dataSelecionada, { [chave]: id });
   }
 
   // "Desvincular": desfaz uma correspondência encontrada (automática ou manual), voltando o
@@ -324,16 +293,8 @@ function DocumentosMjPrime() {
     }
   }
 
-  function desvincularLote(chaves: string[]) {
-    chaves.forEach(desvincularItem);
-  }
-
   function arquivarItem(chave: string) {
     if (dataSelecionada) historico.arquivarItem(dataSelecionada, chave);
-  }
-
-  function arquivarLote(chaves: string[]) {
-    chaves.forEach(arquivarItem);
   }
 
   // "Desfazer conciliação": item já migrado volta a ficar pendente de confirmação. Se o
@@ -349,24 +310,13 @@ function DocumentosMjPrime() {
       const idx = Number(chave.split("-")[1]);
       const p = resultadoExibido.pagamentos[idx];
       const eraVinculoExistente = p?.matchLancamento?.id === id;
-      if (!eraVinculoExistente) finance.deletePayables([id]);
+      if (!eraVinculoExistente && id !== "confirmado" && id !== "lancado") finance.deletePayables([id]);
       historico.desmarcarMigrado(dataSelecionada, chave);
       return;
     }
 
-    // cartaoVenda pode ter uma taxa da maquineta lançada junto — desfaz os dois.
-    const idTaxa = migrados[`${chave}-taxa`];
-    if (idTaxa) {
-      finance.deletePayables([idTaxa]);
-      historico.desmarcarMigrado(dataSelecionada, `${chave}-taxa`);
-    }
-
-    finance.deleteReceivables([id]);
+    if (id !== "lancado") finance.deleteReceivables([id]);
     historico.desmarcarMigrado(dataSelecionada, chave);
-  }
-
-  function desfazerConciliacaoLote(chaves: string[]) {
-    chaves.forEach(desfazerConciliacao);
   }
 
   function desarquivarItem(chave: string) {
@@ -374,14 +324,62 @@ function DocumentosMjPrime() {
   }
 
   // Corrige manualmente a descrição/valor de um lançamento do extrato bancário quando a
-  // leitura automática (OCR/PDF) não foi boa — hoje é o único tipo de item sem nenhum
-  // "match" de valor confiável do lado da venda, então é o que mais precisa de correção.
+  // leitura automática (OCR/PDF) não foi boa.
   function editarPagamentoBanco(index: number, patch: { historico?: string; valor?: number }) {
     if (!dataSelecionada) return;
     historico.atualizarItem(dataSelecionada, (r) => ({
       ...r,
       pagamentos: r.pagamentos.map((p, i) => (i === index ? { ...p, ...patch } : p)),
     }));
+  }
+
+  // Troca a posição de dois quadrados dentro da mesma seção (arrastar e soltar).
+  function trocarOrdem(secao: string, ordemNatural: string[], chaveA: string, chaveB: string) {
+    if (!dataSelecionada) return;
+    historico.trocarOrdem(dataSelecionada, secao, ordemNatural, chaveA, chaveB);
+  }
+
+  // ---------- Taxa da maquineta: lançamento conjunto (soma de todas as diferenças do dia) ----------
+  function taxasCartaoPendentes(): { chave: string; hora?: string; taxa: number }[] {
+    if (!resultadoExibido) return [];
+    return (resultadoExibido.cartaoVendas ?? [])
+      .map((item, i) => {
+        const recebido = item.match?.valor;
+        if (recebido === undefined || item.vendaValor === undefined) return null;
+        const taxa = Math.round((item.vendaValor - recebido) * 100) / 100;
+        return taxa > 0.01 ? { chave: `cartaoVenda-${i}`, hora: item.vendaHora, taxa } : null;
+      })
+      .filter((x): x is { chave: string; hora: string | undefined; taxa: number } => x !== null);
+  }
+
+  function confirmarTaxaAgregada() {
+    if (!dataSelecionada || !resultadoExibido) return;
+    if (resultadoExibido.migrados?.["cartao-taxa-agregada"]) return;
+    const itens = taxasCartaoPendentes();
+    if (itens.length === 0) return;
+    const total = Math.round(itens.reduce((a, i) => a + i.taxa, 0) * 100) / 100;
+    const detalhe = itens.map((i) => `${i.hora ?? "—"}: ${formatCurrencyPrecise(i.taxa)}`).join(" · ");
+    const payable: Payable = {
+      id: genId("p"),
+      favorecido: "—",
+      classificacao: "DESPESAS FINANCEIRAS",
+      categoria: "Tarifas de Maquininhas",
+      vencimento: dataSelecionada,
+      valor: total,
+      status: "pago",
+      pagamento: dataSelecionada,
+      descricao: `Taxa maquineta ${formatDateBR(dataSelecionada)} — ${detalhe} (total ${formatCurrencyPrecise(total)})`,
+    };
+    finance.addPayable([payable]);
+    historico.marcarMigrados(dataSelecionada, { "cartao-taxa-agregada": payable.id });
+  }
+
+  function desfazerTaxaAgregada() {
+    if (!dataSelecionada || !resultadoExibido) return;
+    const id = resultadoExibido.migrados?.["cartao-taxa-agregada"];
+    if (!id) return;
+    finance.deletePayables([id]);
+    historico.desmarcarMigrado(dataSelecionada, "cartao-taxa-agregada");
   }
 
   // Apaga pendências + histórico salvo da conciliação (e os lançamentos que foram criados
@@ -411,6 +409,7 @@ function DocumentosMjPrime() {
     setCaixaMovs([]);
     setDataOverride(null);
     setUltimoUpload(null);
+    setEnviado(false);
   }
 
   const datasComPendencia = useMemo(
@@ -420,6 +419,8 @@ function DocumentosMjPrime() {
   const pendenciasFiltradas = filtroPendencias ? pendencias.filter((p) => p.data === filtroPendencias) : pendencias;
   const pendenciasVisiveis =
     filtroPendencias || verTodasPendencias ? pendenciasFiltradas : pendenciasFiltradas.slice(0, 5);
+
+  const podeEnviar = !!faturamentoRaw && !enviado;
 
   return (
     <div className="flex flex-col gap-6">
@@ -475,8 +476,8 @@ function DocumentosMjPrime() {
           <div>
             <h2 className="text-sm font-semibold text-brand-900">Documentos do período</h2>
             <p className="mt-0.5 text-xs text-faint">
-              Envie os 3 documentos para começar a conciliação. O relatório de faturamento é a base — as demais entradas
-              são conferidas contra ele. O caixa físico é digitado manualmente logo abaixo.
+              Anexe os documentos do dia e o caixa físico logo abaixo. Só quando clicar em <strong>Enviar informações</strong> o
+              sistema monta a conciliação — assim dá pra terminar de anexar tudo antes de qualquer leitura.
             </p>
           </div>
           <button
@@ -499,11 +500,26 @@ function DocumentosMjPrime() {
         <CaixaFisicoManualTable movimentos={caixaMovs} onChange={setCaixaMovs} />
       </div>
 
-      {!resultadoExibido && (
+      <div className="flex justify-end">
+        <button
+          onClick={() => setEnviado(true)}
+          disabled={!faturamentoRaw}
+          className="flex items-center gap-1.5 rounded-lg bg-client-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-client-accent-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Send size={14} />
+          {enviado ? "Reenviar informações" : "Enviar informações"}
+        </button>
+      </div>
+      {!faturamentoRaw && (
+        <p className="-mt-3 text-right text-xs text-faint">Anexe ao menos o relatório de faturamento pra poder enviar.</p>
+      )}
+
+      {podeEnviar === false && !resultadoExibido && (
         <div className="card card-dashed flex flex-col items-center gap-2 p-12 text-center">
           <p className="text-sm text-muted">
-            Envie ao menos o relatório de faturamento para iniciar a conciliação do dia, ou escolha uma data já
-            conciliada acima.
+            {enviado
+              ? "Nenhuma conciliação encontrada ainda — envie ao menos o relatório de faturamento."
+              : "Anexe os documentos do dia e clique em \"Enviar informações\" para montar a conciliação, ou escolha uma data já conciliada acima."}
           </p>
         </div>
       )}
@@ -517,14 +533,14 @@ function DocumentosMjPrime() {
           onEditarPagamentoBanco={editarPagamentoBanco}
           onLancado={(chave) => dataSelecionada && historico.marcarMigrados(dataSelecionada, { [chave]: "lancado" })}
           onConciliar={conciliarItem}
-          onConciliarLote={conciliarLote}
           onDesvincular={desvincularItem}
-          onDesvincularLote={desvincularLote}
           onArquivar={arquivarItem}
-          onArquivarLote={arquivarLote}
           onDesarquivar={desarquivarItem}
           onDesfazer={desfazerConciliacao}
-          onDesfazerLote={desfazerConciliacaoLote}
+          onReordenar={trocarOrdem}
+          taxasCartaoPendentes={taxasCartaoPendentes()}
+          onConfirmarTaxaAgregada={confirmarTaxaAgregada}
+          onDesfazerTaxaAgregada={desfazerTaxaAgregada}
         />
       )}
     </div>
