@@ -76,7 +76,7 @@ export default function FaturamentoDrePage() {
           >
             Detalhamento por mês
           </button>
-          <button className="mt-4 flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-2 text-xs font-semibold text-brand-950 hover:bg-accent-600 transition-colors">
+          <button className="mt-4 flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors">
             <Download size={13} />
             Exportar Excel
           </button>

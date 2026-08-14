@@ -72,7 +72,7 @@ export default function FluxoDeCaixaPage() {
           <button className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors">
             Mês atual
           </button>
-          <button className="flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-2 text-xs font-semibold text-brand-950 hover:bg-accent-600 transition-colors">
+          <button className="flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors">
             <Download size={13} />
             Exportar Excel
           </button>

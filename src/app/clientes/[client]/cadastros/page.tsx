@@ -118,7 +118,7 @@ export default function CadastrosPage() {
 
       <div className="card p-5">
         <div className="mb-3 flex items-center gap-2">
-          <Plus size={15} className="text-accent-500" />
+          <Plus size={15} className="text-client-accent" />
           <h3 className="text-sm font-semibold text-brand-900">Nova classificação</h3>
         </div>
         <p className="mb-3 text-xs text-faint">Cria um novo grupo (uma nova classificação financeira)</p>

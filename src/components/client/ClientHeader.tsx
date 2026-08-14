@@ -57,7 +57,7 @@ export function ClientHeader({ client }: { client: Client }) {
               href={item.href}
               className={`shrink-0 whitespace-nowrap border-b-2 pb-3 text-sm transition-colors ${
                 isActive
-                  ? "border-accent-500 font-medium text-brand-900"
+                  ? "border-client-accent font-medium text-brand-900"
                   : "border-transparent text-muted hover:text-brand-900"
               }`}
             >

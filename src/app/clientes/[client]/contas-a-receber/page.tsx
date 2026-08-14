@@ -137,7 +137,7 @@ export default function ContasAReceberPage() {
               <option value="atrasado">Atrasado</option>
             </select>
           </div>
-          <button className="flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-2 text-xs font-semibold text-brand-950 hover:bg-accent-600 transition-colors whitespace-nowrap">
+          <button className="flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors whitespace-nowrap">
             <Download size={13} />
             Exportar CSV
           </button>
@@ -198,7 +198,7 @@ export default function ContasAReceberPage() {
             <thead>
               <tr className="border-b border-border-subtle text-left text-xs text-faint">
                 <th className="pb-2 pr-2 font-medium">
-                  <input type="checkbox" checked={todosVisiveisSelecionados} onChange={toggleTodos} className="accent-accent-500" />
+                  <input type="checkbox" checked={todosVisiveisSelecionados} onChange={toggleTodos} className="accent-client-accent" />
                 </th>
                 <th className="pb-2 font-medium">Cliente</th>
                 <th className="pb-2 font-medium">Categoria</th>
@@ -222,7 +222,7 @@ export default function ContasAReceberPage() {
                     className="cursor-pointer border-b border-border-subtle last:border-0 group hover:bg-surface-muted/60"
                   >
                     <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
-                      <input type="checkbox" checked={selecionados.includes(r.id)} onChange={() => toggleUm(r.id)} className="accent-accent-500" />
+                      <input type="checkbox" checked={selecionados.includes(r.id)} onChange={() => toggleUm(r.id)} className="accent-client-accent" />
                     </td>
                     <td className="py-3 font-medium text-brand-900 whitespace-nowrap">{r.cliente}</td>
                     <td className="py-3"><CategoryTag name={r.categoria} /></td>
