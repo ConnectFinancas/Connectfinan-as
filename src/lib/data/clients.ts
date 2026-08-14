@@ -13,6 +13,7 @@ export const clients: Client[] = [
     status: "ativo",
     responsible: "Ewerton Lucas",
     regime: "Lucro Presumido",
+    externalUrl: "https://m4prepcenter.com.br/",
   },
   {
     slug: "thiago-bike",

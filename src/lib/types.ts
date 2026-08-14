@@ -15,6 +15,8 @@ export type Client = {
   // Tema do painel (depois de selecionar o cliente). "dark" é o padrão.
   // "black-gold" é o tema exclusivo preto + dourado (usado pela Connect).
   theme?: "dark" | "light" | "black-gold";
+  // Quando definido, "Acessar painel" abre esse link externo em vez do painel interno.
+  externalUrl?: string;
 };
 
 export type MonthlyFinancials = {

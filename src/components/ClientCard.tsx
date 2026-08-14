@@ -52,6 +52,14 @@ export function ClientCard({ client }: { client: Client }) {
 
   if (!active) return <div>{content}</div>;
 
+  if (client.externalUrl) {
+    return (
+      <a href={client.externalUrl} target="_blank" rel="noopener noreferrer" className="block">
+        {content}
+      </a>
+    );
+  }
+
   return (
     <Link href={`/clientes/${client.slug}`} className="block">
       {content}
