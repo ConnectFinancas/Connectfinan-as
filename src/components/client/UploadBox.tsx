@@ -1,49 +1,89 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertTriangle, Check, ChevronDown, ChevronUp, Copy, Loader2, LucideIcon, Upload, X } from "lucide-react";
-import { extractText, isPdf } from "@/lib/reconciliation/extractText";
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Copy, Loader2, LucideIcon, Plus, Upload, X } from "lucide-react";
+import { extractText } from "@/lib/reconciliation/extractText";
+
+type ArquivoLido = {
+  file: File;
+  status: "lendo" | "ok" | "erro";
+  texto: string;
+  viaOcr: boolean;
+};
 
 export function UploadBox({
   icon: Icon,
   title,
   hint,
   onExtracted,
+  multiple,
 }: {
   icon: LucideIcon;
   title: string;
   hint: string;
   onExtracted?: (result: { text: string; viaOcr: boolean; file: File } | null) => void;
+  /** Quando true, permite anexar vários arquivos (ex.: várias fotos do mesmo extrato) — os
+   * textos lidos de cada um são concatenados antes de seguir pra conciliação. */
+  multiple?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [arquivos, setArquivos] = useState<ArquivoLido[]>([]);
   const [arrastando, setArrastando] = useState(false);
-  const [status, setStatus] = useState<"idle" | "lendo" | "ok" | "erro">("idle");
-  const [textoLido, setTextoLido] = useState("");
   const [mostrarTexto, setMostrarTexto] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
-  async function handleFiles(files: FileList | null) {
-    const f = files?.[0];
-    if (!f) return;
-    setFile(f);
-    setStatus("lendo");
-    setTextoLido("");
-    try {
-      const { text, viaOcr } = await extractText(f);
-      setStatus("ok");
-      setTextoLido(text);
-      onExtracted?.({ text, viaOcr, file: f });
-    } catch {
-      setStatus("erro");
+  function emitir(lista: ArquivoLido[]) {
+    const prontos = lista.filter((a) => a.status === "ok");
+    if (prontos.length === 0) {
       onExtracted?.(null);
+      return;
+    }
+    onExtracted?.({
+      text: prontos.map((a) => a.texto).join("\n\n"),
+      viaOcr: prontos.some((a) => a.viaOcr),
+      file: prontos[0].file,
+    });
+  }
+
+  async function handleFiles(fileList: FileList | null) {
+    const novos = fileList ? Array.from(fileList) : [];
+    if (novos.length === 0) return;
+    const selecionados = multiple ? novos : [novos[0]];
+
+    setArquivos((atual) => {
+      const base = multiple ? atual : [];
+      const proximo = [...base, ...selecionados.map((f) => ({ file: f, status: "lendo" as const, texto: "", viaOcr: false }))];
+      return proximo;
+    });
+
+    for (const f of selecionados) {
+      try {
+        const { text, viaOcr } = await extractText(f);
+        setArquivos((atual) => {
+          const proximo = atual.map((a) => (a.file === f ? { ...a, status: "ok" as const, texto: text, viaOcr } : a));
+          emitir(proximo);
+          return proximo;
+        });
+      } catch {
+        setArquivos((atual) => {
+          const proximo = atual.map((a) => (a.file === f ? { ...a, status: "erro" as const } : a));
+          emitir(proximo);
+          return proximo;
+        });
+      }
     }
   }
 
-  function limpar() {
-    setFile(null);
-    setStatus("idle");
-    setTextoLido("");
+  function removerArquivo(file: File) {
+    setArquivos((atual) => {
+      const proximo = atual.filter((a) => a.file !== file);
+      emitir(proximo);
+      return proximo;
+    });
+  }
+
+  function limparTudo() {
+    setArquivos([]);
     setMostrarTexto(false);
     if (inputRef.current) inputRef.current.value = "";
     onExtracted?.(null);
@@ -51,13 +91,24 @@ export function UploadBox({
 
   async function copiarTexto() {
     try {
-      await navigator.clipboard.writeText(textoLido);
+      const textoCompleto = arquivos
+        .filter((a) => a.status === "ok")
+        .map((a) => a.texto)
+        .join("\n\n");
+      await navigator.clipboard.writeText(textoCompleto);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
       // navegador sem permissão de clipboard — ignora, usuário pode selecionar manualmente
     }
   }
+
+  const algumLendo = arquivos.some((a) => a.status === "lendo");
+  const algumOk = arquivos.some((a) => a.status === "ok");
+  const textoCompleto = arquivos
+    .filter((a) => a.status === "ok")
+    .map((a) => a.texto)
+    .join("\n\n");
 
   return (
     <div
@@ -83,23 +134,34 @@ export function UploadBox({
         <p className="mt-0.5 text-xs text-faint">{hint}</p>
       </div>
 
-      {file ? (
+      {arquivos.length > 0 ? (
         <div className="flex w-full flex-col gap-1.5">
-          <div className="flex w-full items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2">
-            <span className="truncate text-xs text-brand-900">{file.name}</span>
-            <button title="Remover arquivo" onClick={limpar} className="shrink-0 text-faint hover:text-danger-500 transition-colors">
-              <X size={14} />
-            </button>
-          </div>
-          {status === "lendo" && (
+          {arquivos.map((a, i) => (
+            <div key={`${a.file.name}-${i}`} className="flex w-full items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2">
+              <span className="truncate text-xs text-brand-900">{a.file.name}</span>
+              <div className="flex shrink-0 items-center gap-2">
+                {a.status === "lendo" && <Loader2 size={12} className="animate-spin text-faint" />}
+                {a.status === "ok" && <Check size={12} className="text-accent-500" />}
+                {a.status === "erro" && <AlertTriangle size={12} className="text-danger-500" />}
+                <button title="Remover arquivo" onClick={() => removerArquivo(a.file)} className="text-faint hover:text-danger-500 transition-colors">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {algumLendo && (
             <p className="flex items-center justify-center gap-1.5 text-[11px] text-faint">
               <Loader2 size={11} className="animate-spin" />
-              {isPdf(file) ? "Lendo PDF..." : "Lendo imagem (OCR)..."}
+              Lendo...
             </p>
           )}
-          {status === "ok" && (
+          {!algumLendo && algumOk && (
             <>
-              <p className="text-[11px] text-accent-500">Lido com sucesso{!isPdf(file) ? " (OCR — confira os valores)" : ""}</p>
+              <p className="text-[11px] text-accent-500">
+                {arquivos.filter((a) => a.status === "ok").length > 1 ? "Todos lidos com sucesso" : "Lido com sucesso"}
+                {arquivos.some((a) => a.status === "ok" && a.viaOcr) ? " (OCR — confira os valores)" : ""}
+              </p>
               <button
                 onClick={() => setMostrarTexto((v) => !v)}
                 className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
@@ -111,7 +173,7 @@ export function UploadBox({
                 <div className="flex flex-col gap-1.5 text-left">
                   <textarea
                     readOnly
-                    value={textoLido || "(nenhum texto foi extraído)"}
+                    value={textoCompleto || "(nenhum texto foi extraído)"}
                     className="h-40 w-full resize-y rounded-lg border border-border-subtle bg-white p-2 font-mono text-[10px] text-brand-900"
                   />
                   <button
@@ -125,12 +187,27 @@ export function UploadBox({
               )}
             </>
           )}
-          {status === "erro" && (
+          {arquivos.some((a) => a.status === "erro") && (
             <p className="flex items-center justify-center gap-1 text-[11px] text-danger-500">
               <AlertTriangle size={11} />
-              Não consegui ler esse arquivo
+              Não consegui ler {arquivos.filter((a) => a.status === "erro").length > 1 ? "alguns arquivos" : "um dos arquivos"}
             </p>
           )}
+
+          <div className="flex items-center justify-center gap-3">
+            {multiple && (
+              <button
+                onClick={() => inputRef.current?.click()}
+                className="flex items-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+              >
+                <Plus size={11} />
+                Anexar mais imagens
+              </button>
+            )}
+            <button onClick={limparTudo} className="text-[11px] font-medium text-faint hover:text-danger-500 transition-colors">
+              Remover tudo
+            </button>
+          </div>
         </div>
       ) : (
         <button
@@ -138,17 +215,23 @@ export function UploadBox({
           className="flex items-center gap-1.5 rounded-lg bg-client-accent px-4 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
         >
           <Upload size={13} />
-          Selecionar arquivo
+          {multiple ? "Selecionar arquivo(s)" : "Selecionar arquivo"}
         </button>
       )}
-      <p className="text-[11px] text-faint">PDF ou imagem · ou arraste o arquivo aqui</p>
+      <p className="text-[11px] text-faint">
+        PDF ou imagem{multiple ? " · pode selecionar mais de uma imagem de uma vez" : ""} · ou arraste o arquivo aqui
+      </p>
 
       <input
         ref={inputRef}
         type="file"
         accept="application/pdf,image/*"
+        multiple={multiple}
         className="hidden"
-        onChange={(e) => handleFiles(e.target.files)}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          e.target.value = "";
+        }}
       />
     </div>
   );

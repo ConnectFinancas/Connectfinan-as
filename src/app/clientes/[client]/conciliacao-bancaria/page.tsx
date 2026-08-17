@@ -495,7 +495,13 @@ function DocumentosMjPrime() {
           </button>
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <UploadBox icon={Landmark} title="Extrato Bradesco" hint="PDF ou print do extrato" onExtracted={setBradescoRaw} />
+          <UploadBox
+            icon={Landmark}
+            title="Extrato Bradesco"
+            hint="PDF ou fotos/prints do extrato — pode anexar mais de uma imagem"
+            onExtracted={setBradescoRaw}
+            multiple
+          />
           <UploadBox icon={Landmark} title="Extrato PagBank" hint="Extrato da conta/maquininha PagBank (PDF)" onExtracted={setPagbankRaw} />
           <UploadBox icon={FileSpreadsheet} title="Relatório de faturamento" hint="Vendas do período (PDF, base da conciliação)" onExtracted={setFaturamentoRaw} />
         </div>
