@@ -67,6 +67,21 @@ export type Receivable = {
   status: Status;
   recebimento?: string;
   formaRecebimento?: string;
+  // Em qual conta bancária o valor entrou (ex.: "Bradesco", "PagBank", "Caixa Físico") — distinto
+  // de formaRecebimento (que é o MEIO de pagamento, ex.: Pix/Cartão). Usado pelo ledger de Contas.
+  conta?: string;
+};
+
+// Transferência entre contas da própria empresa (ex.: PagBank → Bradesco) — nunca entra no DRE
+// nem em Contas a Pagar/Receber, só aparece como um movimento de saída numa conta e entrada na
+// outra na tela de Contas.
+export type TransferenciaConta = {
+  id: string;
+  data: string;
+  valor: number;
+  contaOrigem: string;
+  contaDestino: string;
+  descricao: string;
 };
 
 export type BankTransaction = {

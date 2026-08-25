@@ -83,7 +83,7 @@ export function clientNavItems(base: string): NavItem[] {
       label: "Contas",
       shortLabel: "Contas",
       pageTitle: "Contas",
-      subtitle: "Em construção",
+      subtitle: "Saldo e movimentações por conta bancária",
       icon: Landmark,
     },
   ];

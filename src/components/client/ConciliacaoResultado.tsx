@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
+  ArrowLeftRight,
   ArrowRight,
   Check,
   ChevronLeft,
@@ -39,6 +40,9 @@ type Linha = {
   direita: Lado | null;
   jaMigrado: boolean;
   isTransferencia?: boolean;
+  // true nas linhas de pagamento (PagBank/Caixa/Bradesco) que podem ser reclassificadas
+  // manualmente como transferência entre contas próprias, via o botão "Marcar como transferência".
+  podeVirarTransferencia?: boolean;
   correcaoBanco?: { tipo: "pix" | "dinheiro" | "cartaoVenda"; index: number; matchInfoAtual?: string };
   correcaoPagamento?: { index: number };
   criarLancamento?: {
@@ -47,6 +51,7 @@ type Linha = {
     descricao: string;
     classificacao?: string;
     categoria?: string;
+    conta?: string;
     valor: number;
     vencimento: string;
   };
@@ -110,6 +115,7 @@ function LinhaConciliacao({
   onDesvincular,
   onExcluir,
   onDesfazer,
+  onMarcarTransferencia,
   onEditarItem,
   onEditarPagamentoBanco,
   onLancado,
@@ -122,6 +128,7 @@ function LinhaConciliacao({
   onDesvincular?: (chave: string) => void;
   onExcluir?: (chave: string) => void;
   onDesfazer?: (chave: string) => void;
+  onMarcarTransferencia?: (chave: string) => void;
   onEditarItem?: (
     tipo: "pix" | "dinheiro" | "cartaoVenda" | "pagamento",
     index: number,
@@ -310,11 +317,28 @@ function LinhaConciliacao({
               Desvincular
             </button>
           )}
+          {linha.podeVirarTransferencia && (
+            <button
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Marcar esse lançamento como transferência entre contas da própria empresa? Ele deixa de virar um lançamento em Contas a Pagar e passa a aparecer na aba Contas."
+                  )
+                )
+                  onMarcarTransferencia?.(linha.chave);
+              }}
+              className={`flex items-center gap-1 text-[11px] font-medium text-faint hover:text-client-accent transition-colors ${temMatch ? "ml-3" : ""}`}
+              title="Reclassifica como transferência entre contas próprias"
+            >
+              <ArrowLeftRight size={11} />
+              Marcar como transferência
+            </button>
+          )}
           <button
             onClick={() => {
               if (window.confirm("Excluir esse lançamento da conciliação? Ele não vai mais aparecer aqui.")) onExcluir?.(linha.chave);
             }}
-            className={`flex items-center gap-1 text-[11px] font-medium text-faint hover:text-danger-500 transition-colors ${temMatch ? "ml-3" : ""}`}
+            className={`flex items-center gap-1 text-[11px] font-medium text-faint hover:text-danger-500 transition-colors ${temMatch || linha.podeVirarTransferencia ? "ml-3" : ""}`}
             title="Exclui esse lançamento da conciliação"
           >
             <Trash2 size={11} />
@@ -345,6 +369,7 @@ function LinhaConciliacao({
           }}
           prefill={{
             pessoa: linha.criarLancamento.pessoa,
+            conta: linha.criarLancamento.conta,
             descricao: linha.criarLancamento.descricao,
             classificacao: linha.criarLancamento.classificacao,
             categoria: linha.criarLancamento.categoria,
@@ -370,6 +395,7 @@ export function ConciliacaoResultado({
   onDesvincular,
   onExcluir,
   onDesfazer,
+  onMarcarTransferencia,
   onEditarPagamentoBanco,
   onReordenar,
   taxasCartaoPendentes,
@@ -391,6 +417,7 @@ export function ConciliacaoResultado({
   onDesvincular?: (chave: string) => void;
   onExcluir?: (chave: string) => void;
   onDesfazer?: (chave: string) => void;
+  onMarcarTransferencia?: (chave: string) => void;
   onReordenar?: (secao: string, ordemNatural: string[], chaveA: string, chaveB: string) => void;
   taxasCartaoPendentes: { chave: string; hora?: string; taxa: number }[];
   onConfirmarTaxaAgregada?: () => void;
@@ -502,9 +529,18 @@ export function ConciliacaoResultado({
         esquerda: match ? { rotulo: "Contas a Pagar", descricao: `${match.favorecido} · ${match.classificacao} / ${match.categoria}`, valor: match.valor } : null,
         direita: { rotulo: rotuloBanco, descricao: p.historico, valor: p.valor, data: p.data },
         jaMigrado: !!migrados[chave],
+        podeVirarTransferencia: true,
         correcaoPagamento: { index: i },
         criarLancamento: !match
-          ? { tipo: "pagar", pessoa: p.sugestao?.favorecido, descricao: p.historico, classificacao: p.sugestao?.classificacao || "DESPESAS ADMINISTRATIVAS", valor: p.valor, vencimento: p.data }
+          ? {
+              tipo: "pagar",
+              pessoa: p.sugestao?.favorecido,
+              descricao: p.historico,
+              classificacao: p.sugestao?.classificacao || "DESPESAS ADMINISTRATIVAS",
+              conta: p.origem === "bradesco" ? "Bradesco" : p.origem === "caixa" ? "Caixa Físico" : "PagBank",
+              valor: p.valor,
+              vencimento: p.data,
+            }
           : undefined,
       };
       if (p.origem === "bradesco") secBradesco.push(linha);
@@ -681,6 +717,7 @@ export function ConciliacaoResultado({
                     onDesvincular={onDesvincular}
                     onExcluir={onExcluir}
                     onDesfazer={onDesfazer}
+                    onMarcarTransferencia={onMarcarTransferencia}
                     onEditarItem={onEditarItem}
                     onEditarPagamentoBanco={onEditarPagamentoBanco}
                     onLancado={onLancado}

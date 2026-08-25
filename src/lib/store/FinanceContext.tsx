@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { getFinanceData } from "@/lib/data/financeRegistry";
 import { computeContasPagarKpis, computeContasReceberKpis, computeFinanceSummary, computeFluxoCaixa } from "@/lib/derive";
-import { CategoryGroup, Client, ClientFinanceData, Payable, Receivable } from "@/lib/types";
+import { CategoryGroup, Client, ClientFinanceData, Payable, Receivable, TransferenciaConta } from "@/lib/types";
 
 const PALETTE = ["#22d3a0", "#5b93fd", "#f2665c", "#a78bfa", "#f2a93c", "#f472b6", "#38bdf8", "#94a3b8"];
 
@@ -12,6 +12,8 @@ type FinanceState = {
   receivables: Receivable[];
   categoriasPagar: CategoryGroup[];
   categoriasReceber: CategoryGroup[];
+  transferencias: TransferenciaConta[];
+  saldosIniciais: Record<string, number>;
 };
 
 type Tipo = "pagar" | "receber";
@@ -42,6 +44,9 @@ type FinanceContextValue = FinanceState &
   deleteReceivables: (ids: string[]) => void;
   duplicatePayables: (ids: string[]) => void;
   duplicateReceivables: (ids: string[]) => void;
+  addTransferencia: (t: TransferenciaConta) => void;
+  deleteTransferencias: (ids: string[]) => void;
+  setSaldoInicial: (conta: string, valor: number) => void;
   summary: ReturnType<typeof computeFinanceSummary>;
   contasPagarKpis: ReturnType<typeof computeContasPagarKpis>;
   contasReceberKpis: ReturnType<typeof computeContasReceberKpis>;
@@ -66,6 +71,8 @@ export function FinanceProvider({ client, children }: { client: Client; children
     receivables: seed.seedReceivables,
     categoriasPagar: seed.seedCategoriasPagar,
     categoriasReceber: seed.seedCategoriasReceber,
+    transferencias: [],
+    saldosIniciais: {},
   });
   const [hydrated, setHydrated] = useState(false);
 
@@ -74,8 +81,13 @@ export function FinanceProvider({ client, children }: { client: Client; children
     // então o estado inicial (seed) é intencionalmente substituído aqui uma única vez.
     try {
       const raw = window.localStorage.getItem(storageKey);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (raw) setState(JSON.parse(raw));
+      if (raw) {
+        // "transferencias"/"saldosIniciais" são campos novos — dados salvos antes dessa versão
+        // não têm essas chaves, então caem pra [] / {} em vez de deixar o estado com undefined.
+        const parsed = JSON.parse(raw);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setState((s) => ({ ...s, ...parsed, transferencias: parsed.transferencias ?? [], saldosIniciais: parsed.saldosIniciais ?? {} }));
+      }
     } catch {
       // ignora estado salvo corrompido
     }
@@ -151,6 +163,15 @@ export function FinanceProvider({ client, children }: { client: Client; children
       return { ...s, receivables: [...copies, ...s.receivables] };
     });
 
+  const addTransferencia = (t: TransferenciaConta) =>
+    setState((s) => ({ ...s, transferencias: [t, ...s.transferencias] }));
+
+  const deleteTransferencias = (ids: string[]) =>
+    setState((s) => ({ ...s, transferencias: s.transferencias.filter((t) => !ids.includes(t.id)) }));
+
+  const setSaldoInicial = (conta: string, valor: number) =>
+    setState((s) => ({ ...s, saldosIniciais: { ...s.saldosIniciais, [conta]: valor } }));
+
   const summary = useMemo(
     () => computeFinanceSummary(state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais, seed.cmvManual),
     [state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais, seed.cmvManual]
@@ -193,6 +214,9 @@ export function FinanceProvider({ client, children }: { client: Client; children
     deleteReceivables,
     duplicatePayables,
     duplicateReceivables,
+    addTransferencia,
+    deleteTransferencias,
+    setSaldoInicial,
     summary,
     contasPagarKpis,
     contasReceberKpis,

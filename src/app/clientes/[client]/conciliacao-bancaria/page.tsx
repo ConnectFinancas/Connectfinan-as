@@ -6,7 +6,7 @@ import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
 import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
 import { useFinance, genId } from "@/lib/store/FinanceContext";
-import { Payable, Receivable } from "@/lib/types";
+import { Payable, Receivable, TransferenciaConta } from "@/lib/types";
 import { parseFaturamento, parseBradesco, parsePagBank } from "@/lib/reconciliation/parsers";
 import { conciliarDia, recalcularDinheiro } from "@/lib/reconciliation/match";
 import { CaixaFisicoExtraido, MovimentoCaixaFisico } from "@/lib/reconciliation/types";
@@ -188,7 +188,12 @@ function DocumentosMjPrime() {
   // usuário revisando classificação/categoria antes de salvar.
   function prepararMigracao(
     chave: string
-  ): { receivable?: Receivable; payable?: Payable; apenasMarcar?: boolean; precisaCategoriaFallback?: boolean } | null {
+  ): {
+    receivable?: Receivable;
+    payable?: Payable;
+    transferencia?: TransferenciaConta;
+    precisaCategoriaFallback?: boolean;
+  } | null {
     if (!resultadoExibido) return null;
     const data = resultadoExibido.data;
     const migrados = resultadoExibido.migrados ?? {};
@@ -219,6 +224,10 @@ function DocumentosMjPrime() {
       }
       if (valor === undefined) return null;
 
+      // Conta bancária onde o valor efetivamente entrou — cartão liquida no PagBank, pix no
+      // Bradesco, dinheiro fica no caixa físico. Usado no ledger de Contas.
+      const contaPorTipo = { pix: "Bradesco", dinheiro: "Caixa Físico", cartaoVenda: "PagBank" } as const;
+
       const receivable: Receivable = {
         id: genId("r"),
         cliente: "—",
@@ -230,6 +239,7 @@ function DocumentosMjPrime() {
         recebimento: data,
         descricao: `Venda ${rotulo}${vendaHora ? ` - ${vendaHora}` : ""}`,
         formaRecebimento: rotulo,
+        conta: contaPorTipo[tipo],
       };
       return { receivable };
     }
@@ -238,11 +248,25 @@ function DocumentosMjPrime() {
       const idx = Number(chave.split("-")[1]);
       const p = resultadoExibido.pagamentos[idx];
       if (!p) return null;
-      if (p.tipo === "transferencia") return { apenasMarcar: true };
+      const contaPorOrigem = { pagbank: "PagBank", bradesco: "Bradesco", caixa: "Caixa Físico" } as const;
+      if (p.tipo === "transferencia") {
+        const contaOrigem = contaPorOrigem[p.origem];
+        const contaDestino = p.contraparte ? contaPorOrigem[p.contraparte.origem] : contaOrigem === "Bradesco" ? "PagBank" : "Bradesco";
+        return {
+          transferencia: {
+            id: genId("t"),
+            data: p.data,
+            valor: p.valor,
+            contaOrigem,
+            contaDestino,
+            descricao: p.historico,
+          },
+        };
+      }
       if (p.tipo !== "pagamento") return null;
       const ignorado = (resultadoExibido.ignorados ?? []).includes(chave);
       const match = ignorado ? undefined : p.matchLancamento;
-      if (match) return { payable: { ...match, id: match.id } };
+      if (match) return { payable: { ...match, id: match.id, conta: match.conta ?? contaPorOrigem[p.origem] } };
       return {
         payable: {
           id: genId("p"),
@@ -254,6 +278,7 @@ function DocumentosMjPrime() {
           status: "pago",
           pagamento: p.data,
           descricao: p.historico,
+          conta: contaPorOrigem[p.origem],
         },
         precisaCategoriaFallback: !p.sugestao?.categoria,
       };
@@ -269,8 +294,9 @@ function DocumentosMjPrime() {
     if (!dataSelecionada) return;
     const preparo = prepararMigracao(chave);
     if (!preparo) return;
-    if (preparo.apenasMarcar) {
-      historico.marcarMigrados(dataSelecionada, { [chave]: "confirmado" });
+    if (preparo.transferencia) {
+      finance.addTransferencia(preparo.transferencia);
+      historico.marcarMigrados(dataSelecionada, { [chave]: preparo.transferencia.id });
       return;
     }
     if (preparo.receivable) finance.addReceivable([preparo.receivable]);
@@ -320,13 +346,48 @@ function DocumentosMjPrime() {
       const idx = Number(chave.split("-")[1]);
       const p = resultadoExibido.pagamentos[idx];
       const eraVinculoExistente = p?.matchLancamento?.id === id;
-      if (!eraVinculoExistente && id !== "confirmado" && id !== "lancado") finance.deletePayables([id]);
+      if (id.startsWith("t_")) finance.deleteTransferencias([id]);
+      else if (!eraVinculoExistente && id !== "confirmado" && id !== "lancado") finance.deletePayables([id]);
       historico.desmarcarMigrado(dataSelecionada, chave);
       return;
     }
 
     if (id !== "lancado") finance.deleteReceivables([id]);
     historico.desmarcarMigrado(dataSelecionada, chave);
+  }
+
+  // "Marcar como transferência": reclassifica manualmente uma pendência de pagamento que o
+  // sistema não detectou sozinho como transferência entre contas da própria empresa (ex.: mesmo
+  // valor de saída no PagBank e entrada no Bradesco, mas com histórico diferente do esperado) —
+  // em vez de virar um lançamento em Contas a Pagar, vira um movimento na aba Contas.
+  function transformarEmTransferencia(chave: string) {
+    if (!dataSelecionada || !resultadoExibido) return;
+    if (!chave.startsWith("pagamento-")) return;
+    if (resultadoExibido.migrados?.[chave]) return;
+    const idx = Number(chave.split("-")[1]);
+    const p = resultadoExibido.pagamentos[idx];
+    if (!p || p.tipo !== "pagamento") return;
+
+    const contaPorOrigem = { pagbank: "PagBank", bradesco: "Bradesco", caixa: "Caixa Físico" } as const;
+    const contaOrigem = contaPorOrigem[p.origem];
+    const contaDestino = contaOrigem === "Bradesco" ? "PagBank" : "Bradesco";
+    const transferencia: TransferenciaConta = {
+      id: genId("t"),
+      data: p.data,
+      valor: p.valor,
+      contaOrigem,
+      contaDestino,
+      descricao: p.historico,
+    };
+
+    historico.atualizarItem(dataSelecionada, (r) => ({
+      ...r,
+      pagamentos: r.pagamentos.map((item, i) =>
+        i === idx ? { ...item, tipo: "transferencia" as const, matchLancamento: undefined, sugestao: undefined } : item
+      ),
+    }));
+    finance.addTransferencia(transferencia);
+    historico.marcarMigrados(dataSelecionada, { [chave]: transferencia.id });
   }
 
   // Corrige manualmente a descrição/valor de um lançamento do extrato bancário quando a
@@ -389,6 +450,7 @@ function DocumentosMjPrime() {
       status: "pago",
       pagamento: dataSelecionada,
       descricao: `Taxa maquineta ${formatDateBR(dataSelecionada)} — ${detalhe} (total ${formatCurrencyPrecise(total)})`,
+      conta: "PagBank",
     };
     finance.addPayable([payable]);
     historico.marcarMigrados(dataSelecionada, { "cartao-taxa-agregada": payable.id });
@@ -418,12 +480,15 @@ function DocumentosMjPrime() {
     if (dia) {
       const idsReceber: string[] = [];
       const idsPagar: string[] = [];
+      const idsTransferencia: string[] = [];
       Object.values(dia.migrados ?? {}).forEach((id) => {
         if (id.startsWith("r_")) idsReceber.push(id);
         else if (id.startsWith("p_")) idsPagar.push(id);
+        else if (id.startsWith("t_")) idsTransferencia.push(id);
       });
       if (idsReceber.length > 0) finance.deleteReceivables(idsReceber);
       if (idsPagar.length > 0) finance.deletePayables(idsPagar);
+      if (idsTransferencia.length > 0) finance.deleteTransferencias(idsTransferencia);
       historico.removerDia(dataSelecionada);
     }
     upsertPendencias(dataSelecionada, []);
@@ -583,6 +648,7 @@ function DocumentosMjPrime() {
           onDesvincular={desvincularItem}
           onExcluir={excluirItem}
           onDesfazer={desfazerConciliacao}
+          onMarcarTransferencia={transformarEmTransferencia}
           onReordenar={trocarOrdem}
           taxasCartaoPendentes={taxasCartaoPendentes()}
           onConfirmarTaxaAgregada={confirmarTaxaAgregada}
