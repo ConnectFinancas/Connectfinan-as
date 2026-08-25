@@ -75,6 +75,26 @@ function casarPorValorComSobras<A extends { valor: number }, B extends { valor: 
   return [...pareados, ...sobras];
 }
 
+// Re-casa a seção "Dinheiro" depois que o usuário corrige um lançamento do caixa físico (valor
+// digitado errado, por exemplo) — refaz o pareamento com as vendas em dinheiro do faturamento
+// (que continuam as mesmas, só o lado do caixa mudou) pra já bater sozinho com o valor certo.
+export function recalcularDinheiro(
+  dinheiroAtual: ItemConferencia<MovimentoCaixaFisico>[],
+  caixaAtualizado: MovimentoCaixaFisico[]
+): ItemConferencia<MovimentoCaixaFisico>[] {
+  const vendas = dinheiroAtual
+    .filter((d) => d.vendaValor !== undefined)
+    .map((d) => ({ valor: d.vendaValor!, hora: d.vendaHora }));
+  const entradasCaixa = caixaAtualizado.filter((m) => (m.entrada ?? 0) > 0).map((m) => ({ ...m, valor: m.entrada! }));
+  const casados = casarPorValorComSobras(vendas, entradasCaixa);
+  return casados.map(({ a, b }) => ({
+    vendaValor: a?.valor,
+    vendaHora: a?.hora,
+    match: b,
+    status: b ? "conciliado" : "pendente",
+  }));
+}
+
 // Tolerância de dias ao buscar um lançamento existente em Contas a Pagar pra uma saída do
 // banco — o vencimento cadastrado nem sempre é exatamente o dia em que o banco debitou.
 const TOLERANCIA_DIAS_PAGAMENTO = 3;

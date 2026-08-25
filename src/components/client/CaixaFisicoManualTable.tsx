@@ -1,56 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { MovimentoCaixaFisico } from "@/lib/reconciliation/types";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 
-export function CaixaFisicoManualTable({
-  movimentos,
-  onChange,
+function FormularioLinha({
+  inicial,
+  onSalvar,
+  onCancelar,
+  textoBotao,
 }: {
-  movimentos: MovimentoCaixaFisico[];
-  onChange: (movs: MovimentoCaixaFisico[]) => void;
+  inicial?: MovimentoCaixaFisico;
+  onSalvar: (mov: MovimentoCaixaFisico) => void;
+  onCancelar?: () => void;
+  textoBotao: string;
 }) {
   const finance = useFinance();
-  const [data, setData] = useState("");
-  const [historico, setHistorico] = useState("");
-  const [valor, setValor] = useState("");
-  const [tipo, setTipo] = useState<"entrada" | "saida">("entrada");
-  const [classificacao, setClassificacao] = useState(finance.categoriasPagar[0]?.classificacao ?? "");
-  const [categoria, setCategoria] = useState("");
+  const [data, setData] = useState(inicial?.data ?? "");
+  const [historico, setHistorico] = useState(inicial?.historico ?? "");
+  const [valor, setValor] = useState(inicial ? String(inicial.entrada ?? inicial.saida ?? "").replace(".", ",") : "");
+  const [tipo, setTipo] = useState<"entrada" | "saida">(inicial?.saida ? "saida" : "entrada");
+  const [classificacao, setClassificacao] = useState(inicial?.classificacao ?? finance.categoriasPagar[0]?.classificacao ?? "");
+  const [categoria, setCategoria] = useState(inicial?.categoria ?? "");
 
   const grupoAtual = finance.categoriasPagar.find((c) => c.classificacao === classificacao);
 
-  function adicionar() {
+  function salvar() {
     const valorNum = Number(valor.replace(",", "."));
     if (!data || !historico.trim() || !valorNum) return;
     if (tipo === "saida" && (!classificacao || !categoria)) return;
-    const novo: MovimentoCaixaFisico = {
+    onSalvar({
       data,
       historico: historico.trim(),
       entrada: tipo === "entrada" ? valorNum : undefined,
       saida: tipo === "saida" ? valorNum : undefined,
       classificacao: tipo === "saida" ? classificacao : undefined,
       categoria: tipo === "saida" ? categoria : undefined,
-    };
-    onChange([...movimentos, novo]);
-    setHistorico("");
-    setValor("");
-    setCategoria("");
-  }
-
-  function remover(idx: number) {
-    onChange(movimentos.filter((_, i) => i !== idx));
+    });
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-xs text-faint">
-        Digite os lançamentos do caderno de caixa (letra à mão não é lida automaticamente) — rápido, olhando a foto anexada.
-      </p>
+    <div className="flex flex-col gap-2">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
         <input
           type="date"
@@ -112,31 +105,79 @@ export function CaixaFisicoManualTable({
         </div>
       )}
 
-      <button
-        onClick={adicionar}
-        className="flex items-center justify-center gap-1.5 self-start rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
-      >
-        <Plus size={12} />
-        Adicionar linha
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={salvar}
+          className="flex items-center justify-center gap-1.5 self-start rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+        >
+          {textoBotao === "Adicionar linha" ? <Plus size={12} /> : <Check size={12} />}
+          {textoBotao}
+        </button>
+        {onCancelar && (
+          <button onClick={onCancelar} className="text-xs font-medium text-faint hover:text-danger-500 transition-colors">
+            Cancelar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function CaixaFisicoManualTable({
+  movimentos,
+  onChange,
+}: {
+  movimentos: MovimentoCaixaFisico[];
+  onChange: (movs: MovimentoCaixaFisico[]) => void;
+}) {
+  const [editandoIdx, setEditandoIdx] = useState<number | null>(null);
+
+  function remover(idx: number) {
+    onChange(movimentos.filter((_, i) => i !== idx));
+  }
+
+  function salvarEdicao(idx: number, mov: MovimentoCaixaFisico) {
+    onChange(movimentos.map((m, i) => (i === idx ? mov : m)));
+    setEditandoIdx(null);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-faint">
+        Digite os lançamentos do caderno de caixa (letra à mão não é lida automaticamente) — rápido, olhando a foto anexada. Lançou
+        algo errado? Clique no lápis pra corrigir — a conciliação já refaz o pareamento sozinha com o valor certo.
+      </p>
+
+      {editandoIdx === null && (
+        <FormularioLinha textoBotao="Adicionar linha" onSalvar={(mov) => onChange([...movimentos, mov])} />
+      )}
 
       {movimentos.length > 0 && (
         <div className="flex flex-col gap-1 rounded-lg border border-border-subtle p-2">
-          {movimentos.map((m, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs">
-              <span className="w-16 shrink-0 text-faint">{formatDateBR(m.data)}</span>
-              <span className="flex-1 truncate text-muted">
-                {m.historico}
-                {m.saida && m.categoria && <span className="text-faint"> · {m.categoria}</span>}
-              </span>
-              <span className={`tabular-nums ${m.entrada ? "text-accent-500" : "text-danger-500"}`}>
-                {formatCurrencyPrecise(m.entrada ?? -(m.saida ?? 0))}
-              </span>
-              <button onClick={() => remover(i)} className="text-faint hover:text-danger-500 transition-colors">
-                <Trash2 size={12} />
-              </button>
-            </div>
-          ))}
+          {movimentos.map((m, i) =>
+            editandoIdx === i ? (
+              <div key={i} className="rounded-lg bg-surface-muted p-2">
+                <FormularioLinha inicial={m} textoBotao="Salvar correção" onSalvar={(mov) => salvarEdicao(i, mov)} onCancelar={() => setEditandoIdx(null)} />
+              </div>
+            ) : (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                <span className="w-16 shrink-0 text-faint">{formatDateBR(m.data)}</span>
+                <span className="flex-1 truncate text-muted">
+                  {m.historico}
+                  {m.saida && m.categoria && <span className="text-faint"> · {m.categoria}</span>}
+                </span>
+                <span className={`tabular-nums ${m.entrada ? "text-accent-500" : "text-danger-500"}`}>
+                  {formatCurrencyPrecise(m.entrada ?? -(m.saida ?? 0))}
+                </span>
+                <button onClick={() => setEditandoIdx(i)} title="Corrigir esse lançamento" className="text-faint hover:text-client-accent transition-colors">
+                  <Pencil size={12} />
+                </button>
+                <button onClick={() => remover(i)} title="Remover" className="text-faint hover:text-danger-500 transition-colors">
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            )
+          )}
         </div>
       )}
     </div>

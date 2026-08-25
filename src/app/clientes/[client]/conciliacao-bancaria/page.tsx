@@ -8,7 +8,7 @@ import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
 import { useFinance, genId } from "@/lib/store/FinanceContext";
 import { Payable, Receivable } from "@/lib/types";
 import { parseFaturamento, parseBradesco, parsePagBank } from "@/lib/reconciliation/parsers";
-import { conciliarDia } from "@/lib/reconciliation/match";
+import { conciliarDia, recalcularDinheiro } from "@/lib/reconciliation/match";
 import { CaixaFisicoExtraido, MovimentoCaixaFisico } from "@/lib/reconciliation/types";
 import { usePendencias } from "@/lib/reconciliation/pendenciasStore";
 import { useConciliacaoHistorico, ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
@@ -339,6 +339,20 @@ function DocumentosMjPrime() {
     }));
   }
 
+  // Qualquer alteração no caixa físico (adicionar, remover ou corrigir uma linha lançada errada)
+  // passa por aqui: além de guardar a lista atualizada, se o dia em edição é o mesmo que está
+  // sendo exibido, já refaz o pareamento da seção "Dinheiro" com o valor corrigido — não precisa
+  // desvincular/religar na mão, o item já volta a bater sozinho com a venda do faturamento.
+  function atualizarCaixaMovs(novos: MovimentoCaixaFisico[]) {
+    setCaixaMovs(novos);
+    if (dataSelecionada && resultado && resultado.data === dataSelecionada) {
+      historico.atualizarItem(dataSelecionada, (r) => ({
+        ...r,
+        dinheiro: recalcularDinheiro(r.dinheiro, novos),
+      }));
+    }
+  }
+
   // Troca a posição de dois quadrados dentro da mesma seção (arrastar e soltar).
   function trocarOrdem(secao: string, ordemNatural: string[], chaveA: string, chaveB: string) {
     if (!dataSelecionada) return;
@@ -521,7 +535,7 @@ function DocumentosMjPrime() {
 
       <div className="card p-5">
         <h2 className="mb-1 text-sm font-semibold text-brand-900">Movimento do caixa físico</h2>
-        <CaixaFisicoManualTable movimentos={caixaMovs} onChange={setCaixaMovs} />
+        <CaixaFisicoManualTable movimentos={caixaMovs} onChange={atualizarCaixaMovs} />
       </div>
 
       <div className="flex justify-end">
