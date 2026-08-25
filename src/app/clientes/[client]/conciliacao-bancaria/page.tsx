@@ -502,8 +502,20 @@ function DocumentosMjPrime() {
             onExtracted={setBradescoRaw}
             multiple
           />
-          <UploadBox icon={Landmark} title="Extrato PagBank" hint="Extrato da conta/maquininha PagBank (PDF)" onExtracted={setPagbankRaw} />
-          <UploadBox icon={FileSpreadsheet} title="Relatório de faturamento" hint="Vendas do período (PDF, base da conciliação)" onExtracted={setFaturamentoRaw} />
+          <UploadBox
+            icon={Landmark}
+            title="Extrato PagBank"
+            hint="Extrato da conta/maquininha PagBank — PDF ou fotos/prints"
+            onExtracted={setPagbankRaw}
+            multiple
+          />
+          <UploadBox
+            icon={FileSpreadsheet}
+            title="Relatório de faturamento"
+            hint="Vendas do período — PDF ou fotos/prints, base da conciliação"
+            onExtracted={setFaturamentoRaw}
+            multiple
+          />
         </div>
       </div>
 
@@ -573,8 +585,8 @@ function OutrasEmpresas() {
           nada automaticamente em Contas a Pagar/DRE.
         </p>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <UploadBox icon={FileSpreadsheet} title="Relatório de faturamento" hint="Mesmo formato usado na MJ Prime" onExtracted={setRaw} />
-          <UploadBox icon={Landmark} title="Extrato PagBank" hint="Mesmo formato usado na MJ Prime" onExtracted={setRawPagbank} />
+          <UploadBox icon={FileSpreadsheet} title="Relatório de faturamento" hint="Mesmo formato usado na MJ Prime" onExtracted={setRaw} multiple />
+          <UploadBox icon={Landmark} title="Extrato PagBank" hint="Mesmo formato usado na MJ Prime" onExtracted={setRawPagbank} multiple />
         </div>
       </div>
 
