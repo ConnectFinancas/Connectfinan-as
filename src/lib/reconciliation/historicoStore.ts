@@ -115,6 +115,16 @@ export function useConciliacaoHistorico(slug: string) {
     });
   }
 
+  /** Apaga só o dia informado — os demais dias já conciliados ficam intactos. */
+  function removerDia(data: string) {
+    setHistorico((atual) => {
+      if (!(data in atual)) return atual;
+      const resto = { ...atual };
+      delete resto[data];
+      return resto;
+    });
+  }
+
   function limparTudo() {
     setHistorico({});
   }
@@ -132,6 +142,7 @@ export function useConciliacaoHistorico(slug: string) {
     desarquivarItem,
     desvincularMatch,
     trocarOrdem,
+    removerDia,
     limparTudo,
   };
 }

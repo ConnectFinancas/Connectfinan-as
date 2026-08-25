@@ -19,7 +19,7 @@ type Extraido = { text: string; viaOcr: boolean; file: File } | null;
 
 function DocumentosMjPrime() {
   const finance = useFinance();
-  const { pendencias, upsertPendencias, limparTudo: limparPendencias } = usePendencias(finance.client.slug);
+  const { pendencias, upsertPendencias } = usePendencias(finance.client.slug);
   const historico = useConciliacaoHistorico(finance.client.slug);
   const [dataOverride, setDataOverride] = useState<string | null>(null);
   const [ultimoUpload, setUltimoUpload] = useState<string | null>(null);
@@ -402,34 +402,41 @@ function DocumentosMjPrime() {
     historico.desmarcarMigrado(dataSelecionada, "cartao-taxa-agregada");
   }
 
-  // Apaga pendências + histórico salvo da conciliação (e os lançamentos que foram criados
-  // automaticamente a partir dele, pra não duplicar ao refazer), voltando a tela ao zero.
+  // Apaga a conciliação SÓ do dia que está sendo mostrado na tela (e os lançamentos que foram
+  // criados automaticamente a partir dele, pra não duplicar ao refazer) — os demais dias já
+  // conciliados não são tocados. Se o dia limpo é o que estava com documentos recém-enviados,
+  // também limpa os anexos da tela pra poder recomeçar do zero.
   function limparConciliacao() {
+    if (!dataSelecionada) return;
+    const dia = historico.historico[dataSelecionada];
+
     const confirmado = window.confirm(
-      "Isso vai apagar todo o histórico e as pendências de conciliação salvos, além dos lançamentos criados automaticamente a partir deles em Contas a Receber/Pagar. Lançamentos que você criou manualmente não são afetados. Deseja continuar?"
+      `Isso vai apagar a conciliação do dia ${formatDateBR(dataSelecionada)} e os lançamentos criados automaticamente a partir dela em Contas a Receber/Pagar. Lançamentos criados manualmente não são afetados. Os outros dias já conciliados NÃO são apagados. Deseja continuar?`
     );
     if (!confirmado) return;
 
-    const idsReceber: string[] = [];
-    const idsPagar: string[] = [];
-    Object.values(historico.historico).forEach((dia) => {
+    if (dia) {
+      const idsReceber: string[] = [];
+      const idsPagar: string[] = [];
       Object.values(dia.migrados ?? {}).forEach((id) => {
         if (id.startsWith("r_")) idsReceber.push(id);
         else if (id.startsWith("p_")) idsPagar.push(id);
       });
-    });
-    if (idsReceber.length > 0) finance.deleteReceivables(idsReceber);
-    if (idsPagar.length > 0) finance.deletePayables(idsPagar);
+      if (idsReceber.length > 0) finance.deleteReceivables(idsReceber);
+      if (idsPagar.length > 0) finance.deletePayables(idsPagar);
+      historico.removerDia(dataSelecionada);
+    }
+    upsertPendencias(dataSelecionada, []);
 
-    historico.limparTudo();
-    limparPendencias();
-    setFaturamentoRaw(null);
-    setPagbankRaw(null);
-    setBradescoRaw(null);
-    setCaixaMovs([]);
+    if (resultado && resultado.data === dataSelecionada) {
+      setFaturamentoRaw(null);
+      setPagbankRaw(null);
+      setBradescoRaw(null);
+      setCaixaMovs([]);
+      setUltimoUpload(null);
+      setEnviado(false);
+    }
     setDataOverride(null);
-    setUltimoUpload(null);
-    setEnviado(false);
   }
 
   const datasComPendencia = useMemo(
@@ -502,10 +509,12 @@ function DocumentosMjPrime() {
           </div>
           <button
             onClick={limparConciliacao}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-muted hover:border-danger-500/40 hover:text-danger-500 transition-colors"
+            disabled={!dataSelecionada}
+            title="Apaga só a conciliação do dia selecionado acima — os outros dias já conciliados não são afetados"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-muted hover:border-danger-500/40 hover:text-danger-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 size={13} />
-            Limpar conciliação
+            Limpar conciliação deste dia
           </button>
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
