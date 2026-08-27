@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, FileSpreadsheet, Landmark, PenLine, Send, Trash2, Users } from "lucide-react";
+import { Building2, FilePlus2, FileSpreadsheet, Landmark, PenLine, Send, Trash2, Users } from "lucide-react";
 import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
 import { FaturamentoManualTable, PagBankManualTable, BradescoManualTable } from "@/components/client/ManualEntryTables";
@@ -24,6 +24,11 @@ function DocumentosMjPrime() {
   const historico = useConciliacaoHistorico(finance.client.slug);
   const [dataOverride, setDataOverride] = useState<string | null>(null);
   const [ultimoUpload, setUltimoUpload] = useState<string | null>(null);
+  // Enquanto true, esconde o resultado do último dia já conciliado (que normalmente aparece
+  // sozinho quando não há upload novo) — pra não misturar uma conciliação já pronta com o que
+  // está sendo digitado/anexado agora pra um dia novo. Volta a false assim que um resultado novo
+  // é calculado (ver efeito abaixo) ou quando o usuário navega pra uma data específica.
+  const [iniciandoNova, setIniciandoNova] = useState(false);
   const [filtroPendencias, setFiltroPendencias] = useState("");
   const [verTodasPendencias, setVerTodasPendencias] = useState(false);
 
@@ -105,9 +110,10 @@ function DocumentosMjPrime() {
   if (resultado && resultado.data !== ultimoUpload) {
     setUltimoUpload(resultado.data);
     setDataOverride(null);
+    setIniciandoNova(false);
   }
 
-  const dataSelecionada = dataOverride ?? resultado?.data ?? historico.datas[0] ?? null;
+  const dataSelecionada = dataOverride ?? resultado?.data ?? (iniciandoNova ? null : historico.datas[0]) ?? null;
 
   const resultadoExibido: ResultadoSalvo | null = dataSelecionada
     ? historico.historico[dataSelecionada] ?? (resultado?.data === dataSelecionada ? resultado : null)
@@ -498,6 +504,48 @@ function DocumentosMjPrime() {
     historico.desmarcarMigrado(dataSelecionada, "cartao-taxa-agregada");
   }
 
+  // Esvazia os quadros de anexo/preenchimento manual e o caixa físico, sem mexer em nada que já
+  // foi salvo no histórico — usado tanto ao limpar a conciliação do dia atual quanto ao começar
+  // uma nova, pra não ficar reaproveitando sem querer o que já foi digitado/anexado antes.
+  function limparFormularios() {
+    setFaturamentoRaw(null);
+    setPagbankRaw(null);
+    setBradescoRaw(null);
+    setCaixaMovs([]);
+    setFaturamentoManual([]);
+    setPagbankManual([]);
+    setBradescoManual([]);
+    setUltimoUpload(null);
+    setEnviado(false);
+  }
+
+  // "Nova conciliação": limpa os quadros de anexo/preenchimento manual (que podem estar com
+  // dados de um dia já concluído) e esconde o resultado do último dia conciliado que aparece
+  // sozinho quando não há upload novo — assim o usuário começa um dia novo do zero, sem misturar
+  // com o que já foi feito. Nada do que já está salvo no histórico é apagado.
+  function iniciarNovaConciliacao() {
+    const temRascunhoNaoEnviado =
+      !enviado &&
+      (!!faturamentoRaw ||
+        !!pagbankRaw ||
+        !!bradescoRaw ||
+        caixaMovs.length > 0 ||
+        faturamentoManual.length > 0 ||
+        pagbankManual.length > 0 ||
+        bradescoManual.length > 0);
+    if (
+      temRascunhoNaoEnviado &&
+      !window.confirm(
+        "Isso vai limpar os documentos e lançamentos que você anexou/digitou mas ainda não enviou. Deseja continuar?"
+      )
+    ) {
+      return;
+    }
+    limparFormularios();
+    setDataOverride(null);
+    setIniciandoNova(true);
+  }
+
   // Apaga a conciliação SÓ do dia que está sendo mostrado na tela (e os lançamentos que foram
   // criados automaticamente a partir dele, pra não duplicar ao refazer) — os demais dias já
   // conciliados não são tocados. Se o dia limpo é o que estava com documentos recém-enviados,
@@ -528,15 +576,7 @@ function DocumentosMjPrime() {
     upsertPendencias(dataSelecionada, []);
 
     if (resultado && resultado.data === dataSelecionada) {
-      setFaturamentoRaw(null);
-      setPagbankRaw(null);
-      setBradescoRaw(null);
-      setCaixaMovs([]);
-      setFaturamentoManual([]);
-      setPagbankManual([]);
-      setBradescoManual([]);
-      setUltimoUpload(null);
-      setEnviado(false);
+      limparFormularios();
     }
     setDataOverride(null);
   }
@@ -610,15 +650,25 @@ function DocumentosMjPrime() {
               a conciliação — assim dá pra terminar de anexar/preencher tudo antes de qualquer leitura.
             </p>
           </div>
-          <button
-            onClick={limparConciliacao}
-            disabled={!dataSelecionada}
-            title="Apaga só a conciliação do dia selecionado acima — os outros dias já conciliados não são afetados"
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-muted hover:border-danger-500/40 hover:text-danger-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Trash2 size={13} />
-            Limpar conciliação deste dia
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={iniciarNovaConciliacao}
+              title="Limpa os quadros abaixo pra começar um dia novo — não apaga nada do que já foi conciliado"
+              className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-muted hover:border-client-accent/40 hover:text-client-accent transition-colors"
+            >
+              <FilePlus2 size={13} />
+              Nova conciliação
+            </button>
+            <button
+              onClick={limparConciliacao}
+              disabled={!dataSelecionada}
+              title="Apaga só a conciliação do dia selecionado acima — os outros dias já conciliados não são afetados"
+              className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-muted hover:border-danger-500/40 hover:text-danger-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={13} />
+              Limpar conciliação deste dia
+            </button>
+          </div>
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-2">
