@@ -137,13 +137,6 @@ function casarCartaoPorTaxaComSobras(
   return [...pareados, ...sobras];
 }
 
-const TITULAR_KEYWORDS = ["MJ PRIME", "MJ ELETRO"];
-
-function ehMesmoTitular(historico: string): boolean {
-  const upper = historico.toUpperCase();
-  return TITULAR_KEYWORDS.some((k) => upper.includes(k));
-}
-
 // Busca o Contas a Pagar existente mais próximo (mesmo valor, dentro da tolerância de dias) —
 // entre os candidatos empatados, prefere o de data mais próxima da saída bancária.
 function buscarLancamentoProximo(payables: Payable[], valorAbs: number, dataReferencia: string): Payable | undefined {
@@ -168,8 +161,20 @@ export function conciliarDia(
   pagbank: PagBankExtraido,
   bradesco: BradescoExtraido,
   caixa: CaixaFisicoExtraido,
-  payablesExistentes: Payable[]
+  payablesExistentes: Payable[],
+  // Nomes que aparecem no extrato quando é a própria empresa do outro lado do lançamento (ex.:
+  // "MJ PRIME", "MJ ELETRO") — usado pra detectar automaticamente uma saída do PagBank/Bradesco
+  // que é na verdade uma transferência entre contas próprias, não uma despesa de verdade. Cada
+  // cliente tem os seus (ver Client.titularKeywords); sem nenhum informado, nada é auto-detectado
+  // como transferência — o usuário ainda pode marcar manualmente pelo botão na tela.
+  titularKeywords: string[] = []
 ): ResultadoConciliacao {
+  const titularKeywordsUpper = titularKeywords.map((k) => k.toUpperCase());
+  function ehMesmoTitular(historico: string): boolean {
+    const upper = historico.toUpperCase();
+    return titularKeywordsUpper.some((k) => upper.includes(k));
+  }
+
   // ---------- Cartão (crédito + débito) x PagBank ----------
   const vendasCartao = faturamento.vendas.filter((v) => v.forma === "CARTAO DE CREDITO" || v.forma === "CARTAO DE DEBITO");
   const creditosPagBank = pagbank.movimentos.filter((m) => m.valor > 0 && /disponivel/i.test(m.descricao));

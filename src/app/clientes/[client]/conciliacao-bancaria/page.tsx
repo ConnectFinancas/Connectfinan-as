@@ -18,7 +18,7 @@ import { formatDateBR } from "@/lib/today";
 
 type Extraido = { text: string; viaOcr: boolean; file: File } | null;
 
-function DocumentosMjPrime() {
+function DocumentosCliente() {
   const finance = useFinance();
   const { pendencias, upsertPendencias } = usePendencias(finance.client.slug);
   const historico = useConciliacaoHistorico(finance.client.slug);
@@ -92,9 +92,10 @@ function DocumentosMjPrime() {
       pagbank ?? { movimentos: [] },
       bradesco ?? { movimentos: [], viaOcr: false },
       caixa,
-      finance.payables
+      finance.payables,
+      finance.client.titularKeywords ?? [finance.client.name.toUpperCase()]
     );
-  }, [enviado, faturamento, pagbank, bradesco, caixa, dataReferencia, finance.payables]);
+  }, [enviado, faturamento, pagbank, bradesco, caixa, dataReferencia, finance.payables, finance.client]);
 
   // Depende do objeto inteiro (não só da data): sem isso, enviar um documento novo ou
   // digitar uma linha do caixa físico depois do primeiro salvamento do dia não atualizava
@@ -806,6 +807,7 @@ function DocumentosMjPrime() {
 }
 
 function OutrasEmpresas() {
+  const finance = useFinance();
   const [raw, setRaw] = useState<Extraido>(null);
   const [rawPagbank, setRawPagbank] = useState<Extraido>(null);
   const faturamento = useMemo(() => (raw ? parseFaturamento(raw.text) : null), [raw]);
@@ -816,12 +818,12 @@ function OutrasEmpresas() {
       <div className="card p-5">
         <h2 className="text-sm font-semibold text-brand-900">Movimento de outras empresas</h2>
         <p className="mt-0.5 text-xs text-faint">
-          Relatórios de outras empresas do grupo, no mesmo formato — fica separado da conciliação da MJ Prime, sem lançar
-          nada automaticamente em Contas a Pagar/DRE.
+          Relatórios de outras empresas do grupo, no mesmo formato — fica separado da conciliação da {finance.client.name}, sem
+          lançar nada automaticamente em Contas a Pagar/DRE.
         </p>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <UploadBox icon={FileSpreadsheet} title="Relatório de faturamento" hint="Mesmo formato usado na MJ Prime" onExtracted={setRaw} multiple />
-          <UploadBox icon={Landmark} title="Extrato PagBank" hint="Mesmo formato usado na MJ Prime" onExtracted={setRawPagbank} multiple />
+          <UploadBox icon={FileSpreadsheet} title="Relatório de faturamento" hint={`Mesmo formato usado na ${finance.client.name}`} onExtracted={setRaw} multiple />
+          <UploadBox icon={Landmark} title="Extrato PagBank" hint={`Mesmo formato usado na ${finance.client.name}`} onExtracted={setRawPagbank} multiple />
         </div>
       </div>
 
@@ -829,7 +831,7 @@ function OutrasEmpresas() {
         <div className="card overflow-hidden">
           <div className="p-5 pb-3">
             <h3 className="text-sm font-semibold text-brand-900">Lançamentos identificados</h3>
-            <p className="text-xs text-faint">Apenas para consulta — não altera o financeiro da MJ Prime</p>
+            <p className="text-xs text-faint">Apenas para consulta — não altera o financeiro da {finance.client.name}</p>
           </div>
           <div className="overflow-x-auto px-5 pb-5">
             <table className="w-full text-sm">
@@ -870,19 +872,20 @@ function OutrasEmpresas() {
 }
 
 export default function ConciliacaoBancariaPage() {
-  const [aba, setAba] = useState<"mj-prime" | "outras">("mj-prime");
+  const finance = useFinance();
+  const [aba, setAba] = useState<"cliente" | "outras">("cliente");
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex gap-2 border-b border-border-subtle">
         <button
-          onClick={() => setAba("mj-prime")}
+          onClick={() => setAba("cliente")}
           className={`flex items-center gap-1.5 border-b-2 px-3 pb-2.5 text-sm transition-colors ${
-            aba === "mj-prime" ? "border-client-accent font-medium text-brand-900" : "border-transparent text-muted hover:text-brand-900"
+            aba === "cliente" ? "border-client-accent font-medium text-brand-900" : "border-transparent text-muted hover:text-brand-900"
           }`}
         >
           <Building2 size={14} />
-          MJ Prime
+          {finance.client.name}
         </button>
         <button
           onClick={() => setAba("outras")}
@@ -895,7 +898,7 @@ export default function ConciliacaoBancariaPage() {
         </button>
       </div>
 
-      {aba === "mj-prime" ? <DocumentosMjPrime /> : <OutrasEmpresas />}
+      {aba === "cliente" ? <DocumentosCliente /> : <OutrasEmpresas />}
     </div>
   );
 }

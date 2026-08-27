@@ -17,6 +17,10 @@ export type Client = {
   theme?: "dark" | "light" | "black-gold";
   // Quando definido, "Acessar painel" abre esse link externo em vez do painel interno.
   externalUrl?: string;
+  // Nomes que aparecem no extrato bancário quando é a própria empresa (ex.: um nome fantasia
+  // usado em outra conta) — usado na Conciliação Bancária pra detectar automaticamente
+  // transferências entre contas próprias. Sem isso, o padrão é o próprio nome do cliente.
+  titularKeywords?: string[];
 };
 
 export type MonthlyFinancials = {

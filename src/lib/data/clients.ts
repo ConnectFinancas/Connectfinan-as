@@ -41,6 +41,7 @@ export const clients: Client[] = [
     responsible: "Ewerton Lucas",
     regime: "Simples Nacional",
     theme: "light",
+    titularKeywords: ["MJ PRIME", "MJ ELETRO"],
   },
   {
     slug: "ever-shopping",
