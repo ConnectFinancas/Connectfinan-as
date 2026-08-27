@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, FileSpreadsheet, Landmark, Send, Trash2, Users } from "lucide-react";
+import { Building2, FileSpreadsheet, Landmark, PenLine, Send, Trash2, Users } from "lucide-react";
 import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
+import { FaturamentoManualTable, PagBankManualTable, BradescoManualTable } from "@/components/client/ManualEntryTables";
 import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
 import { useFinance, genId } from "@/lib/store/FinanceContext";
 import { Payable, Receivable, TransferenciaConta } from "@/lib/types";
 import { parseFaturamento, parseBradesco, parsePagBank } from "@/lib/reconciliation/parsers";
 import { conciliarDia, recalcularDinheiro } from "@/lib/reconciliation/match";
-import { CaixaFisicoExtraido, MovimentoCaixaFisico } from "@/lib/reconciliation/types";
+import { CaixaFisicoExtraido, MovimentoBradesco, MovimentoCaixaFisico, MovimentoPagBank, VendaExtraida } from "@/lib/reconciliation/types";
 import { usePendencias } from "@/lib/reconciliation/pendenciasStore";
 import { useConciliacaoHistorico, ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
 import { formatCurrencyPrecise } from "@/lib/format";
@@ -30,17 +31,50 @@ function DocumentosMjPrime() {
   const [pagbankRaw, setPagbankRaw] = useState<Extraido>(null);
   const [bradescoRaw, setBradescoRaw] = useState<Extraido>(null);
   const [caixaMovs, setCaixaMovs] = useState<MovimentoCaixaFisico[]>([]);
+  // Preenchimento manual (alternativa ao anexo de documento) — soma com o que for lido dos
+  // arquivos anexados, em vez de substituir, pra dar pra combinar upload + digitação.
+  const [faturamentoManual, setFaturamentoManual] = useState<VendaExtraida[]>([]);
+  const [pagbankManual, setPagbankManual] = useState<MovimentoPagBank[]>([]);
+  const [bradescoManual, setBradescoManual] = useState<MovimentoBradesco[]>([]);
+  const [mostrarManualFaturamento, setMostrarManualFaturamento] = useState(false);
+  const [mostrarManualPagbank, setMostrarManualPagbank] = useState(false);
+  const [mostrarManualBradesco, setMostrarManualBradesco] = useState(false);
   // Só monta a conciliação depois que o usuário clicar em "Enviar informações" — evita ficar
   // recalculando/reorganizando as colunas a cada arquivo anexado, um por um.
   const [enviado, setEnviado] = useState(false);
 
-  const faturamento = useMemo(() => (faturamentoRaw ? parseFaturamento(faturamentoRaw.text) : null), [faturamentoRaw]);
-  const pagbank = useMemo(() => (pagbankRaw ? parsePagBank(pagbankRaw.text) : null), [pagbankRaw]);
-  const anoReferencia = faturamento?.vendas[0]?.data.slice(0, 4) ?? String(new Date().getFullYear());
-  const bradesco = useMemo(
+  const faturamentoParsed = useMemo(() => (faturamentoRaw ? parseFaturamento(faturamentoRaw.text) : null), [faturamentoRaw]);
+  const pagbankParsed = useMemo(() => (pagbankRaw ? parsePagBank(pagbankRaw.text) : null), [pagbankRaw]);
+  const anoReferencia =
+    (faturamentoParsed?.vendas[0]?.data ?? faturamentoManual[0]?.data)?.slice(0, 4) ?? String(new Date().getFullYear());
+  const bradescoParsed = useMemo(
     () => (bradescoRaw ? parseBradesco(bradescoRaw.text, anoReferencia, bradescoRaw.viaOcr) : null),
     [bradescoRaw, anoReferencia]
   );
+
+  // Junta o que veio do documento anexado (se houver) com o que foi digitado manualmente —
+  // os dois convivem, então dá pra completar com a mão só o que faltou na leitura automática.
+  const faturamento = useMemo(() => {
+    const vendas = [...(faturamentoParsed?.vendas ?? []), ...faturamentoManual];
+    if (vendas.length === 0) return null;
+    const totalPorForma: Record<string, number> = {};
+    vendas.forEach((v) => {
+      totalPorForma[v.forma] = Math.round(((totalPorForma[v.forma] ?? 0) + v.valor) * 100) / 100;
+    });
+    const totalGeral = Math.round(vendas.reduce((a, v) => a + v.valor, 0) * 100) / 100;
+    return { vendas, totalPorForma, totalGeral };
+  }, [faturamentoParsed, faturamentoManual]);
+
+  const pagbank = useMemo(() => {
+    const movimentos = [...(pagbankParsed?.movimentos ?? []), ...pagbankManual];
+    return movimentos.length > 0 ? { movimentos } : null;
+  }, [pagbankParsed, pagbankManual]);
+
+  const bradesco = useMemo(() => {
+    const movimentos = [...(bradescoParsed?.movimentos ?? []), ...bradescoManual];
+    return movimentos.length > 0 ? { movimentos, viaOcr: bradescoParsed?.viaOcr ?? false } : null;
+  }, [bradescoParsed, bradescoManual]);
+
   const caixa: CaixaFisicoExtraido = useMemo(() => ({ movimentos: caixaMovs }), [caixaMovs]);
 
   const dataReferencia = faturamento?.vendas[0]?.data ?? null;
@@ -498,6 +532,9 @@ function DocumentosMjPrime() {
       setPagbankRaw(null);
       setBradescoRaw(null);
       setCaixaMovs([]);
+      setFaturamentoManual([]);
+      setPagbankManual([]);
+      setBradescoManual([]);
       setUltimoUpload(null);
       setEnviado(false);
     }
@@ -512,7 +549,7 @@ function DocumentosMjPrime() {
   const pendenciasVisiveis =
     filtroPendencias || verTodasPendencias ? pendenciasFiltradas : pendenciasFiltradas.slice(0, 5);
 
-  const podeEnviar = !!faturamentoRaw && !enviado;
+  const podeEnviar = !!faturamento && !enviado;
 
   return (
     <div className="flex flex-col gap-6">
@@ -568,8 +605,9 @@ function DocumentosMjPrime() {
           <div>
             <h2 className="text-sm font-semibold text-brand-900">Documentos do período</h2>
             <p className="mt-0.5 text-xs text-faint">
-              Anexe os documentos do dia e o caixa físico logo abaixo. Só quando clicar em <strong>Enviar informações</strong> o
-              sistema monta a conciliação — assim dá pra terminar de anexar tudo antes de qualquer leitura.
+              Anexe os documentos do dia e o caixa físico logo abaixo, ou clique em <strong>Preencher manualmente</strong> em
+              cada quadro pra digitar em vez de anexar. Só quando clicar em <strong>Enviar informações</strong> o sistema monta
+              a conciliação — assim dá pra terminar de anexar/preencher tudo antes de qualquer leitura.
             </p>
           </div>
           <button
@@ -583,27 +621,83 @@ function DocumentosMjPrime() {
           </button>
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <UploadBox
-            icon={Landmark}
-            title="Extrato Bradesco"
-            hint="PDF ou fotos/prints do extrato — pode anexar mais de uma imagem"
-            onExtracted={setBradescoRaw}
-            multiple
-          />
-          <UploadBox
-            icon={Landmark}
-            title="Extrato PagBank"
-            hint="Extrato da conta/maquininha PagBank — PDF ou fotos/prints"
-            onExtracted={setPagbankRaw}
-            multiple
-          />
-          <UploadBox
-            icon={FileSpreadsheet}
-            title="Relatório de faturamento"
-            hint="Vendas do período — PDF ou fotos/prints, base da conciliação"
-            onExtracted={setFaturamentoRaw}
-            multiple
-          />
+          <div className="flex flex-col gap-2">
+            <UploadBox
+              icon={Landmark}
+              title="Extrato Bradesco"
+              hint="PDF ou fotos/prints do extrato — pode anexar mais de uma imagem"
+              onExtracted={setBradescoRaw}
+              multiple
+            />
+            <button
+              onClick={() => setMostrarManualBradesco((v) => !v)}
+              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+            >
+              <PenLine size={11} />
+              {mostrarManualBradesco
+                ? "Ocultar preenchimento manual"
+                : bradescoManual.length > 0
+                  ? `Preenchimento manual (${bradescoManual.length})`
+                  : "Preencher manualmente"}
+            </button>
+            {mostrarManualBradesco && (
+              <div className="card p-3">
+                <BradescoManualTable movimentos={bradescoManual} onChange={setBradescoManual} />
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <UploadBox
+              icon={Landmark}
+              title="Extrato PagBank"
+              hint="Extrato da conta/maquininha PagBank — PDF ou fotos/prints"
+              onExtracted={setPagbankRaw}
+              multiple
+            />
+            <button
+              onClick={() => setMostrarManualPagbank((v) => !v)}
+              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+            >
+              <PenLine size={11} />
+              {mostrarManualPagbank
+                ? "Ocultar preenchimento manual"
+                : pagbankManual.length > 0
+                  ? `Preenchimento manual (${pagbankManual.length})`
+                  : "Preencher manualmente"}
+            </button>
+            {mostrarManualPagbank && (
+              <div className="card p-3">
+                <PagBankManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <UploadBox
+              icon={FileSpreadsheet}
+              title="Relatório de faturamento"
+              hint="Vendas do período — PDF ou fotos/prints, base da conciliação"
+              onExtracted={setFaturamentoRaw}
+              multiple
+            />
+            <button
+              onClick={() => setMostrarManualFaturamento((v) => !v)}
+              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+            >
+              <PenLine size={11} />
+              {mostrarManualFaturamento
+                ? "Ocultar preenchimento manual"
+                : faturamentoManual.length > 0
+                  ? `Preenchimento manual (${faturamentoManual.length})`
+                  : "Preencher manualmente"}
+            </button>
+            {mostrarManualFaturamento && (
+              <div className="card p-3">
+                <FaturamentoManualTable vendas={faturamentoManual} onChange={setFaturamentoManual} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -615,15 +709,17 @@ function DocumentosMjPrime() {
       <div className="flex justify-end">
         <button
           onClick={() => setEnviado(true)}
-          disabled={!faturamentoRaw}
+          disabled={!faturamento}
           className="flex items-center gap-1.5 rounded-lg bg-client-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-client-accent-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Send size={14} />
           {enviado ? "Reenviar informações" : "Enviar informações"}
         </button>
       </div>
-      {!faturamentoRaw && (
-        <p className="-mt-3 text-right text-xs text-faint">Anexe ao menos o relatório de faturamento pra poder enviar.</p>
+      {!faturamento && (
+        <p className="-mt-3 text-right text-xs text-faint">
+          Anexe ou preencha manualmente ao menos o relatório de faturamento pra poder enviar.
+        </p>
       )}
 
       {podeEnviar === false && !resultadoExibido && (
