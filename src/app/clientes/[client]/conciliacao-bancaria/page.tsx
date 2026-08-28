@@ -30,9 +30,12 @@ type BancoConfig = {
   banco1Nome: string;
   banco2Chave: "bradesco" | "bancoBrasil";
   banco2Nome: string;
-  mostrarUploadBanco1: boolean;
-  mostrarUploadBanco2: boolean;
   mostrarUploadFaturamento: boolean;
+  // A leitura automática do PDF/foto (parsePagBank/parseBradesco) só existe pro formato da
+  // MJ Prime — pra outros bancos ainda sem parser calibrado, o anexo continua disponível (fica
+  // guardado e o texto lido pode ser consultado), mas os valores entram pelo preenchimento
+  // manual mesmo, pra não arriscar extrair número errado de um formato desconhecido.
+  leituraAutomatica: boolean;
   requerSelecaoData: boolean;
   taxaDoRelatorio: boolean;
   bankLabels: BankLabels;
@@ -45,9 +48,8 @@ function getBancoConfig(client: Client): BancoConfig {
       banco1Nome: "Stone",
       banco2Chave: "bancoBrasil",
       banco2Nome: "Banco do Brasil",
-      mostrarUploadBanco1: false,
-      mostrarUploadBanco2: false,
       mostrarUploadFaturamento: false,
+      leituraAutomatica: false,
       requerSelecaoData: true,
       taxaDoRelatorio: true,
       bankLabels: {
@@ -66,9 +68,8 @@ function getBancoConfig(client: Client): BancoConfig {
     banco1Nome: "PagBank",
     banco2Chave: "bradesco",
     banco2Nome: "Bradesco",
-    mostrarUploadBanco1: true,
-    mostrarUploadBanco2: true,
     mostrarUploadFaturamento: true,
+    leituraAutomatica: true,
     requerSelecaoData: false,
     taxaDoRelatorio: false,
     bankLabels: {
@@ -105,8 +106,10 @@ function DocumentosCliente() {
   const [pagbankManual, setPagbankManual] = useState<MovimentoPagBank[]>([]);
   const [bradescoManual, setBradescoManual] = useState<MovimentoBradesco[]>([]);
   const [mostrarManualFaturamento, setMostrarManualFaturamento] = useState(false);
-  const [mostrarManualPagbank, setMostrarManualPagbank] = useState(false);
-  const [mostrarManualBradesco, setMostrarManualBradesco] = useState(false);
+  // Sem leitura automática pro banco, o preenchimento manual já é o principal jeito de entrar
+  // com os valores — começa aberto, em vez de escondido atrás de um clique extra.
+  const [mostrarManualPagbank, setMostrarManualPagbank] = useState(!bancoConfig.leituraAutomatica);
+  const [mostrarManualBradesco, setMostrarManualBradesco] = useState(!bancoConfig.leituraAutomatica);
   // Só monta a conciliação depois que o usuário clicar em "Enviar informações" — evita ficar
   // recalculando/reorganizando as colunas a cada arquivo anexado, um por um.
   const [enviado, setEnviado] = useState(false);
@@ -117,12 +120,15 @@ function DocumentosCliente() {
   const [dataConciliacao, setDataConciliacao] = useState<string | null>(null);
 
   const faturamentoParsed = useMemo(() => (faturamentoRaw ? parseFaturamento(faturamentoRaw.text) : null), [faturamentoRaw]);
-  const pagbankParsed = useMemo(() => (pagbankRaw ? parsePagBank(pagbankRaw.text) : null), [pagbankRaw]);
+  const pagbankParsed = useMemo(
+    () => (pagbankRaw && bancoConfig.leituraAutomatica ? parsePagBank(pagbankRaw.text) : null),
+    [pagbankRaw, bancoConfig.leituraAutomatica]
+  );
   const anoReferencia =
     (faturamentoParsed?.vendas[0]?.data ?? faturamentoManual[0]?.data)?.slice(0, 4) ?? String(new Date().getFullYear());
   const bradescoParsed = useMemo(
-    () => (bradescoRaw ? parseBradesco(bradescoRaw.text, anoReferencia, bradescoRaw.viaOcr) : null),
-    [bradescoRaw, anoReferencia]
+    () => (bradescoRaw && bancoConfig.leituraAutomatica ? parseBradesco(bradescoRaw.text, anoReferencia, bradescoRaw.viaOcr) : null),
+    [bradescoRaw, anoReferencia, bancoConfig.leituraAutomatica]
   );
 
   // Junta o que veio do documento anexado (se houver) com o que foi digitado manualmente —
@@ -761,7 +767,11 @@ function DocumentosCliente() {
                   cada quadro pra digitar em vez de anexar.
                 </>
               ) : (
-                <>Preencha os quadros abaixo com o que veio do caderno e dos extratos, e o caixa físico logo abaixo.</>
+                <>
+                  Anexe os extratos em PDF pra guardar/conferir (a leitura automática ainda não está disponível pra esses bancos)
+                  e transcreva os valores em <strong>Preencher manualmente</strong> em cada quadro, junto com as vendas do caderno
+                  e o caixa físico logo abaixo.
+                </>
               )}{" "}
               Só quando clicar em <strong>Enviar informações</strong> o sistema monta a conciliação — assim dá pra terminar de
               anexar/preencher tudo antes de qualquer leitura.
@@ -789,83 +799,65 @@ function DocumentosCliente() {
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-2">
-            {bancoConfig.mostrarUploadBanco2 ? (
-              <>
-                <UploadBox
-                  icon={Landmark}
-                  title={`Extrato ${bancoConfig.banco2Nome}`}
-                  hint="PDF ou fotos/prints do extrato — pode anexar mais de uma imagem"
-                  onExtracted={setBradescoRaw}
-                  multiple
-                />
-                <button
-                  onClick={() => setMostrarManualBradesco((v) => !v)}
-                  className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
-                >
-                  <PenLine size={11} />
-                  {mostrarManualBradesco
-                    ? "Ocultar preenchimento manual"
-                    : bradescoManual.length > 0
-                      ? `Preenchimento manual (${bradescoManual.length})`
-                      : "Preencher manualmente"}
-                </button>
-                {mostrarManualBradesco && (
-                  <div className="card p-3">
-                    <BradescoManualTable movimentos={bradescoManual} onChange={setBradescoManual} />
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="card card-dashed p-4">
-                <div className="mb-1 flex items-center gap-2">
-                  <Landmark size={15} className="text-client-accent" />
-                  <h3 className="text-xs font-semibold text-brand-900">Extrato {bancoConfig.banco2Nome}</h3>
-                </div>
-                <p className="mb-3 text-[11px] text-faint">
-                  Leitura automática ainda não disponível pra esse banco — preencha manualmente por enquanto.
-                </p>
+            <UploadBox
+              icon={Landmark}
+              title={`Extrato ${bancoConfig.banco2Nome}`}
+              hint={
+                bancoConfig.leituraAutomatica
+                  ? "PDF ou fotos/prints do extrato — pode anexar mais de uma imagem"
+                  : "PDF ou fotos/prints do extrato, pra guardar/conferir — os valores entram pelo preenchimento manual abaixo"
+              }
+              onExtracted={setBradescoRaw}
+              multiple
+            />
+            <button
+              onClick={() => setMostrarManualBradesco((v) => !v)}
+              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+            >
+              <PenLine size={11} />
+              {mostrarManualBradesco
+                ? "Ocultar preenchimento manual"
+                : bradescoManual.length > 0
+                  ? `Preenchimento manual (${bradescoManual.length})`
+                  : "Preencher manualmente"}
+            </button>
+            {mostrarManualBradesco && (
+              <div className="card p-3">
                 <BradescoManualTable movimentos={bradescoManual} onChange={setBradescoManual} />
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            {bancoConfig.mostrarUploadBanco1 ? (
-              <>
-                <UploadBox
-                  icon={Landmark}
-                  title={`Extrato ${bancoConfig.banco1Nome}`}
-                  hint={`Extrato da conta/maquininha ${bancoConfig.banco1Nome} — PDF ou fotos/prints`}
-                  onExtracted={setPagbankRaw}
-                  multiple
-                />
-                <button
-                  onClick={() => setMostrarManualPagbank((v) => !v)}
-                  className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
-                >
-                  <PenLine size={11} />
-                  {mostrarManualPagbank
-                    ? "Ocultar preenchimento manual"
-                    : pagbankManual.length > 0
-                      ? `Preenchimento manual (${pagbankManual.length})`
-                      : "Preencher manualmente"}
-                </button>
-                {mostrarManualPagbank && (
-                  <div className="card p-3">
-                    <PagBankManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
-                  </div>
+            <UploadBox
+              icon={Landmark}
+              title={`Extrato ${bancoConfig.banco1Nome}`}
+              hint={
+                bancoConfig.leituraAutomatica
+                  ? `Extrato da conta/maquininha ${bancoConfig.banco1Nome} — PDF ou fotos/prints`
+                  : `PDF ou fotos/prints do extrato, pra guardar/conferir — os valores entram pelo preenchimento manual abaixo`
+              }
+              onExtracted={setPagbankRaw}
+              multiple
+            />
+            <button
+              onClick={() => setMostrarManualPagbank((v) => !v)}
+              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+            >
+              <PenLine size={11} />
+              {mostrarManualPagbank
+                ? "Ocultar preenchimento manual"
+                : pagbankManual.length > 0
+                  ? `Preenchimento manual (${pagbankManual.length})`
+                  : "Preencher manualmente"}
+            </button>
+            {mostrarManualPagbank && (
+              <div className="card p-3">
+                {bancoConfig.banco1Chave === "stone" ? (
+                  <StoneManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
+                ) : (
+                  <PagBankManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
                 )}
-              </>
-            ) : (
-              <div className="card card-dashed p-4">
-                <div className="mb-1 flex items-center gap-2">
-                  <Landmark size={15} className="text-client-accent" />
-                  <h3 className="text-xs font-semibold text-brand-900">Extrato {bancoConfig.banco1Nome}</h3>
-                </div>
-                <p className="mb-3 text-[11px] text-faint">
-                  Leitura automática ainda não disponível pra esse banco — preencha manualmente por enquanto.
-                </p>
-                <StoneManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
               </div>
             )}
           </div>
