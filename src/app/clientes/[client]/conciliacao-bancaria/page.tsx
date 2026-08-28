@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Building2, FilePlus2, FileSpreadsheet, Landmark, PenLine, Send, Trash2, Users } from "lucide-react";
 import { UploadBox } from "@/components/client/UploadBox";
 import { CaixaFisicoManualTable } from "@/components/client/CaixaFisicoManualTable";
-import { FaturamentoManualTable, PagBankManualTable, BradescoManualTable } from "@/components/client/ManualEntryTables";
-import { ConciliacaoResultado } from "@/components/client/ConciliacaoResultado";
+import { FaturamentoManualTable, PagBankManualTable, BradescoManualTable, StoneManualTable } from "@/components/client/ManualEntryTables";
+import { ConciliacaoResultado, BankLabels } from "@/components/client/ConciliacaoResultado";
 import { useFinance, genId } from "@/lib/store/FinanceContext";
-import { Payable, Receivable, TransferenciaConta } from "@/lib/types";
+import { Client, Payable, Receivable, TransferenciaConta } from "@/lib/types";
 import { parseFaturamento, parseBradesco, parsePagBank } from "@/lib/reconciliation/parsers";
-import { conciliarDia, recalcularDinheiro } from "@/lib/reconciliation/match";
+import { conciliarDia, conciliarDiaMjShoes, recalcularDinheiro } from "@/lib/reconciliation/match";
 import { CaixaFisicoExtraido, MovimentoBradesco, MovimentoCaixaFisico, MovimentoPagBank, VendaExtraida } from "@/lib/reconciliation/types";
 import { usePendencias } from "@/lib/reconciliation/pendenciasStore";
 import { useConciliacaoHistorico, ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
@@ -18,8 +18,71 @@ import { formatDateBR } from "@/lib/today";
 
 type Extraido = { text: string; viaOcr: boolean; file: File } | null;
 
+// Configuração dos bancos usados na Conciliação Bancária de cada cliente. MJ Prime usa
+// Bradesco (pix/saídas) + PagBank (cartão) com leitura automática de PDF/foto e a taxa da
+// maquineta calculada por diferença entre venda e recebido. MJ Shoes usa Banco do Brasil +
+// Stone, só por preenchimento manual (sem parser ainda — precisa de exemplo real do extrato
+// pra calibrar), com a taxa da Stone somada direto do que já vem discriminado no relatório, e
+// pedindo pro usuário confirmar manualmente a data da conciliação (documentos que chegam do
+// cliente costumam cobrir vários dias de uma vez).
+type BancoConfig = {
+  banco1Chave: "pagbank" | "stone";
+  banco1Nome: string;
+  banco2Chave: "bradesco" | "bancoBrasil";
+  banco2Nome: string;
+  mostrarUploadBanco1: boolean;
+  mostrarUploadBanco2: boolean;
+  mostrarUploadFaturamento: boolean;
+  requerSelecaoData: boolean;
+  taxaDoRelatorio: boolean;
+  bankLabels: BankLabels;
+};
+
+function getBancoConfig(client: Client): BancoConfig {
+  if (client.slug === "mj-shoes") {
+    return {
+      banco1Chave: "stone",
+      banco1Nome: "Stone",
+      banco2Chave: "bancoBrasil",
+      banco2Nome: "Banco do Brasil",
+      mostrarUploadBanco1: false,
+      mostrarUploadBanco2: false,
+      mostrarUploadFaturamento: false,
+      requerSelecaoData: true,
+      taxaDoRelatorio: true,
+      bankLabels: {
+        cartao: "Stone",
+        cartaoArtigo: "na",
+        extrato: "Banco do Brasil",
+        origemLabels: { stone: "Stone", bancoBrasil: "Banco do Brasil" },
+        origemOrdem: ["stone", "bancoBrasil"],
+        origemArtigo: { stone: "da" },
+        taxaDoRelatorio: true,
+      },
+    };
+  }
+  return {
+    banco1Chave: "pagbank",
+    banco1Nome: "PagBank",
+    banco2Chave: "bradesco",
+    banco2Nome: "Bradesco",
+    mostrarUploadBanco1: true,
+    mostrarUploadBanco2: true,
+    mostrarUploadFaturamento: true,
+    requerSelecaoData: false,
+    taxaDoRelatorio: false,
+    bankLabels: {
+      cartao: "PagBank",
+      extrato: "Bradesco",
+      origemLabels: { pagbank: "PagBank", bradesco: "Bradesco", caixa: "Caixa Físico" },
+      origemOrdem: ["pagbank", "caixa", "bradesco"],
+    },
+  };
+}
+
 function DocumentosCliente() {
   const finance = useFinance();
+  const bancoConfig = getBancoConfig(finance.client);
   const { pendencias, upsertPendencias } = usePendencias(finance.client.slug);
   const historico = useConciliacaoHistorico(finance.client.slug);
   const [dataOverride, setDataOverride] = useState<string | null>(null);
@@ -47,6 +110,11 @@ function DocumentosCliente() {
   // Só monta a conciliação depois que o usuário clicar em "Enviar informações" — evita ficar
   // recalculando/reorganizando as colunas a cada arquivo anexado, um por um.
   const [enviado, setEnviado] = useState(false);
+  // Só usado quando bancoConfig.requerSelecaoData (MJ Shoes): o relatório enviado pelo cliente
+  // costuma cobrir vários dias de uma vez, então em vez de assumir a data da primeira venda
+  // lida, o sistema mostra as datas encontradas nos documentos e o usuário confirma qual delas
+  // é a conciliação de agora.
+  const [dataConciliacao, setDataConciliacao] = useState<string | null>(null);
 
   const faturamentoParsed = useMemo(() => (faturamentoRaw ? parseFaturamento(faturamentoRaw.text) : null), [faturamentoRaw]);
   const pagbankParsed = useMemo(() => (pagbankRaw ? parsePagBank(pagbankRaw.text) : null), [pagbankRaw]);
@@ -82,10 +150,33 @@ function DocumentosCliente() {
 
   const caixa: CaixaFisicoExtraido = useMemo(() => ({ movimentos: caixaMovs }), [caixaMovs]);
 
-  const dataReferencia = faturamento?.vendas[0]?.data ?? null;
+  // Datas distintas encontradas nos documentos/preenchimentos atuais — só usado quando o
+  // cliente exige seleção manual de data (MJ Shoes), como um lembrete pro usuário confirmar
+  // no campo de data qual delas é a conciliação de agora.
+  const datasEncontradas = useMemo(() => {
+    const todas = [
+      ...(faturamento?.vendas.map((v) => v.data) ?? []),
+      ...(pagbank?.movimentos.map((m) => m.data) ?? []),
+      ...(bradesco?.movimentos.map((m) => m.data) ?? []),
+      ...caixaMovs.map((m) => m.data),
+    ];
+    return [...new Set(todas)].sort();
+  }, [faturamento, pagbank, bradesco, caixaMovs]);
+
+  const dataReferencia = bancoConfig.requerSelecaoData ? dataConciliacao : faturamento?.vendas[0]?.data ?? null;
 
   const resultado = useMemo(() => {
     if (!enviado || !faturamento || !dataReferencia) return null;
+    if (bancoConfig.requerSelecaoData) {
+      return conciliarDiaMjShoes(
+        dataReferencia,
+        faturamento,
+        pagbank ?? { movimentos: [] },
+        bradesco ?? { movimentos: [], viaOcr: false },
+        caixa,
+        finance.payables
+      );
+    }
     return conciliarDia(
       dataReferencia,
       faturamento,
@@ -95,7 +186,7 @@ function DocumentosCliente() {
       finance.payables,
       finance.client.titularKeywords ?? [finance.client.name.toUpperCase()]
     );
-  }, [enviado, faturamento, pagbank, bradesco, caixa, dataReferencia, finance.payables, finance.client]);
+  }, [enviado, faturamento, pagbank, bradesco, caixa, dataReferencia, finance.payables, finance.client, bancoConfig.requerSelecaoData]);
 
   // Depende do objeto inteiro (não só da data): sem isso, enviar um documento novo ou
   // digitar uma linha do caixa físico depois do primeiro salvamento do dia não atualizava
@@ -133,7 +224,7 @@ function DocumentosCliente() {
         .map(({ v, chave }) => ({
           id: `${chave}-${data}`,
           data,
-          descricao: `Venda no cartão não identificada no PagBank (${v.vendaHora ?? ""})`,
+          descricao: `Venda no cartão não identificada ${bancoConfig.bankLabels.cartaoArtigo ?? "no"} ${bancoConfig.banco1Nome} (${v.vendaHora ?? ""})`,
           valor: v.vendaValor ?? 0,
           tipo: "cartao" as const,
         })),
@@ -143,7 +234,7 @@ function DocumentosCliente() {
         .map(({ p, chave }) => ({
           id: `${chave}-${data}`,
           data,
-          descricao: `Pix não identificado no Bradesco (${p.vendaHora ?? ""})`,
+          descricao: `Pix não identificado no ${bancoConfig.banco2Nome} (${p.vendaHora ?? ""})`,
           valor: p.vendaValor ?? 0,
           tipo: "pix" as const,
         })),
@@ -267,7 +358,7 @@ function DocumentosCliente() {
 
       // Conta bancária onde o valor efetivamente entrou — cartão liquida no PagBank, pix no
       // Bradesco, dinheiro fica no caixa físico. Usado no ledger de Contas.
-      const contaPorTipo = { pix: "Bradesco", dinheiro: "Caixa Físico", cartaoVenda: "PagBank" } as const;
+      const contaPorTipo = { pix: bancoConfig.banco2Nome, dinheiro: "Caixa Físico", cartaoVenda: bancoConfig.banco1Nome };
 
       const receivable: Receivable = {
         id: genId("r"),
@@ -289,10 +380,18 @@ function DocumentosCliente() {
       const idx = Number(chave.split("-")[1]);
       const p = resultadoExibido.pagamentos[idx];
       if (!p) return null;
-      const contaPorOrigem = { pagbank: "PagBank", bradesco: "Bradesco", caixa: "Caixa Físico" } as const;
+      const contaPorOrigem: Record<string, string> = {
+        [bancoConfig.banco1Chave]: bancoConfig.banco1Nome,
+        [bancoConfig.banco2Chave]: bancoConfig.banco2Nome,
+        caixa: "Caixa Físico",
+      };
       if (p.tipo === "transferencia") {
-        const contaOrigem = contaPorOrigem[p.origem];
-        const contaDestino = p.contraparte ? contaPorOrigem[p.contraparte.origem] : contaOrigem === "Bradesco" ? "PagBank" : "Bradesco";
+        const contaOrigem = contaPorOrigem[p.origem] ?? p.origem;
+        const contaDestino = p.contraparte
+          ? contaPorOrigem[p.contraparte.origem] ?? p.contraparte.origem
+          : contaOrigem === bancoConfig.banco2Nome
+            ? bancoConfig.banco1Nome
+            : bancoConfig.banco2Nome;
         return {
           transferencia: {
             id: genId("t"),
@@ -307,7 +406,7 @@ function DocumentosCliente() {
       if (p.tipo !== "pagamento") return null;
       const ignorado = (resultadoExibido.ignorados ?? []).includes(chave);
       const match = ignorado ? undefined : p.matchLancamento;
-      if (match) return { payable: { ...match, id: match.id, conta: match.conta ?? contaPorOrigem[p.origem] } };
+      if (match) return { payable: { ...match, id: match.id, conta: match.conta ?? contaPorOrigem[p.origem] ?? p.origem } };
       return {
         payable: {
           id: genId("p"),
@@ -319,7 +418,7 @@ function DocumentosCliente() {
           status: "pago",
           pagamento: p.data,
           descricao: p.historico,
-          conta: contaPorOrigem[p.origem],
+          conta: contaPorOrigem[p.origem] ?? p.origem,
         },
         precisaCategoriaFallback: !p.sugestao?.categoria,
       };
@@ -409,9 +508,13 @@ function DocumentosCliente() {
     const p = resultadoExibido.pagamentos[idx];
     if (!p || p.tipo !== "pagamento") return;
 
-    const contaPorOrigem = { pagbank: "PagBank", bradesco: "Bradesco", caixa: "Caixa Físico" } as const;
-    const contaOrigem = contaPorOrigem[p.origem];
-    const contaDestino = contaOrigem === "Bradesco" ? "PagBank" : "Bradesco";
+    const contaPorOrigem: Record<string, string> = {
+      [bancoConfig.banco1Chave]: bancoConfig.banco1Nome,
+      [bancoConfig.banco2Chave]: bancoConfig.banco2Nome,
+      caixa: "Caixa Físico",
+    };
+    const contaOrigem = contaPorOrigem[p.origem] ?? p.origem;
+    const contaDestino = contaOrigem === bancoConfig.banco2Nome ? bancoConfig.banco1Nome : bancoConfig.banco2Nome;
     const transferencia: TransferenciaConta = {
       id: genId("t"),
       data: p.data,
@@ -466,9 +569,14 @@ function DocumentosCliente() {
     if (!resultadoExibido) return [];
     return (resultadoExibido.cartaoVendas ?? [])
       .map((item, i) => {
-        const recebido = item.match?.valor;
-        if (recebido === undefined || item.vendaValor === undefined) return null;
-        const taxa = Math.round((item.vendaValor - recebido) * 100) / 100;
+        // MJ Shoes (Stone): a taxa já vem discriminada por lançamento no relatório, usada
+        // direto — sem calcular por diferença como se faz com o PagBank da MJ Prime.
+        const taxa = bancoConfig.taxaDoRelatorio
+          ? item.match?.taxa
+          : item.match?.valor !== undefined && item.vendaValor !== undefined
+            ? Math.round((item.vendaValor - item.match.valor) * 100) / 100
+            : undefined;
+        if (taxa === undefined) return null;
         return taxa > 0.01 ? { chave: `cartaoVenda-${i}`, hora: item.vendaHora, taxa } : null;
       })
       .filter((x): x is { chave: string; hora: string | undefined; taxa: number } => x !== null);
@@ -491,7 +599,7 @@ function DocumentosCliente() {
       status: "pago",
       pagamento: dataSelecionada,
       descricao: `Taxa maquineta ${formatDateBR(dataSelecionada)} — ${detalhe} (total ${formatCurrencyPrecise(total)})`,
-      conta: "PagBank",
+      conta: bancoConfig.banco1Nome,
     };
     finance.addPayable([payable]);
     historico.marcarMigrados(dataSelecionada, { "cartao-taxa-agregada": payable.id });
@@ -516,6 +624,7 @@ function DocumentosCliente() {
     setFaturamentoManual([]);
     setPagbankManual([]);
     setBradescoManual([]);
+    setDataConciliacao(null);
     setUltimoUpload(null);
     setEnviado(false);
   }
@@ -646,9 +755,16 @@ function DocumentosCliente() {
           <div>
             <h2 className="text-sm font-semibold text-brand-900">Documentos do período</h2>
             <p className="mt-0.5 text-xs text-faint">
-              Anexe os documentos do dia e o caixa físico logo abaixo, ou clique em <strong>Preencher manualmente</strong> em
-              cada quadro pra digitar em vez de anexar. Só quando clicar em <strong>Enviar informações</strong> o sistema monta
-              a conciliação — assim dá pra terminar de anexar/preencher tudo antes de qualquer leitura.
+              {bancoConfig.mostrarUploadFaturamento ? (
+                <>
+                  Anexe os documentos do dia e o caixa físico logo abaixo, ou clique em <strong>Preencher manualmente</strong> em
+                  cada quadro pra digitar em vez de anexar.
+                </>
+              ) : (
+                <>Preencha os quadros abaixo com o que veio do caderno e dos extratos, e o caixa físico logo abaixo.</>
+              )}{" "}
+              Só quando clicar em <strong>Enviar informações</strong> o sistema monta a conciliação — assim dá pra terminar de
+              anexar/preencher tudo antes de qualquer leitura.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -673,78 +789,121 @@ function DocumentosCliente() {
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-2">
-            <UploadBox
-              icon={Landmark}
-              title="Extrato Bradesco"
-              hint="PDF ou fotos/prints do extrato — pode anexar mais de uma imagem"
-              onExtracted={setBradescoRaw}
-              multiple
-            />
-            <button
-              onClick={() => setMostrarManualBradesco((v) => !v)}
-              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
-            >
-              <PenLine size={11} />
-              {mostrarManualBradesco
-                ? "Ocultar preenchimento manual"
-                : bradescoManual.length > 0
-                  ? `Preenchimento manual (${bradescoManual.length})`
-                  : "Preencher manualmente"}
-            </button>
-            {mostrarManualBradesco && (
-              <div className="card p-3">
+            {bancoConfig.mostrarUploadBanco2 ? (
+              <>
+                <UploadBox
+                  icon={Landmark}
+                  title={`Extrato ${bancoConfig.banco2Nome}`}
+                  hint="PDF ou fotos/prints do extrato — pode anexar mais de uma imagem"
+                  onExtracted={setBradescoRaw}
+                  multiple
+                />
+                <button
+                  onClick={() => setMostrarManualBradesco((v) => !v)}
+                  className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+                >
+                  <PenLine size={11} />
+                  {mostrarManualBradesco
+                    ? "Ocultar preenchimento manual"
+                    : bradescoManual.length > 0
+                      ? `Preenchimento manual (${bradescoManual.length})`
+                      : "Preencher manualmente"}
+                </button>
+                {mostrarManualBradesco && (
+                  <div className="card p-3">
+                    <BradescoManualTable movimentos={bradescoManual} onChange={setBradescoManual} />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="card card-dashed p-4">
+                <div className="mb-1 flex items-center gap-2">
+                  <Landmark size={15} className="text-client-accent" />
+                  <h3 className="text-xs font-semibold text-brand-900">Extrato {bancoConfig.banco2Nome}</h3>
+                </div>
+                <p className="mb-3 text-[11px] text-faint">
+                  Leitura automática ainda não disponível pra esse banco — preencha manualmente por enquanto.
+                </p>
                 <BradescoManualTable movimentos={bradescoManual} onChange={setBradescoManual} />
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <UploadBox
-              icon={Landmark}
-              title="Extrato PagBank"
-              hint="Extrato da conta/maquininha PagBank — PDF ou fotos/prints"
-              onExtracted={setPagbankRaw}
-              multiple
-            />
-            <button
-              onClick={() => setMostrarManualPagbank((v) => !v)}
-              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
-            >
-              <PenLine size={11} />
-              {mostrarManualPagbank
-                ? "Ocultar preenchimento manual"
-                : pagbankManual.length > 0
-                  ? `Preenchimento manual (${pagbankManual.length})`
-                  : "Preencher manualmente"}
-            </button>
-            {mostrarManualPagbank && (
-              <div className="card p-3">
-                <PagBankManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
+            {bancoConfig.mostrarUploadBanco1 ? (
+              <>
+                <UploadBox
+                  icon={Landmark}
+                  title={`Extrato ${bancoConfig.banco1Nome}`}
+                  hint={`Extrato da conta/maquininha ${bancoConfig.banco1Nome} — PDF ou fotos/prints`}
+                  onExtracted={setPagbankRaw}
+                  multiple
+                />
+                <button
+                  onClick={() => setMostrarManualPagbank((v) => !v)}
+                  className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+                >
+                  <PenLine size={11} />
+                  {mostrarManualPagbank
+                    ? "Ocultar preenchimento manual"
+                    : pagbankManual.length > 0
+                      ? `Preenchimento manual (${pagbankManual.length})`
+                      : "Preencher manualmente"}
+                </button>
+                {mostrarManualPagbank && (
+                  <div className="card p-3">
+                    <PagBankManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="card card-dashed p-4">
+                <div className="mb-1 flex items-center gap-2">
+                  <Landmark size={15} className="text-client-accent" />
+                  <h3 className="text-xs font-semibold text-brand-900">Extrato {bancoConfig.banco1Nome}</h3>
+                </div>
+                <p className="mb-3 text-[11px] text-faint">
+                  Leitura automática ainda não disponível pra esse banco — preencha manualmente por enquanto.
+                </p>
+                <StoneManualTable movimentos={pagbankManual} onChange={setPagbankManual} />
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <UploadBox
-              icon={FileSpreadsheet}
-              title="Relatório de faturamento"
-              hint="Vendas do período — PDF ou fotos/prints, base da conciliação"
-              onExtracted={setFaturamentoRaw}
-              multiple
-            />
-            <button
-              onClick={() => setMostrarManualFaturamento((v) => !v)}
-              className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
-            >
-              <PenLine size={11} />
-              {mostrarManualFaturamento
-                ? "Ocultar preenchimento manual"
-                : faturamentoManual.length > 0
-                  ? `Preenchimento manual (${faturamentoManual.length})`
-                  : "Preencher manualmente"}
-            </button>
-            {mostrarManualFaturamento && (
-              <div className="card p-3">
+            {bancoConfig.mostrarUploadFaturamento ? (
+              <>
+                <UploadBox
+                  icon={FileSpreadsheet}
+                  title="Relatório de faturamento"
+                  hint="Vendas do período — PDF ou fotos/prints, base da conciliação"
+                  onExtracted={setFaturamentoRaw}
+                  multiple
+                />
+                <button
+                  onClick={() => setMostrarManualFaturamento((v) => !v)}
+                  className="flex items-center justify-center gap-1 text-[11px] font-medium text-client-accent hover:underline"
+                >
+                  <PenLine size={11} />
+                  {mostrarManualFaturamento
+                    ? "Ocultar preenchimento manual"
+                    : faturamentoManual.length > 0
+                      ? `Preenchimento manual (${faturamentoManual.length})`
+                      : "Preencher manualmente"}
+                </button>
+                {mostrarManualFaturamento && (
+                  <div className="card p-3">
+                    <FaturamentoManualTable vendas={faturamentoManual} onChange={setFaturamentoManual} />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="card card-dashed p-4">
+                <div className="mb-1 flex items-center gap-2">
+                  <FileSpreadsheet size={15} className="text-client-accent" />
+                  <h3 className="text-xs font-semibold text-brand-900">Vendas do período (caderno)</h3>
+                </div>
+                <p className="mb-3 text-[11px] text-faint">Transcreva aqui as vendas anotadas no caderno.</p>
                 <FaturamentoManualTable vendas={faturamentoManual} onChange={setFaturamentoManual} />
               </div>
             )}
@@ -757,10 +916,30 @@ function DocumentosCliente() {
         <CaixaFisicoManualTable movimentos={caixaMovs} onChange={atualizarCaixaMovs} />
       </div>
 
+      {bancoConfig.requerSelecaoData && (
+        <div className="card p-5">
+          <h2 className="text-sm font-semibold text-brand-900">Data da conciliação</h2>
+          <p className="mt-0.5 text-xs text-faint">
+            O relatório do caderno costuma trazer vários dias de uma vez — escolha qual data é essa conciliação.
+          </p>
+          {datasEncontradas.length > 0 && (
+            <p className="mt-2 text-xs text-muted">
+              Datas encontradas nos documentos: {datasEncontradas.map((d) => formatDateBR(d)).join(", ")}
+            </p>
+          )}
+          <input
+            type="date"
+            value={dataConciliacao ?? ""}
+            onChange={(e) => setDataConciliacao(e.target.value || null)}
+            className="mt-3 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900"
+          />
+        </div>
+      )}
+
       <div className="flex justify-end">
         <button
           onClick={() => setEnviado(true)}
-          disabled={!faturamento}
+          disabled={!faturamento || (bancoConfig.requerSelecaoData && !dataConciliacao)}
           className="flex items-center gap-1.5 rounded-lg bg-client-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-client-accent-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Send size={14} />
@@ -772,13 +951,18 @@ function DocumentosCliente() {
           Anexe ou preencha manualmente ao menos o relatório de faturamento pra poder enviar.
         </p>
       )}
+      {faturamento && bancoConfig.requerSelecaoData && !dataConciliacao && (
+        <p className="-mt-3 text-right text-xs text-faint">Escolha a data da conciliação acima pra poder enviar.</p>
+      )}
 
       {podeEnviar === false && !resultadoExibido && (
         <div className="card card-dashed flex flex-col items-center gap-2 p-12 text-center">
           <p className="text-sm text-muted">
             {enviado
               ? "Nenhuma conciliação encontrada ainda — envie ao menos o relatório de faturamento."
-              : "Anexe os documentos do dia e clique em \"Enviar informações\" para montar a conciliação, ou escolha uma data já conciliada acima."}
+              : bancoConfig.mostrarUploadFaturamento
+                ? "Anexe os documentos do dia e clique em \"Enviar informações\" para montar a conciliação, ou escolha uma data já conciliada acima."
+                : "Preencha os documentos do dia e clique em \"Enviar informações\" para montar a conciliação, ou escolha uma data já conciliada acima."}
           </p>
         </div>
       )}
@@ -787,6 +971,7 @@ function DocumentosCliente() {
           resultado={resultadoExibido}
           datas={historico.datas}
           dataSelecionada={dataSelecionada ?? undefined}
+          bankLabels={bancoConfig.bankLabels}
           onNavegar={setDataOverride}
           onEditarItem={editarItem}
           onEditarPagamentoBanco={editarPagamentoBanco}

@@ -26,7 +26,7 @@ export type ItemConferencia<T> = {
 };
 
 export type PagamentoConciliacao = {
-  origem: "bradesco" | "pagbank" | "caixa";
+  origem: "bradesco" | "pagbank" | "caixa" | "bancoBrasil" | "stone";
   data: string;
   historico: string;
   valor: number;
@@ -299,6 +299,119 @@ export function conciliarDia(
         !matchLancamento && !ehTransferenciaMesmoTitular
           ? { favorecido: sugerirFavorecido(saida.historico), classificacao: "DESPESAS ADMINISTRATIVAS", categoria: "" }
           : undefined,
+    });
+  }
+
+  const totalPendencias =
+    cartaoVendas.filter((v) => v.status === "pendente").length +
+    pix.filter((p) => p.status === "pendente").length +
+    dinheiro.filter((d) => d.status === "pendente").length +
+    pagamentos.filter((p) => p.status === "pendente" && p.tipo === "pagamento").length;
+
+  return { data, cartao, cartaoVendas, pix, dinheiro, pagamentos, totalPendencias };
+}
+
+// Conciliação da MJ Shoes: mesma ideia da MJ Prime (relatório de vendas x extratos, quadrados
+// sistema/banco, saídas batendo com Contas a Pagar), mas com dois bancos diferentes — Stone no
+// lugar do PagBank e Banco do Brasil no lugar do Bradesco — e uma diferença importante no
+// cartão: a Stone já discrimina a taxa da maquineta por lançamento no próprio relatório, então
+// em vez de CALCULAR a taxa por diferença (venda - recebido, com tolerância) como se faz com o
+// PagBank, aqui a venda casa por valor BRUTO exato com o lançamento da Stone, e a taxa vem
+// pronta do campo "taxa" de cada MovimentoPagBank (reaproveitado pra representar a Stone).
+export function conciliarDiaMjShoes(
+  data: string,
+  faturamento: FaturamentoExtraido,
+  stone: PagBankExtraido,
+  bancoBrasil: BradescoExtraido,
+  caixa: CaixaFisicoExtraido,
+  payablesExistentes: Payable[]
+): ResultadoConciliacao {
+  // ---------- Cartão (crédito + débito) x Stone ----------
+  const vendasCartao = faturamento.vendas.filter((v) => v.forma === "CARTAO DE CREDITO" || v.forma === "CARTAO DE DEBITO");
+  const creditosStone = stone.movimentos.filter((m) => m.valor > 0);
+
+  const faturamentoTotal = round2(vendasCartao.reduce((a, v) => a + v.valor, 0));
+  const stoneTotal = round2(creditosStone.reduce((a, m) => a + m.valor, 0));
+  const diferenca = round2(faturamentoTotal - stoneTotal);
+
+  const cartao = {
+    faturamentoTotal,
+    faturamentoQtd: vendasCartao.length,
+    pagbankTotal: stoneTotal,
+    pagbankQtd: creditosStone.length,
+    diferenca,
+    quantidadeBate: vendasCartao.length === creditosStone.length,
+    valorBate: diferenca >= 0,
+  };
+
+  // Casamento por valor BRUTO exato — sem tolerância de taxa, já que o valor da Stone aqui é o
+  // bruto da venda (igual ao caderno) e a taxa é informada à parte, discriminada.
+  const cartaoCasados = casarPorValorComSobras(vendasCartao, creditosStone);
+  const cartaoVendas: ItemConferencia<MovimentoPagBank>[] = cartaoCasados.map(({ a, b }) => ({
+    vendaValor: a?.valor,
+    vendaHora: a?.hora,
+    match: b,
+    status: b ? "conciliado" : "pendente",
+  }));
+
+  // ---------- Pix: vendas faturadas x recebidos no Banco do Brasil ----------
+  const vendasPix = faturamento.vendas.filter((v) => v.forma === "PIX");
+  const pixRecebidosBB = bancoBrasil.movimentos.filter((m) => m.valor > 0 && /pix recebido/i.test(m.historico));
+  const pixCasados = casarPorValorComSobras(vendasPix, pixRecebidosBB);
+  const pix: ItemConferencia<MovimentoBradesco>[] = pixCasados.map(({ a, b }) => ({
+    vendaValor: a?.valor,
+    vendaHora: a?.hora,
+    match: b,
+    status: b ? "conciliado" : "pendente",
+  }));
+
+  // ---------- Espécie: vendas faturadas x caixa físico ----------
+  const vendasDinheiro = faturamento.vendas.filter((v) => v.forma === "DINHEIRO");
+  const entradasCaixa = caixa.movimentos.filter((m) => (m.entrada ?? 0) > 0).map((m) => ({ ...m, valor: m.entrada! }));
+  const dinheiroCasados = casarPorValorComSobras(vendasDinheiro, entradasCaixa);
+  const dinheiro: ItemConferencia<MovimentoCaixaFisico>[] = dinheiroCasados.map(({ a, b }) => ({
+    vendaValor: a?.valor,
+    vendaHora: a?.hora,
+    match: b,
+    status: b ? "conciliado" : "pendente",
+  }));
+
+  // ---------- Saídas (Banco do Brasil e Stone) x Contas a Pagar ----------
+  const pagamentos: PagamentoConciliacao[] = [];
+
+  const saidasBB = bancoBrasil.movimentos.filter((m) => m.valor < 0 || m.valorLegivel === false);
+  for (const saida of saidasBB) {
+    const valorAbs = Math.abs(saida.valor);
+    const matchLancamento = buscarLancamentoProximo(payablesExistentes, valorAbs, data);
+    pagamentos.push({
+      origem: "bancoBrasil",
+      data: saida.data,
+      historico: saida.historico,
+      valor: valorAbs,
+      tipo: "pagamento",
+      matchLancamento,
+      status: matchLancamento ? "conciliado" : "pendente",
+      sugestao: !matchLancamento
+        ? { favorecido: sugerirFavorecido(saida.historico), classificacao: "DESPESAS ADMINISTRATIVAS", categoria: "" }
+        : undefined,
+    });
+  }
+
+  const saidasStone = stone.movimentos.filter((m) => m.valor < 0);
+  for (const saida of saidasStone) {
+    const valorAbs = Math.abs(saida.valor);
+    const matchLancamento = buscarLancamentoProximo(payablesExistentes, valorAbs, data);
+    pagamentos.push({
+      origem: "stone",
+      data: saida.data,
+      historico: saida.descricao,
+      valor: valorAbs,
+      tipo: "pagamento",
+      matchLancamento,
+      status: matchLancamento ? "conciliado" : "pendente",
+      sugestao: !matchLancamento
+        ? { favorecido: sugerirFavorecido(saida.descricao), classificacao: "DESPESAS ADMINISTRATIVAS", categoria: "" }
+        : undefined,
     });
   }
 

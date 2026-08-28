@@ -18,6 +18,10 @@ export type MovimentoPagBank = {
   data: string; // ISO
   descricao: string;
   valor: number; // positivo = entrada, negativo = saída
+  // Só usado pela Stone (MJ Shoes): taxa da maquineta já discriminada no próprio relatório, sem
+  // precisar ser calculada por diferença contra o valor da venda como é feito com o PagBank —
+  // ver conciliarDiaMjShoes. "valor" nesse caso é o BRUTO da venda, sem descontar essa taxa.
+  taxa?: number;
 };
 
 export type PagBankExtraido = {

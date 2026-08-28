@@ -384,10 +384,40 @@ function LinhaConciliacao({
   );
 }
 
+// Rótulos padrão (MJ Prime) — usados quando o chamador não passa "bankLabels", pra manter o
+// comportamento de sempre sem precisar mexer nos outros clientes que já usam esse componente.
+const DEFAULT_BANK_LABELS: BankLabels = {
+  cartao: "PagBank",
+  extrato: "Bradesco",
+  origemLabels: { bradesco: "Bradesco", pagbank: "PagBank", caixa: "Caixa Físico" },
+  origemOrdem: ["pagbank", "caixa", "bradesco"],
+};
+
+export type BankLabels = {
+  /** Nome do banco/maquineta que recebe o cartão (seção "Recebimentos de Cartão"). */
+  cartao: string;
+  /** Artigo pra "recebido _ {cartao}" — "no" (PagBank, Banco do Brasil) ou "na" (Stone). Padrão "no". */
+  cartaoArtigo?: string;
+  /** Nome do banco do pix/extrato (seção "Recebimentos via Pix"). */
+  extrato: string;
+  /** Artigo pra "identificado _ {extrato}" — mesma ideia de cartaoArtigo. Padrão "no". */
+  extratoArtigo?: string;
+  /** origem (chave de PagamentoConciliacao) -> nome de exibição. */
+  origemLabels: Record<string, string>;
+  /** Ordem fixa das seções "Pagamentos do <banco>" — só aparecem se tiverem lançamento. */
+  origemOrdem: string[];
+  /** origem -> artigo usado no título ("do"/"da"), pra "Pagamentos da Stone" em vez de "Pagamentos do Stone". */
+  origemArtigo?: Record<string, string>;
+  /** true quando a taxa da maquineta já vem discriminada no relatório (Stone/MJ Shoes) em vez de
+   * ser calculada por diferença entre bruto e recebido (PagBank/MJ Prime) — só muda o texto. */
+  taxaDoRelatorio?: boolean;
+};
+
 export function ConciliacaoResultado({
   resultado,
   datas,
   dataSelecionada,
+  bankLabels,
   onNavegar,
   onEditarItem,
   onLancado,
@@ -405,6 +435,7 @@ export function ConciliacaoResultado({
   resultado: ResultadoConciliacao | ResultadoSalvo;
   datas?: string[];
   dataSelecionada?: string;
+  bankLabels?: BankLabels;
   onNavegar?: (data: string) => void;
   onEditarItem?: (
     tipo: "pix" | "dinheiro" | "cartaoVenda" | "pagamento",
@@ -423,6 +454,7 @@ export function ConciliacaoResultado({
   onConfirmarTaxaAgregada?: () => void;
   onDesfazerTaxaAgregada?: () => void;
 }) {
+  const labels = bankLabels ?? DEFAULT_BANK_LABELS;
   const migrados = "migrados" in resultado ? resultado.migrados ?? {} : {};
   const arquivados = "arquivados" in resultado ? resultado.arquivados ?? [] : [];
   const ignorados = "ignorados" in resultado ? resultado.ignorados ?? [] : [];
@@ -439,9 +471,9 @@ export function ConciliacaoResultado({
       const esquerda: Lado | null =
         item.vendaValor !== undefined ? { rotulo: "Cartão", descricao: `Venda Cartão${item.vendaHora ? ` · ${item.vendaHora}` : ""}`, valor: item.vendaValor, hora: item.vendaHora } : null;
       const direita: Lado | null = item.match
-        ? { rotulo: "PagBank", descricao: item.matchInfo || item.match.descricao, valor: item.match.valor, data: item.match.data }
+        ? { rotulo: labels.cartao, descricao: item.matchInfo || item.match.descricao, valor: item.match.valor, data: item.match.data }
         : item.matchInfo
-          ? { rotulo: "PagBank", descricao: item.matchInfo, valor: item.vendaValor ?? 0 }
+          ? { rotulo: labels.cartao, descricao: item.matchInfo, valor: item.vendaValor ?? 0 }
           : null;
       return {
         chave,
@@ -451,7 +483,7 @@ export function ConciliacaoResultado({
         correcaoBanco: { tipo: "cartaoVenda", index: i, matchInfoAtual: item.matchInfo || item.match?.descricao },
         criarLancamento:
           !esquerda && direita
-            ? { tipo: "receber", descricao: `Recebimento identificado no PagBank (cartão)`, classificacao: "Faturamento", categoria: "Faturamento Geral", valor: direita.valor, vencimento: direita.data || resultado.data }
+            ? { tipo: "receber", descricao: `Recebimento identificado ${labels.cartaoArtigo ?? "no"} ${labels.cartao} (cartão)`, classificacao: "Faturamento", categoria: "Faturamento Geral", valor: direita.valor, vencimento: direita.data || resultado.data }
             : undefined,
       };
     });
@@ -483,9 +515,9 @@ export function ConciliacaoResultado({
       const esquerda: Lado | null =
         item.vendaValor !== undefined ? { rotulo: "Pix", descricao: `Venda Pix${item.vendaHora ? ` · ${item.vendaHora}` : ""}`, valor: item.vendaValor, hora: item.vendaHora } : null;
       const direita: Lado | null = item.match
-        ? { rotulo: "Bradesco", descricao: item.matchInfo || item.match.historico, valor: item.match.valor, data: item.match.data }
+        ? { rotulo: labels.extrato, descricao: item.matchInfo || item.match.historico, valor: item.match.valor, data: item.match.data }
         : item.matchInfo
-          ? { rotulo: "Bradesco", descricao: item.matchInfo, valor: item.vendaValor ?? 0 }
+          ? { rotulo: labels.extrato, descricao: item.matchInfo, valor: item.vendaValor ?? 0 }
           : null;
       return {
         chave,
@@ -495,26 +527,24 @@ export function ConciliacaoResultado({
         correcaoBanco: { tipo: "pix", index: i, matchInfoAtual: item.matchInfo || item.match?.historico },
         criarLancamento:
           !esquerda && direita
-            ? { tipo: "receber", descricao: `Recebimento identificado no Bradesco (pix)`, classificacao: "Faturamento", categoria: "Faturamento Geral", valor: direita.valor, vencimento: direita.data || resultado.data }
+            ? { tipo: "receber", descricao: `Recebimento identificado ${labels.extratoArtigo ?? "no"} ${labels.extrato} (pix)`, classificacao: "Faturamento", categoria: "Faturamento Geral", valor: direita.valor, vencimento: direita.data || resultado.data }
             : undefined,
       };
     });
 
     const secTransferencia: Linha[] = [];
-    const secPagbank: Linha[] = [];
-    const secCaixa: Linha[] = [];
-    const secBradesco: Linha[] = [];
+    const linhasPorOrigem = new Map<string, Linha[]>();
 
     pagamentos.forEach((p, i) => {
       const chave = `pagamento-${i}`;
-      const rotuloBanco = p.origem === "bradesco" ? "Bradesco" : p.origem === "caixa" ? "Caixa físico" : "PagBank";
+      const rotuloBanco = labels.origemLabels[p.origem] ?? p.origem;
 
       if (p.tipo === "transferencia") {
         secTransferencia.push({
           chave,
           esquerda: { rotulo: rotuloBanco, descricao: p.historico, valor: p.valor, data: p.data },
           direita: p.contraparte
-            ? { rotulo: p.contraparte.origem === "bradesco" ? "Bradesco" : "PagBank", descricao: p.contraparte.historico, valor: p.valor, data: p.contraparte.data }
+            ? { rotulo: labels.origemLabels[p.contraparte.origem] ?? p.contraparte.origem, descricao: p.contraparte.historico, valor: p.valor, data: p.contraparte.data }
             : null,
           jaMigrado: !!migrados[chave],
           isTransferencia: true,
@@ -537,28 +567,37 @@ export function ConciliacaoResultado({
               pessoa: p.sugestao?.favorecido,
               descricao: p.historico,
               classificacao: p.sugestao?.classificacao || "DESPESAS ADMINISTRATIVAS",
-              conta: p.origem === "bradesco" ? "Bradesco" : p.origem === "caixa" ? "Caixa Físico" : "PagBank",
+              conta: rotuloBanco,
               valor: p.valor,
               vencimento: p.data,
             }
           : undefined,
       };
-      if (p.origem === "bradesco") secBradesco.push(linha);
-      else if (p.origem === "caixa") secCaixa.push(linha);
-      else secPagbank.push(linha);
+      const arr = linhasPorOrigem.get(p.origem) ?? [];
+      arr.push(linha);
+      linhasPorOrigem.set(p.origem, arr);
     });
 
+    // Seções de saída seguem a ordem configurada por cliente (labels.origemOrdem) — cada banco
+    // vira uma seção "Pagamentos do <banco>", só aparece se tiver algum lançamento.
+    const secoesSaida: Secao[] = labels.origemOrdem
+      .map((origem) => ({
+        id: `${origem}-saida`,
+        titulo: `Pagamentos ${labels.origemArtigo?.[origem] ?? "do"} ${labels.origemLabels[origem] ?? origem}`,
+        subtitulo: `Saídas ${labels.origemArtigo?.[origem] ?? "do"} ${labels.origemLabels[origem] ?? origem} × Contas a Pagar`,
+        linhas: linhasPorOrigem.get(origem) ?? [],
+      }))
+      .filter((s) => s.linhas.length > 0);
+
     return [
-      { id: "cartao", titulo: "Recebimentos de Cartão", subtitulo: "Vendas no cartão (crédito/débito) × recebido no PagBank", linhas: secCartao },
+      { id: "cartao", titulo: "Recebimentos de Cartão", subtitulo: `Vendas no cartão (crédito/débito) × recebido ${labels.cartaoArtigo ?? "no"} ${labels.cartao}`, linhas: secCartao },
       { id: "dinheiro", titulo: "Recebimentos em Dinheiro / Espécie", subtitulo: "Vendas em dinheiro × caixa físico", linhas: secDinheiro },
-      { id: "pix", titulo: "Recebimentos via Pix e Depósitos", subtitulo: "Vendas em Pix × extrato Bradesco", linhas: secPix },
+      { id: "pix", titulo: "Recebimentos via Pix e Depósitos", subtitulo: `Vendas em Pix × extrato ${labels.extrato}`, linhas: secPix },
       { id: "transferencia", titulo: "Transferências entre Contas", subtitulo: "Não entra no DRE nem no Contas a Pagar", linhas: secTransferencia },
-      { id: "pagbank-saida", titulo: "Pagamentos do PagBank", subtitulo: "Saídas do extrato PagBank × Contas a Pagar", linhas: secPagbank },
-      { id: "caixa-saida", titulo: "Pagamentos do Caixa Físico", subtitulo: "Despesas pagas em espécie × Contas a Pagar", linhas: secCaixa },
-      { id: "bradesco-saida", titulo: "Pagamentos do Bradesco", subtitulo: "Saídas do extrato Bradesco × Contas a Pagar", linhas: secBradesco },
+      ...secoesSaida,
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resultado]);
+  }, [resultado, labels]);
 
   function ordenar(secao: Secao): Linha[] {
     const salva = ordens[secao.id];
@@ -746,8 +785,9 @@ export function ConciliacaoResultado({
             )}
           </div>
           <p className="text-xs text-faint">
-            Soma da diferença (bruto − recebido no PagBank) de cada venda de cartão já identificada no dia. Confirme pra lançar tudo de
-            uma vez em Contas a Pagar.
+            {labels.taxaDoRelatorio
+              ? `Soma das taxas já discriminadas no relatório da ${labels.cartao} pra cada venda de cartão já identificada no dia. Confirme pra lançar tudo de uma vez em Contas a Pagar.`
+              : `Soma da diferença (bruto − recebido ${labels.cartaoArtigo ?? "no"} ${labels.cartao}) de cada venda de cartão já identificada no dia. Confirme pra lançar tudo de uma vez em Contas a Pagar.`}
           </p>
           <ul className="mt-3 flex flex-col gap-1 text-xs text-muted">
             {taxasCartaoPendentes.map((t) => (
