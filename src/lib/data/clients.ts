@@ -68,6 +68,7 @@ export const clients: Client[] = [
     status: "ativo",
     responsible: "Ewerton Lucas",
     regime: "Simples Nacional",
+    theme: "light",
   },
   {
     slug: "store-pluss",
