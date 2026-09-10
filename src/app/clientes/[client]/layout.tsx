@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { IconRail } from "@/components/client/IconRail";
 import { ClientHeader } from "@/components/client/ClientHeader";
+import { TarefasHeader } from "@/components/client/TarefasHeader";
 import { ClientFooter } from "@/components/client/ClientFooter";
 import { clients, getClient } from "@/lib/data/clients";
 import { getFinanceData } from "@/lib/data/financeRegistry";
@@ -8,7 +9,11 @@ import { FinanceProvider } from "@/lib/store/FinanceContext";
 import { Client } from "@/lib/types";
 
 // Pré-gera cada cliente conhecido como página estática em tempo de build,
-// para que a troca entre abas seja instantânea (sem SSR a cada navegação).
+// para que a troca entre abas seja instantânea (sem SSR a cada navegação). Clientes do tipo
+// "tarefas" ficam de fora de propósito: essa lista de params se propaga pra TODAS as rotas
+// irmãs sob [client]/* (fluxo-de-caixa, contas-a-receber etc.), que exigem FinanceProvider —
+// pré-gerar um cliente sem dados financeiros nelas quebra o build. Sem entrar aqui, a rota
+// ainda funciona normalmente, só passa a ser renderizada sob demanda em vez de estática.
 export function generateStaticParams() {
   return clients.filter((c) => c.status === "ativo" && getFinanceData(c.slug)).map((c) => ({ client: c.slug }));
 }
@@ -38,9 +43,10 @@ function backgroundVars(client: Client): React.CSSProperties {
 export default async function ClientLayout({ children, params }: LayoutProps<"/clientes/[client]">) {
   const { client: slug } = await params;
   const client = getClient(slug);
-  if (!client || !getFinanceData(slug)) notFound();
+  const ehTarefas = client?.tipo === "tarefas";
+  if (!client || (!ehTarefas && !getFinanceData(slug))) notFound();
 
-  return (
+  const shell = (
     <div
       className={`min-h-screen bg-background ${themeClass(client.theme)}`}
       style={
@@ -51,14 +57,22 @@ export default async function ClientLayout({ children, params }: LayoutProps<"/c
         } as React.CSSProperties
       }
     >
-      <FinanceProvider key={client.slug} client={client}>
-        <IconRail client={client} />
-        <div className="sm:pl-14 flex min-h-screen flex-col">
-          <ClientHeader client={client} />
-          <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
-          <ClientFooter clientName={client.name} />
-        </div>
-      </FinanceProvider>
+      <IconRail client={client} />
+      <div className="sm:pl-14 flex min-h-screen flex-col">
+        {ehTarefas ? <TarefasHeader client={client} /> : <ClientHeader client={client} />}
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+        <ClientFooter clientName={client.name} />
+      </div>
     </div>
+  );
+
+  // Clientes do tipo "tarefas" não têm dados financeiros — não passam pelo FinanceProvider
+  // (que exige um seed financeiro cadastrado em financeRegistry).
+  if (ehTarefas) return shell;
+
+  return (
+    <FinanceProvider key={client.slug} client={client}>
+      {shell}
+    </FinanceProvider>
   );
 }

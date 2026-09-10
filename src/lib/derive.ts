@@ -379,6 +379,131 @@ function anoCorrenteShort() {
   return "26";
 }
 
+// ---------- DRE de Caixa (regime de caixa, dentro do Fluxo de Caixa) ----------
+// Mesma ideia/estrutura do DRE por competência (computeDreGrid), mas usando a data de
+// pagamento/recebimento efetivo em vez do vencimento, com as entradas separadas por fonte de
+// recebimento (forma de recebimento) em vez de por classificação. Diferente do DRE por
+// competência, aqui os pagamentos a fornecedor ENTRAM normalmente — não tem exclusão nenhuma,
+// é o caixa que de fato saiu, classificado como "Custos Variáveis" quando lançado na categoria
+// "Pagamentos a Fornecedores" (ver seedCategoriasPagar de cada cliente).
+function monthTotalsPorData<T>(items: T[], dataDe: (item: T) => string | undefined, valorDe: (item: T) => number): number[] {
+  const totals = Array(12).fill(0);
+  for (const item of items) {
+    const data = dataDe(item);
+    if (!data) continue;
+    totals[monthIndex(data)] += valorDe(item);
+  }
+  return totals;
+}
+
+export function computeFluxoCaixaDreGrid(
+  payables: Payable[],
+  receivables: Receivable[],
+  categoriasPagar: CategoryGroup[]
+): DreGridRow[] {
+  const recebidos = receivables.filter((r) => r.status === "recebido" && r.recebimento);
+  const pagos = payables.filter((p) => p.status === "pago" && p.pagamento);
+
+  const porFonte = new Map<string, Receivable[]>();
+  for (const r of recebidos) {
+    const fonte = r.formaRecebimento?.trim() || "Não informado";
+    if (!porFonte.has(fonte)) porFonte.set(fonte, []);
+    porFonte.get(fonte)!.push(r);
+  }
+  const entradaRows = [...porFonte.entries()]
+    .map(([label, items]) => {
+      const values = monthTotalsPorData(items, (r) => r.recebimento, (r) => r.valor).map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { label, values, acumulado, expandable: true };
+    })
+    .sort((a, b) => b.acumulado - a.acumulado);
+
+  const totalEntradasValues = Array(12).fill(0);
+  let acumEntradas = 0;
+  for (const row of entradaRows) {
+    row.values.forEach((v, i) => (totalEntradasValues[i] += v));
+    acumEntradas += row.acumulado;
+  }
+  acumEntradas = round2(acumEntradas);
+
+  const saidaRows = categoriasPagar
+    .map((c) => {
+      const items = pagos.filter((p) => p.classificacao === c.classificacao);
+      const values = monthTotalsPorData(items, (p) => p.pagamento, (p) => p.valor).map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { label: c.classificacao, values, acumulado, negative: true, expandable: true };
+    })
+    .filter((row) => row.acumulado > 0 || categoriasPagar.find((c) => c.classificacao === row.label)?.padrao);
+
+  const totalSaidasValues = Array(12).fill(0);
+  let acumSaidas = 0;
+  for (const row of saidaRows) {
+    row.values.forEach((v, i) => (totalSaidasValues[i] += v));
+    acumSaidas += row.acumulado;
+  }
+  acumSaidas = round2(acumSaidas);
+
+  const resultadoValues = totalEntradasValues.map((v, i) => round2(v - totalSaidasValues[i]));
+  const acumResultado = round2(acumEntradas - acumSaidas);
+
+  return [
+    { label: "ENTRADAS", values: Array(12).fill(0), acumulado: 0, isSection: true },
+    ...entradaRows,
+    { label: "= Total de entradas", values: totalEntradasValues.map(round2), acumulado: acumEntradas, isSubtotal: true },
+    { label: "SAÍDAS", values: Array(12).fill(0), acumulado: 0, isSection: true },
+    ...saidaRows,
+    { label: "= Total de saídas", values: totalSaidasValues.map(round2), acumulado: acumSaidas, isSubtotal: true, negative: true },
+    { label: "= Resultado de caixa", values: resultadoValues, acumulado: acumResultado, isTotal: true },
+  ];
+}
+
+// Linhas (lançamentos) por trás de uma linha do grid de DRE de Caixa — usado no drill-down ao
+// clicar numa fonte de entrada ou numa classificação de saída.
+export function lancamentosFluxoCaixaPorLinha(
+  payables: Payable[],
+  receivables: Receivable[],
+  tipo: "entrada" | "saida",
+  label: string
+) {
+  if (tipo === "entrada") {
+    return receivables
+      .filter((r) => r.status === "recebido" && r.recebimento && (r.formaRecebimento?.trim() || "Não informado") === label)
+      .sort((a, b) => a.recebimento!.localeCompare(b.recebimento!));
+  }
+  return payables
+    .filter((p) => p.status === "pago" && p.pagamento && p.classificacao === label)
+    .sort((a, b) => a.pagamento!.localeCompare(b.pagamento!));
+}
+
+// ---------- Margem média e ponto de equilíbrio (a partir do DRE por competência) ----------
+// Custos variáveis aqui = CMV do DRE (CSV automático + CMV manual, já calculado em
+// computeDreGrid) — é o que efetivamente acompanha o volume de vendas. Custos fixos = todas as
+// outras despesas do DRE (pessoal, administrativas, comerciais etc.), que não escalam
+// diretamente com a receita. É a leitura padrão de ponto de equilíbrio pra um negócio de
+// serviços/varejo, dado o que já está classificado no plano de contas.
+export function computeMargemEPontoEquilibrio(dreGrid: DreGridRow[]) {
+  const receita = dreGrid.find((r) => r.label === "RECEITA")?.acumulado ?? 0;
+  const cmv = dreGrid.find((r) => r.label === "(-) CMV")?.acumulado ?? 0;
+  const custosFixos = dreGrid.find((r) => r.label === "= Despesas totais")?.acumulado ?? 0;
+  const resultado = dreGrid.find((r) => r.isTotal)?.acumulado ?? 0;
+
+  const margemContribuicaoPct = receita > 0 ? round2(((receita - cmv) / receita) * 100) : 0;
+  const margemLiquidaPct = receita > 0 ? round2((resultado / receita) * 100) : 0;
+  const pontoEquilibrio = margemContribuicaoPct > 0 ? round2(custosFixos / (margemContribuicaoPct / 100)) : 0;
+  const distanciaDoPontoEquilibrio = round2(receita - pontoEquilibrio);
+
+  return {
+    receita,
+    custosVariaveis: cmv,
+    custosFixos,
+    margemContribuicaoPct,
+    margemLiquidaPct,
+    pontoEquilibrio,
+    distanciaDoPontoEquilibrio,
+    atingiuPontoEquilibrio: receita >= pontoEquilibrio && pontoEquilibrio > 0,
+  };
+}
+
 function round2(n: number) {
   return Math.round(n * 100) / 100;
 }

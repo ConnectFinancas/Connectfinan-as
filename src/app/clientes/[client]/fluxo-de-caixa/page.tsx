@@ -1,11 +1,15 @@
 "use client";
 
+import { Fragment, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Download, Landmark, Pin, Target, TrendingUp } from "lucide-react";
+import { AlertTriangle, ChevronRight, Download, Gauge, Landmark, Pin, Target, TrendingUp } from "lucide-react";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { MiniBarCompare } from "@/components/charts/MiniBarCompare";
 import { useFinance } from "@/lib/store/FinanceContext";
+import { computeFluxoCaixaDreGrid, computeMargemEPontoEquilibrio, lancamentosFluxoCaixaPorLinha } from "@/lib/derive";
+import { dreMonths } from "@/lib/constants";
 import { formatCurrencyPrecise } from "@/lib/format";
+import { formatDateBR } from "@/lib/today";
 
 const DailyBalanceChart = dynamic(() => import("@/components/charts/DailyBalanceChart").then((m) => m.DailyBalanceChart), {
   ssr: false,
@@ -43,7 +47,16 @@ export default function FluxoDeCaixaPage() {
     destaquesPeriodo,
     resumoExecutivo,
     pontoDeAtencao,
+    payables,
+    receivables,
+    categoriasPagar,
+    summary,
   } = useFinance();
+
+  const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
+
+  const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
+  const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid);
 
   return (
     <div className="flex flex-col gap-6">
@@ -238,6 +251,164 @@ export default function FluxoDeCaixaPage() {
               <p><span className="font-semibold">Ponto de atenção:</span> {pontoDeAtencao}</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ---------- DRE de Caixa: mesma ideia do DRE por competência, mas pela data de pagamento/recebimento efetivo ---------- */}
+      <div className="card overflow-hidden">
+        <div className="p-5 pb-4">
+          <h2 className="text-sm font-semibold text-brand-900">DRE de Caixa</h2>
+          <p className="text-xs text-faint">
+            Regime de <span className="font-medium text-brand-700">caixa</span> (pela data de pagamento/recebimento, não pelo
+            vencimento). Entradas por fonte de recebimento; saídas por classificação — incluindo pagamento a fornecedores,
+            aqui contabilizado como Custos Variáveis. Clique em ▸ pra ver os lançamentos.
+          </p>
+        </div>
+        <div className="overflow-x-auto pb-2">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border-subtle text-left text-[11px] text-faint">
+                <th className="py-2 pl-5 pr-3 font-medium sticky left-0 bg-surface">Conta</th>
+                {dreMonths.map((m) => (
+                  <th key={m} className="py-2 px-3 text-right font-medium whitespace-nowrap">{m.toUpperCase()}</th>
+                ))}
+                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">Acumulado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dreCaixaGrid.map((row, idx) => {
+                if (row.isSection) {
+                  return (
+                    <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
+                      <td colSpan={dreMonths.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                        {row.label}
+                      </td>
+                    </tr>
+                  );
+                }
+                const isLinhaExpansivel = !!row.expandable;
+                const isOpen = isLinhaExpansivel && linhaAberta === row.label;
+                const tipo: "entrada" | "saida" = row.negative ? "saida" : "entrada";
+                const rowColor = row.isSubtotal ? "text-brand-900" : row.negative ? "text-warn-500" : "text-muted";
+                const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
+                return (
+                  <Fragment key={idx}>
+                    <tr
+                      onClick={isLinhaExpansivel ? () => setLinhaAberta(isOpen ? null : row.label) : undefined}
+                      className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""} ${
+                        isLinhaExpansivel ? "cursor-pointer hover:bg-surface-muted/60" : ""
+                      }`}
+                    >
+                      <td
+                        className={`py-2.5 pl-5 pr-3 whitespace-nowrap sticky left-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : "bg-surface"} ${
+                          row.isTotal || row.isSubtotal ? "font-semibold text-brand-900" : "text-muted"
+                        }`}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {row.expandable && (
+                            <ChevronRight size={12} className={`text-faint transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                          )}
+                          {row.label}
+                        </span>
+                      </td>
+                      {row.values.map((v, i) => (
+                        <td
+                          key={i}
+                          className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
+                            row.isTotal ? (v >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
+                          }`}
+                        >
+                          {formatCurrencyPrecise(v)}
+                        </td>
+                      ))}
+                      <td className={`py-2.5 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                        {formatCurrencyPrecise(row.acumulado)}
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="border-b border-border-subtle bg-surface/60">
+                        <td colSpan={dreMonths.length + 2} className="py-2 pl-9 pr-5">
+                          <div className="flex flex-col gap-1">
+                            {lancamentosFluxoCaixaPorLinha(payables, receivables, tipo, row.label).map((l) => (
+                              <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
+                                <span className="w-16 shrink-0">
+                                  {formatDateBR(tipo === "entrada" ? (l as { recebimento?: string }).recebimento! : (l as { pagamento?: string }).pagamento!)}
+                                </span>
+                                <span className="flex-1 truncate">
+                                  {("favorecido" in l ? l.favorecido : l.cliente) !== "—" ? `${"favorecido" in l ? l.favorecido : l.cliente} — ` : ""}
+                                  {l.descricao}
+                                </span>
+                                <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                              </div>
+                            ))}
+                            {lancamentosFluxoCaixaPorLinha(payables, receivables, tipo, row.label).length === 0 && (
+                              <p className="text-[11px] text-faint">Sem lançamentos</p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ---------- Margem média e ponto de equilíbrio ---------- */}
+      <div className="card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Gauge size={16} className="text-client-accent" />
+          <h2 className="text-sm font-semibold text-brand-900">Margem e Ponto de Equilíbrio</h2>
+        </div>
+        <p className="-mt-3 mb-4 text-xs text-faint">
+          A partir do DRE por competência: custos variáveis = CMV; custos fixos = demais despesas do período.
+        </p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-lg bg-surface-muted p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Margem de Contribuição</p>
+            <p className="mt-1 text-lg font-semibold text-brand-900">{margemEPontoEquilibrio.margemContribuicaoPct.toFixed(1)}%</p>
+          </div>
+          <div className="rounded-lg bg-surface-muted p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Margem Líquida</p>
+            <p className={`mt-1 text-lg font-semibold ${margemEPontoEquilibrio.margemLiquidaPct >= 0 ? "text-accent-500" : "text-danger-500"}`}>
+              {margemEPontoEquilibrio.margemLiquidaPct.toFixed(1)}%
+            </p>
+          </div>
+          <div className="rounded-lg bg-surface-muted p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Custos Fixos</p>
+            <p className="mt-1 text-lg font-semibold text-brand-900">{formatCurrencyPrecise(margemEPontoEquilibrio.custosFixos)}</p>
+          </div>
+          <div className="rounded-lg bg-surface-muted p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Ponto de Equilíbrio</p>
+            <p className="mt-1 text-lg font-semibold text-brand-900">{formatCurrencyPrecise(margemEPontoEquilibrio.pontoEquilibrio)}</p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-lg border border-border-subtle p-4">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted">Receita do ano</span>
+            <span className="font-medium text-brand-900">{formatCurrencyPrecise(margemEPontoEquilibrio.receita)}</span>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+            <div
+              className={`h-full rounded-full ${margemEPontoEquilibrio.atingiuPontoEquilibrio ? "bg-accent-500" : "bg-warn-500"}`}
+              style={{
+                width: `${
+                  margemEPontoEquilibrio.pontoEquilibrio > 0
+                    ? Math.min(100, Math.round((margemEPontoEquilibrio.receita / margemEPontoEquilibrio.pontoEquilibrio) * 100))
+                    : 0
+                }%`,
+              }}
+            />
+          </div>
+          <p className={`mt-2 text-xs ${margemEPontoEquilibrio.atingiuPontoEquilibrio ? "text-accent-500" : "text-warn-500"}`}>
+            {margemEPontoEquilibrio.pontoEquilibrio <= 0
+              ? "Sem margem de contribuição suficiente no período pra calcular o ponto de equilíbrio."
+              : margemEPontoEquilibrio.atingiuPontoEquilibrio
+                ? `Ponto de equilíbrio já atingido — ${formatCurrencyPrecise(margemEPontoEquilibrio.distanciaDoPontoEquilibrio)} acima do necessário.`
+                : `Faltam ${formatCurrencyPrecise(Math.abs(margemEPontoEquilibrio.distanciaDoPontoEquilibrio))} em receita pra atingir o ponto de equilíbrio.`}
+          </p>
         </div>
       </div>
 

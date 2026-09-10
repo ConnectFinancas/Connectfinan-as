@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useParams, useRouter } from "next/navigation";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { formatCurrencyPrecise } from "@/lib/format";
+import { getClient } from "@/lib/data/clients";
 
 const RevenueExpenseChart = dynamic(() => import("@/components/charts/RevenueExpenseChart").then((m) => m.RevenueExpenseChart), {
   ssr: false,
@@ -44,7 +47,23 @@ function ResumoCard({
   );
 }
 
+// Clientes do tipo "tarefas" (ex.: Ewerton) não têm painel financeiro — o Resumo normal chama
+// useFinance(), que exige um FinanceProvider que esses clientes não têm. Por isso a rota raiz
+// só redireciona pro quadro de tarefas nesse caso, sem tocar no corpo do Resumo financeiro.
 export default function ClientDashboardPage() {
+  const params = useParams<{ client: string }>();
+  const router = useRouter();
+  const client = getClient(params.client);
+
+  useEffect(() => {
+    if (client?.tipo === "tarefas") router.replace(`/clientes/${params.client}/tarefas`);
+  }, [client, params.client, router]);
+
+  if (client?.tipo === "tarefas") return null;
+  return <ResumoFinanceiro />;
+}
+
+function ResumoFinanceiro() {
   const { client, summary } = useFinance();
   const { anoCorrente, resumoKpis, resumoDoAno, indicadores, monthlyFinancials, evolucaoReceitaAcumulada, saidasPorClassificacao } = summary;
 

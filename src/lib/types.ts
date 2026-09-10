@@ -21,6 +21,10 @@ export type Client = {
   // usado em outra conta) — usado na Conciliação Bancária pra detectar automaticamente
   // transferências entre contas próprias. Sem isso, o padrão é o próprio nome do cliente.
   titularKeywords?: string[];
+  // "financeiro" (padrão) mostra o painel financeiro normal (DRE, Contas a Pagar/Receber etc.).
+  // "tarefas" troca todo o painel por um quadro de tarefas estilo Todoist — usado pra clientes
+  // que na verdade são espaços de organização interna, não empresas com financeiro de verdade.
+  tipo?: "financeiro" | "tarefas";
 };
 
 export type MonthlyFinancials = {

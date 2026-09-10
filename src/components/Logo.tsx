@@ -25,7 +25,7 @@ export function Logo({ className }: { className?: string }) {
         </defs>
       </svg>
       <span className="text-[15px] font-semibold tracking-tight text-brand-900 leading-none">
-        Connect <span className="font-light text-brand-600">Finanças</span>
+        Ricavi <span className="font-light text-brand-600">Finanças</span>
       </span>
     </div>
   );

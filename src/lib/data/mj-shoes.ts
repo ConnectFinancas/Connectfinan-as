@@ -89,6 +89,14 @@ export const mjShoesData: ClientFinanceData = {
       ],
     },
     {
+      classificacao: "CUSTOS VARIAVEIS",
+      color: "#fb923c",
+      padrao: true,
+      categorias: [
+        { nome: "Pagamentos a Fornecedores", padrao: true },
+      ],
+    },
+    {
       classificacao: "IMPOSTOS",
       color: "#f5c344",
       padrao: true,

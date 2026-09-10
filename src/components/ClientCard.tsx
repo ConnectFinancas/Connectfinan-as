@@ -61,7 +61,7 @@ export function ClientCard({ client }: { client: Client }) {
   }
 
   return (
-    <Link href={`/clientes/${client.slug}`} className="block">
+    <Link href={client.tipo === "tarefas" ? `/clientes/${client.slug}/tarefas` : `/clientes/${client.slug}`} className="block">
       {content}
     </Link>
   );

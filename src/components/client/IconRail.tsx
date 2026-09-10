@@ -25,7 +25,7 @@ export function IconRail({ client }: { client: Client }) {
 
       <div className="h-px w-6 bg-border-subtle" />
 
-      <Link href={`/clientes/${client.slug}`} title={client.name}>
+      <Link href={client.tipo === "tarefas" ? `/clientes/${client.slug}/tarefas` : `/clientes/${client.slug}`} title={client.name}>
         <ClientMonogram monogram={client.monogram} accent={client.accent} accentDark={client.accentDark} size={34} />
       </Link>
 

@@ -1,4 +1,4 @@
-# Connect Finanças
+# Ricavi Finanças
 
 Painel de gestão financeira para BPO financeiro, no estilo Conta Azul: um portfólio de clientes onde cada logo abre o painel financeiro dedicado daquele cliente (DRE, fluxo de caixa, contas a pagar/receber, conciliação bancária e obrigações fiscais).
 

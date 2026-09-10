@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Connect Finanças",
-  description: "Painel de gestão financeira BPO — Connect Finanças",
+  title: "Ricavi Finanças",
+  description: "Painel de gestão financeira BPO — Ricavi Finanças",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
