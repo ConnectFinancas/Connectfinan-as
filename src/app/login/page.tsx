@@ -4,22 +4,39 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, BarChart3, Eye, EyeOff, Lock, Mail, ShieldCheck, TrendingUp } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { createClient } from "@/lib/supabase/client";
 
-// TODO Fase B: trocar o submit por autenticação real (supabase.auth.signInWithPassword),
-// resolver o papel do usuário (colaborador com permissões específicas, ou cliente restrito ao
-// próprio painel) e proteger as rotas /clientes/[client]/* via middleware de sessão. Por
-// enquanto, sem backend, o formulário só navega pro portfólio de clientes.
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setErro(null);
     setEnviando(true);
+
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+
+    if (error || !data.user) {
+      setErro("E-mail ou senha incorretos.");
+      setEnviando(false);
+      return;
+    }
+
+    // Histórico de acesso — falha silenciosa aqui não deve travar o login.
+    await supabase.from("audit_log").insert({
+      profile_id: data.user.id,
+      email: data.user.email,
+      acao: "login",
+    });
+
     router.push("/");
+    router.refresh();
   }
 
   return (
@@ -107,6 +124,12 @@ export default function LoginPage() {
           <p className="mt-1.5 text-sm text-slate-500">Acesse o painel com seu e-mail e senha.</p>
 
           <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+            {erro && (
+              <div className="rounded-lg border border-danger-200 bg-danger-100 px-3 py-2 text-xs font-medium text-danger-500">
+                {erro}
+              </div>
+            )}
+
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-600">E-mail</label>
               <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2.5 focus-within:border-brand-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-500/15 transition-colors">
