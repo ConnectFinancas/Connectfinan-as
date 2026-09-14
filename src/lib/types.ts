@@ -172,6 +172,14 @@ export type ClientFinanceData = {
   seedReceivables: Receivable[];
   seedCategoriasPagar: CategoryGroup[];
   seedCategoriasReceber: CategoryGroup[];
+  // Incremente sempre que EDITAR manualmente seedPayables/seedReceivables/seedCategoriasPagar/
+  // seedCategoriasReceber neste arquivo (novo lançamento, importação, correção). Isso faz o
+  // navegador do cliente descartar sozinho a cópia salva desses dados (localStorage) e usar a
+  // versão nova — sem precisar de F5 forçado nem de limpar o localStorage manualmente. O que o
+  // próprio cliente digitou pela tela (marketplaceManual, transferências, saldo inicial, e
+  // qualquer lançamento criado por ele mesmo em "Nova despesa"/"Nova conta a receber") nunca é
+  // apagado por isso. Ausente = versão 1.
+  dataVersion?: number;
   deducoesManuais: { impostos: number; inadimplencia: number; investimentos: number };
   // CMV (preço de custo do produto vendido) informado manualmente por mês — não vem dos
   // pagamentos a fornecedor em Contas a Pagar. Índice 0 = Jan, 11 = Dez. Ainda pendente de

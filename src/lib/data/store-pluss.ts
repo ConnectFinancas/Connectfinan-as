@@ -8,6 +8,10 @@ import { ClientFinanceData } from "@/lib/types";
 // cliente alimenta o Fluxo de Caixa normalmente, mas NÃO entra no DRE — a receita do DRE vem só
 // da aba "Informações do DRE" (ver marketplaceManual/linhasDestaqueDre e computeDreGrid).
 export const storePlussData: ClientFinanceData = {
+  // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
+  // este número — ver o comentário de dataVersion em types.ts.
+  dataVersion: 1,
+
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,

@@ -15,7 +15,18 @@ type FinanceState = {
   transferencias: TransferenciaConta[];
   saldosIniciais: Record<string, number>;
   marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>;
+  // Ver ClientFinanceData.dataVersion — usado só pra saber se os dados base (seed) mudaram desde
+  // a última vez que esse navegador salvou o estado; não é exibido em lugar nenhum.
+  dataVersion: number;
 };
+
+// genId() sempre gera algo como "p_1a2b3c4d5e" (com "_"); ids que vêm do seed são simples
+// ("p1", "r12"...). Serve pra separar, na hora de descartar dados antigos por causa de um
+// dataVersion novo, o que veio do seed (pode ser recriado do zero) do que o próprio cliente
+// cadastrou pela tela em "Nova despesa"/"Nova conta a receber" (isso nunca pode ser apagado).
+function criadoPelaTela(id: string) {
+  return id.includes("_");
+}
 
 type Tipo = "pagar" | "receber";
 
@@ -68,6 +79,8 @@ export function FinanceProvider({ client, children }: { client: Client; children
 
   const storageKey = `cf-${client.slug}-finance-v1`;
 
+  const seedVersion = seed.dataVersion ?? 1;
+
   const [state, setState] = useState<FinanceState>({
     payables: seed.seedPayables,
     receivables: seed.seedReceivables,
@@ -76,6 +89,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     transferencias: [],
     saldosIniciais: {},
     marketplaceManual: seed.marketplaceManual ?? emptyMarketplaceManual(),
+    dataVersion: seedVersion,
   });
   const [hydrated, setHydrated] = useState(false);
 
@@ -88,13 +102,25 @@ export function FinanceProvider({ client, children }: { client: Client; children
         // "transferencias"/"saldosIniciais" são campos novos — dados salvos antes dessa versão
         // não têm essas chaves, então caem pra [] / {} em vez de deixar o estado com undefined.
         const parsed = JSON.parse(raw);
+        // Cópia salva sem dataVersion (de antes dessa checagem existir) conta como versão 0 —
+        // ou seja, sempre dispara a atualização automática pelo menos uma vez.
+        const dadosBaseMudaram = (parsed.dataVersion ?? 0) !== seedVersion;
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setState((s) => ({
           ...s,
           ...parsed,
+          payables: dadosBaseMudaram
+            ? [...seed.seedPayables, ...((parsed.payables as Payable[] | undefined) ?? []).filter((p) => criadoPelaTela(p.id))]
+            : parsed.payables,
+          receivables: dadosBaseMudaram
+            ? [...seed.seedReceivables, ...((parsed.receivables as Receivable[] | undefined) ?? []).filter((r) => criadoPelaTela(r.id))]
+            : parsed.receivables,
+          categoriasPagar: dadosBaseMudaram ? seed.seedCategoriasPagar : parsed.categoriasPagar,
+          categoriasReceber: dadosBaseMudaram ? seed.seedCategoriasReceber : parsed.categoriasReceber,
           transferencias: parsed.transferencias ?? [],
           saldosIniciais: parsed.saldosIniciais ?? {},
           marketplaceManual: parsed.marketplaceManual ?? s.marketplaceManual,
+          dataVersion: seedVersion,
         }));
       }
     } catch {
