@@ -67,6 +67,15 @@ export default function FluxoDeCaixaPage() {
     ? computeMargemEPontoEquilibrioPorMes(summary.dreGrid)
     : null;
 
+  // Visão inspirada em outro sistema que o cliente usa (Arken): os mesmos dados do DRE por
+  // competência (o de sempre, sem alteração nenhuma nele), só que também exibidos aqui dentro do
+  // Fluxo de Caixa, com 4 cards de resumo + tabela mês a mês em visual navy/dourado.
+  const kpiReceita = summary.dreGrid.find((r) => r.label === "RECEITA")?.acumulado ?? 0;
+  const kpiMargemContribuicao = summary.dreGrid.find((r) => r.label === "= Lucro Bruto ou Valor a Gastar")?.acumulado ?? 0;
+  const kpiDespesasTotais = summary.dreGrid.find((r) => r.label === "= Despesas totais")?.acumulado ?? 0;
+  const kpiResultado = summary.dreGrid.find((r) => r.isTotal)?.acumulado ?? 0;
+  const DOURADO = "#d4af37";
+
   return (
     <div className="flex flex-col gap-6">
       <div className="card flex flex-col gap-3 p-4 lg:flex-row lg:items-end lg:justify-between">
@@ -422,7 +431,7 @@ export default function FluxoDeCaixaPage() {
       </div>
 
       {margemEPontoEquilibrioPorMes && (
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden" style={{ borderTop: `3px solid ${DOURADO}` }}>
           <div className="p-5 pb-1">
             <div className="flex items-center gap-2">
               <Target size={16} className="text-client-accent" />
@@ -487,6 +496,93 @@ export default function FluxoDeCaixaPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {margemEPontoEquilibrioPorMes && (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div className="card p-5" style={{ borderTop: `3px solid ${DOURADO}` }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">Receita</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-brand-900">{formatCurrencyPrecise(kpiReceita)}</p>
+            </div>
+            <div className="card p-5" style={{ borderTop: `3px solid ${DOURADO}` }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">Margem de Contribuição</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-brand-900">{formatCurrencyPrecise(kpiMargemContribuicao)}</p>
+              <p className="mt-1 text-xs text-faint">{margemEPontoEquilibrio.margemContribuicaoPct.toFixed(1)}%</p>
+            </div>
+            <div className="card p-5" style={{ borderTop: `3px solid ${DOURADO}` }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">Despesas Totais</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-brand-900">{formatCurrencyPrecise(kpiDespesasTotais)}</p>
+            </div>
+            <div className="card p-5" style={{ borderTop: `3px solid ${DOURADO}` }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">Geração de Caixa</p>
+              <p className={`mt-2 text-2xl font-semibold tracking-tight ${kpiResultado >= 0 ? "text-accent-500" : "text-danger-500"}`}>
+                {formatCurrencyPrecise(kpiResultado)}
+              </p>
+            </div>
+          </div>
+
+          <div className="card overflow-hidden">
+            <div className="p-5 pb-4" style={{ borderBottom: `2px solid ${DOURADO}` }}>
+              <h2 className="text-sm font-semibold text-brand-900">Demonstrativo por Competência</h2>
+              <p className="text-xs text-faint">Mesmos dados da aba Faturamento &amp; DRE, mês a mês, pra acompanhar aqui também.</p>
+            </div>
+            <div className="overflow-x-auto pb-2">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] text-white" style={{ backgroundColor: "#0a1330" }}>
+                    <th className="py-2.5 pl-5 pr-3 font-medium sticky left-0" style={{ backgroundColor: "#0a1330" }}>
+                      Linha
+                    </th>
+                    {dreMonths.map((m) => (
+                      <th key={m} className="py-2.5 px-3 text-right font-medium whitespace-nowrap">
+                        {m.toUpperCase()}/26
+                      </th>
+                    ))}
+                    <th className="py-2.5 pl-3 pr-5 text-right font-medium whitespace-nowrap">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.dreGrid.map((row, idx) => {
+                    if (row.isSection) {
+                      return (
+                        <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
+                          <td colSpan={dreMonths.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                            {row.label}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const rowColor = row.isSubtotal ? "text-brand-900" : row.negative ? "text-warn-500" : "text-muted";
+                    const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
+                    return (
+                      <tr
+                        key={idx}
+                        className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""}`}
+                      >
+                        <td
+                          className={`py-2 pl-5 pr-3 whitespace-nowrap sticky left-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : "bg-surface"} ${
+                            row.isTotal || row.isSubtotal || row.isHeader ? "font-semibold text-brand-900" : "text-muted"
+                          }`}
+                        >
+                          {row.label}
+                        </td>
+                        {row.values.map((v, i) => (
+                          <td key={i} className={`py-2 px-3 text-right tabular-nums whitespace-nowrap ${rowColor}`}>
+                            {formatCurrencyPrecise(v)}
+                          </td>
+                        ))}
+                        <td className={`py-2 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                          {formatCurrencyPrecise(row.acumulado)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       <p className="text-[11px] text-faint">
