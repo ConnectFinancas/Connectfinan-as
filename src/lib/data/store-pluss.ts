@@ -1,10 +1,12 @@
 import { ClientFinanceData } from "@/lib/types";
 
 // Store Pluss é um caso diferente dos outros clientes: a conciliação bancária é feita direto
-// no Conta Azul (por isso não tem essa aba no painel dela — ver clients.ts), e o Contas a Pagar
-// é alimentado por relatórios que o cliente envia (não por lançamento manual dia a dia). Os 205
-// lançamentos abaixo vieram do primeiro relatório enviado ("Visão Contas a Pagar"). Contas a
-// Receber ainda não tem relatório equivalente enviado — segue vazio até chegar.
+// no Conta Azul (por isso não tem essa aba no painel dela — ver clients.ts), e Contas a Pagar/
+// Receber são alimentados por relatórios que o cliente envia (não por lançamento manual dia a
+// dia). Os 205 lançamentos de Contas a Pagar vieram do relatório "Visão Contas a Pagar"; os 48
+// de Contas a Receber, do relatório "Visão Contas a Receber". Importante: Contas a Receber dessa
+// cliente alimenta o Fluxo de Caixa normalmente, mas NÃO entra no DRE — a receita do DRE vem só
+// da aba "Informações do DRE" (ver marketplaceManual/linhasDestaqueDre e computeDreGrid).
 export const storePlussData: ClientFinanceData = {
   deducoesManuais: {
     impostos: 0,
@@ -63,11 +65,60 @@ export const storePlussData: ClientFinanceData = {
   ],
   destaquesPeriodo: [],
   resumoExecutivo: [
-    "Contas a Pagar importado do primeiro relatório enviado (205 lançamentos). Contas a Receber e o restante do Resumo Financeiro ainda dependem dos próximos relatórios.",
+    "Contas a Pagar (205 lançamentos) e Contas a Receber (48 lançamentos) importados dos relatórios enviados. A receita do DRE vem da aba \"Informações do DRE\", não de Contas a Receber.",
   ],
-  pontoDeAtencao: "Aguardando relatório de Contas a Receber para completar o Resumo Financeiro.",
+  pontoDeAtencao: "Preencha a aba \"Informações do DRE\" (receita/CMV/comissão por marketplace) para o DRE refletir o resultado real.",
 
-  seedReceivables: [],
+  seedReceivables: [
+    { id: "r1", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-01", valor: 18000.0, status: "recebido", recebimento: "2026-08-01", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r2", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-03", valor: 49000.0, status: "recebido", recebimento: "2026-08-03", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r3", cliente: "Moda Mundial Brasil Intermediacao D", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Transferência recebida - Moda Mundial Brasil Intermediacao D", vencimento: "2026-08-03", valor: 142.87, status: "recebido", recebimento: "2026-08-03", formaRecebimento: "Transferência", conta: "Inter St" },
+    { id: "r4", cliente: "Moda Mundial Brasil Intermediacao D", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Transferência recebida - Moda Mundial Brasil Intermediacao D", vencimento: "2026-08-03", valor: 183.69, status: "recebido", recebimento: "2026-08-03", formaRecebimento: "Transferência", conta: "Inter St" },
+    { id: "r5", cliente: "Moda Mundial Brasil Intermediacao D", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Transferência recebida - Moda Mundial Brasil Intermediacao D", vencimento: "2026-08-03", valor: 40.82, status: "recebido", recebimento: "2026-08-03", formaRecebimento: "Transferência", conta: "Inter St" },
+    { id: "r6", cliente: "—", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "PIX TRANSF PIPO BR03/08", vencimento: "2026-08-03", valor: 7855.9, status: "recebido", recebimento: "2026-08-03", formaRecebimento: "Pix", conta: "ITAU - BLAIMP" },
+    { id: "r7", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-04", valor: 14000.0, status: "recebido", recebimento: "2026-08-04", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r8", cliente: "—", categoria: "Juros recebidos", classificacao: "RECEITAS FINANCEIRAS", descricao: "REND PAGO APLIC AUT MAIS", vencimento: "2026-08-04", valor: 1.45, status: "recebido", recebimento: "2026-08-04", formaRecebimento: "Rendimento", conta: "ITAU - BLAIMP" },
+    { id: "r9", cliente: "—", categoria: "Juros recebidos", classificacao: "RECEITAS FINANCEIRAS", descricao: "REND PAGO APLIC AUT MAIS", vencimento: "2026-08-04", valor: 0.29, status: "recebido", recebimento: "2026-08-04", formaRecebimento: "Rendimento", conta: "Itau St" },
+    { id: "r10", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-04", valor: 14000.0, status: "recebido", recebimento: "2026-08-04", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r11", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "REND PAGO APLIC AUT MAIS", vencimento: "2026-08-05", valor: 17.07, status: "recebido", recebimento: "2026-08-05", formaRecebimento: "Rendimento", conta: "Itau St" },
+    { id: "r12", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-05", valor: 5000.0, status: "recebido", recebimento: "2026-08-05", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r13", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "PIX TRANSF STORE P06/08", vencimento: "2026-08-06", valor: 49000.0, status: "recebido", recebimento: "2026-08-06", formaRecebimento: "Pix", conta: "Itau St" },
+    { id: "r14", cliente: "—", categoria: "Receitas de Serviços", classificacao: "RECEITAS FINANCEIRAS", descricao: "Transferência Recebida", vencimento: "2026-08-07", valor: 0.74, status: "recebido", recebimento: "2026-08-07", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r15", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-08", valor: 5000.0, status: "recebido", recebimento: "2026-08-08", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r16", cliente: "Cartão De Débito - Shein", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Crédito domicílio cartão - Cartão De Débito - Shein", vencimento: "2026-08-10", valor: 20.41, status: "recebido", recebimento: "2026-08-10", formaRecebimento: "Cartão", conta: "Inter St" },
+    { id: "r17", cliente: "Cartão De Débito - Shein", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Crédito domicílio cartão - Cartão De Débito - Shein", vencimento: "2026-08-10", valor: 102.05, status: "recebido", recebimento: "2026-08-10", formaRecebimento: "Cartão", conta: "Inter St" },
+    { id: "r18", cliente: "Moda Mundial Brasil Intermediacao D", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Transferência recebida - Moda Mundial Brasil Intermediacao D", vencimento: "2026-08-10", valor: 61.23, status: "recebido", recebimento: "2026-08-10", formaRecebimento: "Transferência", conta: "Inter St" },
+    { id: "r19", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - BLAIMP (TIKTOK)", descricao: "PIX TRANSF PIPO BR10/08", vencimento: "2026-08-10", valor: 9155.4, status: "recebido", recebimento: "2026-08-10", formaRecebimento: "Pix", conta: "ITAU - BLAIMP" },
+    { id: "r20", cliente: "—", categoria: "Juros recebidos", classificacao: "RECEITAS FINANCEIRAS", descricao: "REND PAGO APLIC AUT MAIS", vencimento: "2026-08-10", valor: 0.12, status: "recebido", recebimento: "2026-08-10", formaRecebimento: "Rendimento", conta: "Itau St" },
+    { id: "r21", cliente: "—", categoria: "Reembolso e devolucoes", classificacao: "devoluções", descricao: "Transferência Recebida", vencimento: "2026-08-10", valor: 20.99, status: "recebido", recebimento: "2026-08-10", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r22", cliente: "—", categoria: "Reembolso e devolucoes", classificacao: "devoluções", descricao: "Transferência Recebida", vencimento: "2026-08-10", valor: 26.96, status: "recebido", recebimento: "2026-08-10", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r23", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-11", valor: 12000.0, status: "recebido", recebimento: "2026-08-11", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r24", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-11", valor: 49000.0, status: "recebido", recebimento: "2026-08-11", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r25", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "PIX TRANSF STORE P11/08", vencimento: "2026-08-11", valor: 49000.0, status: "recebido", recebimento: "2026-08-11", formaRecebimento: "Pix", conta: "Itau St" },
+    { id: "r26", cliente: "—", categoria: "Juros recebidos", classificacao: "RECEITAS FINANCEIRAS", descricao: "REND PAGO APLIC AUT MAIS", vencimento: "2026-08-11", valor: 0.29, status: "recebido", recebimento: "2026-08-11", formaRecebimento: "Rendimento", conta: "Itau St" },
+    { id: "r27", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-12", valor: 5000.0, status: "recebido", recebimento: "2026-08-12", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r28", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-13", valor: 46000.0, status: "recebido", recebimento: "2026-08-13", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r29", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITAS FINANCEIRAS", descricao: "REND PAGO APLIC AUT MAIS", vencimento: "2026-08-13", valor: 49.39, status: "recebido", recebimento: "2026-08-13", formaRecebimento: "Rendimento", conta: "Itau St" },
+    { id: "r30", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-15", valor: 5000.0, status: "recebido", recebimento: "2026-08-15", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r31", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-15", valor: 49000.0, status: "recebido", recebimento: "2026-08-15", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r32", cliente: "Cartão De Débito - Shein", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Crédito domicílio cartão - Cartão De Débito - Shein", vencimento: "2026-08-17", valor: 61.23, status: "recebido", recebimento: "2026-08-17", formaRecebimento: "Cartão", conta: "Inter St" },
+    { id: "r33", cliente: "Moda Mundial Brasil Intermediacao D", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Transferência recebida - Moda Mundial Brasil Intermediacao D", vencimento: "2026-08-17", valor: 81.64, status: "recebido", recebimento: "2026-08-17", formaRecebimento: "Transferência", conta: "Inter St" },
+    { id: "r34", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - BLAIMP (TIKTOK)", descricao: "PIX TRANSF PIPO BR17/08", vencimento: "2026-08-17", valor: 21695.12, status: "recebido", recebimento: "2026-08-17", formaRecebimento: "Pix", conta: "ITAU - BLAIMP" },
+    { id: "r35", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-20", valor: 40000.0, status: "recebido", recebimento: "2026-08-20", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r36", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-20", valor: 49000.0, status: "recebido", recebimento: "2026-08-20", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r37", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "PIX TRANSF STORE P20/08", vencimento: "2026-08-20", valor: 29000.0, status: "recebido", recebimento: "2026-08-20", formaRecebimento: "Pix", conta: "Itau St" },
+    { id: "r38", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-20", valor: 5000.0, status: "recebido", recebimento: "2026-08-20", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r39", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-20", valor: 5000.0, status: "recebido", recebimento: "2026-08-20", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r40", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-22", valor: 5000.0, status: "recebido", recebimento: "2026-08-22", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r41", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix recebido - Store Pluss Ltda", vencimento: "2026-08-24", valor: 49000.0, status: "recebido", recebimento: "2026-08-24", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r42", cliente: "Moda Mundial Brasil Intermediacao D", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Transferência recebida - Moda Mundial Brasil Intermediacao D", vencimento: "2026-08-24", valor: 163.28, status: "recebido", recebimento: "2026-08-24", formaRecebimento: "Transferência", conta: "Inter St" },
+    { id: "r43", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - BLAIMP (TIKTOK)", descricao: "PIX TRANSF PIPO BR24/08", vencimento: "2026-08-24", valor: 19984.67, status: "recebido", recebimento: "2026-08-24", formaRecebimento: "Pix", conta: "ITAU - BLAIMP" },
+    { id: "r44", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "PIX TRANSF STORE P24/08", vencimento: "2026-08-24", valor: 31000.0, status: "recebido", recebimento: "2026-08-24", formaRecebimento: "Pix", conta: "Itau St" },
+    { id: "r45", cliente: "Cartão De Débito - Shein", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", descricao: "Crédito domicílio cartão - Cartão De Débito - Shein", vencimento: "2026-08-25", valor: 20.41, status: "recebido", recebimento: "2026-08-25", formaRecebimento: "Cartão", conta: "Inter St" },
+    { id: "r46", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-25", valor: 5000.0, status: "recebido", recebimento: "2026-08-25", formaRecebimento: "Transferência", conta: "Nubank St" },
+    { id: "r47", cliente: "Pix Marketplace", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Pix enviado devolvido - Pix Marketplace", vencimento: "2026-08-26", valor: 486.96, status: "recebido", recebimento: "2026-08-26", formaRecebimento: "Pix", conta: "Inter St" },
+    { id: "r48", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-27", valor: 5000.0, status: "recebido", recebimento: "2026-08-27", formaRecebimento: "Transferência", conta: "Nubank St" },
+  ],
 
   seedPayables: [
     { id: "p1", favorecido: "manoel moda masc", categoria: "Compras de Produtos", classificacao: "COMPRA DE PRODUTOS", vencimento: "2026-08-01", valor: 50000.0, status: "pago", pagamento: "2026-08-01", descricao: "Pix enviado - Manoel Ferreira Bananeira", conta: "Inter St" },
@@ -392,10 +443,47 @@ export const storePlussData: ClientFinanceData = {
   ],
   seedCategoriasReceber: [
     {
-      classificacao: "Faturamento",
+      classificacao: "RECEITA DE VENDAS - STORE PLUSS",
       color: "#22d3a0",
       padrao: true,
-      categorias: [{ nome: "Faturamento Geral", padrao: true }],
+      categorias: [
+        { nome: "Receitas de Vendas", padrao: true },
+        { nome: "Receitas de Serviços", padrao: true },
+      ],
+    },
+    {
+      classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)",
+      color: "#38bdf8",
+      padrao: true,
+      categorias: [
+        { nome: "Receitas de Vendas", padrao: true },
+      ],
+    },
+    {
+      classificacao: "RECEITA DE VENDAS - BLAIMP (TIKTOK)",
+      color: "#a78bfa",
+      padrao: true,
+      categorias: [
+        { nome: "Receitas de Vendas", padrao: true },
+      ],
+    },
+    {
+      classificacao: "RECEITAS FINANCEIRAS",
+      color: "#f5c344",
+      padrao: true,
+      categorias: [
+        { nome: "Juros recebidos", padrao: true },
+        { nome: "Receitas de Serviços", padrao: true },
+        { nome: "Receitas de Vendas", padrao: true },
+      ],
+    },
+    {
+      classificacao: "devoluções",
+      color: "#f2665c",
+      padrao: true,
+      categorias: [
+        { nome: "Reembolso e devolucoes", padrao: true },
+      ],
     },
   ],
 };

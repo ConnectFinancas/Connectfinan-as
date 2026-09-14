@@ -218,11 +218,15 @@ export function computeDreGrid(
   const noCmv = new Set(dreConfig.classificacoesNoCmv ?? []);
   const temMarketplace = !!dreConfig.marketplaceManual;
 
-  // Receita = a do sistema (Contas a Receber) + a informada manualmente por marketplace
-  // (quando o cliente não lança Contas a Receber, como a Store Pluss).
+  // Receita: quando o cliente informa receita por marketplace, o DRE usa SÓ esse valor — Contas
+  // a Receber desse cliente existe pro Fluxo de Caixa, mas não entra no DRE (evita contar a
+  // mesma venda duas vezes). Sem marketplace configurado, a receita continua vindo normalmente
+  // de Contas a Receber, como em todo cliente.
   const receitaExtra = somarMarketplace(dreConfig.marketplaceManual, "receita");
-  const receitaBruta = receitaBrutaBase.map((v, i) => round2(v + receitaExtra[i]));
-  const acumReceita = round2(acumReceitaBase + receitaExtra.reduce((a, v) => a + v, 0));
+  const receitaBruta = temMarketplace ? receitaExtra.map(round2) : receitaBrutaBase.map((v, i) => round2(v + receitaExtra[i]));
+  const acumReceita = temMarketplace
+    ? round2(receitaExtra.reduce((a, v) => a + v, 0))
+    : round2(acumReceitaBase + receitaExtra.reduce((a, v) => a + v, 0));
 
   // Comissão de marketplace: linha própria de dedução, só aparece pra clientes com esse dado.
   const comissaoValues = somarMarketplace(dreConfig.marketplaceManual, "comissao").map(round2);
