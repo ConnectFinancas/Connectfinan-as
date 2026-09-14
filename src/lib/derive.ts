@@ -664,6 +664,34 @@ export function computeMargemEPontoEquilibrio(dreGrid: DreGridRow[]) {
   };
 }
 
+// Mesma conta de computeMargemEPontoEquilibrio, mas mês a mês em vez de só o acumulado do ano —
+// pra clientes que precisam ver quanto precisam faturar por mês, não só no total.
+export function computeMargemEPontoEquilibrioPorMes(dreGrid: DreGridRow[]) {
+  const receitaValues = dreGrid.find((r) => r.label === "RECEITA")?.values ?? Array(12).fill(0);
+  const cmvValues = dreGrid.find((r) => r.label === "(-) CMV")?.values ?? Array(12).fill(0);
+  const custosFixosValues = dreGrid.find((r) => r.label === "= Despesas totais")?.values ?? Array(12).fill(0);
+
+  return dreMonths.map((mes, i) => {
+    const receita = receitaValues[i] ?? 0;
+    const cmv = cmvValues[i] ?? 0;
+    const custosFixos = custosFixosValues[i] ?? 0;
+    const margemContribuicao = round2(receita - cmv);
+    const margemContribuicaoPct = receita > 0 ? round2((margemContribuicao / receita) * 100) : 0;
+    const pontoEquilibrio = margemContribuicaoPct > 0 ? round2(custosFixos / (margemContribuicaoPct / 100)) : 0;
+    const folga = round2(receita - pontoEquilibrio);
+    return {
+      mes,
+      receita: round2(receita),
+      margemContribuicao,
+      margemContribuicaoPct,
+      custosFixos: round2(custosFixos),
+      pontoEquilibrio,
+      folga,
+      atingiuPontoEquilibrio: receita >= pontoEquilibrio && pontoEquilibrio > 0,
+    };
+  });
+}
+
 function round2(n: number) {
   return Math.round(n * 100) / 100;
 }

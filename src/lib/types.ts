@@ -31,6 +31,9 @@ export type Client = {
   // Quando true, mostra a aba "Informações do DRE" — onde a receita/CMV/comissão por
   // marketplace são digitadas manualmente (ver ClientFinanceData.marketplaceManual).
   temInformacoesDre?: boolean;
+  // Quando true, mostra a tabela "Ponto de Equilíbrio por Mês" no Fluxo de Caixa (quanto precisa
+  // faturar por mês, não só o acumulado do ano).
+  temPontoEquilibrioMensal?: boolean;
 };
 
 export type MonthlyFinancials = {

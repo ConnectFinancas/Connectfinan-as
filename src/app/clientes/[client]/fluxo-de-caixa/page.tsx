@@ -6,7 +6,12 @@ import { AlertTriangle, ChevronRight, Download, Gauge, Landmark, Pin, Target, Tr
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { MiniBarCompare } from "@/components/charts/MiniBarCompare";
 import { useFinance } from "@/lib/store/FinanceContext";
-import { computeFluxoCaixaDreGrid, computeMargemEPontoEquilibrio, lancamentosFluxoCaixaPorLinha } from "@/lib/derive";
+import {
+  computeFluxoCaixaDreGrid,
+  computeMargemEPontoEquilibrio,
+  computeMargemEPontoEquilibrioPorMes,
+  lancamentosFluxoCaixaPorLinha,
+} from "@/lib/derive";
 import { dreMonths } from "@/lib/constants";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
@@ -51,12 +56,16 @@ export default function FluxoDeCaixaPage() {
     receivables,
     categoriasPagar,
     summary,
+    client,
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
   const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid);
+  const margemEPontoEquilibrioPorMes = client.temPontoEquilibrioMensal
+    ? computeMargemEPontoEquilibrioPorMes(summary.dreGrid)
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -411,6 +420,74 @@ export default function FluxoDeCaixaPage() {
           </p>
         </div>
       </div>
+
+      {margemEPontoEquilibrioPorMes && (
+        <div className="card overflow-hidden">
+          <div className="p-5 pb-1">
+            <div className="flex items-center gap-2">
+              <Target size={16} className="text-client-accent" />
+              <h2 className="text-sm font-semibold text-brand-900">Ponto de Equilíbrio por Mês</h2>
+            </div>
+            <p className="mt-1 text-xs text-faint">Quanto precisa faturar em cada mês pra cobrir os custos do período.</p>
+          </div>
+          <div className="overflow-x-auto p-5 pt-4">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border-subtle bg-brand-900 text-left text-[11px] text-white">
+                  <th className="py-2.5 pl-4 pr-3 font-medium whitespace-nowrap">Mês</th>
+                  <th className="py-2.5 px-3 text-right font-medium whitespace-nowrap">Receita</th>
+                  <th className="py-2.5 px-3 text-right font-medium whitespace-nowrap">Margem Contrib.</th>
+                  <th className="py-2.5 px-3 text-right font-medium whitespace-nowrap">Custos Fixos</th>
+                  <th className="py-2.5 px-3 text-right font-medium whitespace-nowrap">Ponto de Equilíbrio</th>
+                  <th className="py-2.5 pl-3 pr-4 text-right font-medium whitespace-nowrap">Folga sobre o PE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {margemEPontoEquilibrioPorMes.map((linha) => (
+                  <tr key={linha.mes} className="border-b border-border-subtle last:border-0">
+                    <td className="py-2 pl-4 pr-3 whitespace-nowrap text-muted">{linha.mes}/26</td>
+                    <td className="py-2 px-3 text-right tabular-nums text-brand-900 whitespace-nowrap">{formatCurrencyPrecise(linha.receita)}</td>
+                    <td className="py-2 px-3 text-right tabular-nums whitespace-nowrap text-muted">
+                      {linha.margemContribuicaoPct.toFixed(1)}%
+                    </td>
+                    <td className="py-2 px-3 text-right tabular-nums whitespace-nowrap text-muted">
+                      {formatCurrencyPrecise(linha.custosFixos)}
+                    </td>
+                    <td className="py-2 px-3 text-right tabular-nums whitespace-nowrap text-muted">
+                      {formatCurrencyPrecise(linha.pontoEquilibrio)}
+                    </td>
+                    <td
+                      className={`py-2 pl-3 pr-4 text-right tabular-nums whitespace-nowrap font-medium ${
+                        linha.atingiuPontoEquilibrio ? "text-accent-500" : "text-danger-500"
+                      }`}
+                    >
+                      {linha.folga >= 0 ? "+" : ""}
+                      {formatCurrencyPrecise(linha.folga)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-surface-muted font-semibold text-brand-900">
+                  <td className="py-2.5 pl-4 pr-3 whitespace-nowrap">Período</td>
+                  <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">{formatCurrencyPrecise(margemEPontoEquilibrio.receita)}</td>
+                  <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">
+                    {margemEPontoEquilibrio.margemContribuicaoPct.toFixed(1)}%
+                  </td>
+                  <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">{formatCurrencyPrecise(margemEPontoEquilibrio.custosFixos)}</td>
+                  <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">{formatCurrencyPrecise(margemEPontoEquilibrio.pontoEquilibrio)}</td>
+                  <td
+                    className={`py-2.5 pl-3 pr-4 text-right tabular-nums whitespace-nowrap ${
+                      margemEPontoEquilibrio.atingiuPontoEquilibrio ? "text-accent-500" : "text-danger-500"
+                    }`}
+                  >
+                    {margemEPontoEquilibrio.distanciaDoPontoEquilibrio >= 0 ? "+" : ""}
+                    {formatCurrencyPrecise(margemEPontoEquilibrio.distanciaDoPontoEquilibrio)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <p className="text-[11px] text-faint">
         * Valores em Reais (R$) · Fonte: Contas a Receber (banco) + Contas a Pagar · Fluxo por regime de caixa
