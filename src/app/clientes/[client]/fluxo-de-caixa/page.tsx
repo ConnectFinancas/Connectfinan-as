@@ -7,6 +7,7 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { MiniBarCompare } from "@/components/charts/MiniBarCompare";
 import { useFinance } from "@/lib/store/FinanceContext";
 import {
+  computeCapitalDeGiroRecomendado,
   computeFluxoCaixaDreGrid,
   computeMargemEPontoEquilibrio,
   computeMargemEPontoEquilibrioPorMes,
@@ -81,7 +82,6 @@ export default function FluxoDeCaixaPage() {
     receivables,
     categoriasPagar,
     summary,
-    client,
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
@@ -90,15 +90,17 @@ export default function FluxoDeCaixaPage() {
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
   const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid);
-  const margemEPontoEquilibrioPorMes = client.temPontoEquilibrioMensal
-    ? computeMargemEPontoEquilibrioPorMes(summary.dreGrid)
-    : null;
+  const margemEPontoEquilibrioPorMes = computeMargemEPontoEquilibrioPorMes(summary.dreGrid);
+  const capitalDeGiro = computeCapitalDeGiroRecomendado(payables);
 
   // Visão inspirada em outro sistema que o cliente usa (Arken): os mesmos dados do DRE por
   // competência (o de sempre, sem alteração nenhuma nele), só que também exibidos aqui dentro do
   // Fluxo de Caixa, com 4 cards de resumo + tabela mês a mês em visual navy/dourado.
   const kpiReceita = summary.dreGrid.find((r) => r.label === "RECEITA")?.acumulado ?? 0;
-  const kpiMargemContribuicao = summary.dreGrid.find((r) => r.label === "= Lucro Bruto ou Valor a Gastar")?.acumulado ?? 0;
+  const kpiMargemContribuicao =
+    summary.dreGrid.find((r) => r.label === "= Lucro Bruto ou Valor a Gastar")?.acumulado ??
+    summary.dreGrid.find((r) => r.label === "= Receita líquida")?.acumulado ??
+    0;
   const kpiDespesasTotais = summary.dreGrid.find((r) => r.label === "= Despesas totais")?.acumulado ?? 0;
   const kpiResultado = summary.dreGrid.find((r) => r.isTotal)?.acumulado ?? 0;
   const DOURADO = "#d4af37";
@@ -138,13 +140,18 @@ export default function FluxoDeCaixaPage() {
         <span className="text-xs font-medium text-warn-500">{fluxoCaixaPeriodo}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         <Kpi label="Saldo Inicial" value={fluxoCaixaKpis.saldoInicial} hint="no início do período" tone={fluxoCaixaKpis.saldoInicial >= 0 ? undefined : "negative"} />
         <Kpi label="Recebimentos" value={fluxoCaixaKpis.recebimentos} hint="entradas de caixa" tone="positive" />
         <Kpi label="Pagamentos" value={fluxoCaixaKpis.pagamentos} hint="saídas de caixa" />
         <Kpi label="Geração Líquida" value={fluxoCaixaKpis.geracaoLiquida} hint={`${fluxoCaixaKpis.geracaoLiquidaPct.toFixed(1)}% dos recebimentos`} tone="positive" />
         <Kpi label="Saldo Final" value={fluxoCaixaKpis.saldoFinal} hint="no fim do período" tone={fluxoCaixaKpis.saldoFinal >= 0 ? undefined : "negative"} />
         <Kpi label="Crescimento do Caixa" value={fluxoCaixaKpis.crescimentoCaixa} hint="vs início do período" tone="positive" isPct />
+        <Kpi
+          label="Capital de Giro Recomendado"
+          value={capitalDeGiro.recomendado}
+          hint={capitalDeGiro.mesesComMovimento > 0 ? "≈ 1 mês de despesas médias" : "sem histórico suficiente"}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

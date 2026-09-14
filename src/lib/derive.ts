@@ -692,6 +692,24 @@ export function computeMargemEPontoEquilibrioPorMes(dreGrid: DreGridRow[]) {
   });
 }
 
+// Capital de giro recomendado: a média mensal de saídas de caixa efetivas (regime de caixa, só
+// meses com pagamento) usada como colchão mínimo — 1 mês de despesas médias guardado pra cobrir
+// o negócio caso a receita do mês seguinte atrase ou falhe. É uma régua simples e genérica
+// (funciona pra qualquer cliente, não depende de configuração específica de DRE).
+export function computeCapitalDeGiroRecomendado(payables: Payable[]) {
+  const pagos = payables.filter((p) => p.status === "pago" && p.pagamento);
+  const porMes = monthTotalsPorData(pagos, (p) => p.pagamento, (p) => p.valor);
+  const mesesComMovimento = porMes.filter((v) => v > 0).length;
+  const totalPago = round2(porMes.reduce((a, v) => a + v, 0));
+  const mediaMensal = mesesComMovimento > 0 ? round2(totalPago / mesesComMovimento) : 0;
+
+  return {
+    mediaMensal,
+    recomendado: mediaMensal,
+    mesesComMovimento,
+  };
+}
+
 function round2(n: number) {
   return Math.round(n * 100) / 100;
 }

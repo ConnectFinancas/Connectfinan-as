@@ -85,7 +85,6 @@ export const clients: Client[] = [
     theme: "light",
     conciliacaoExterna: true,
     temInformacoesDre: true,
-    temPontoEquilibrioMensal: true,
   },
   {
     slug: "connect",
