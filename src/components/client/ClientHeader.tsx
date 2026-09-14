@@ -9,7 +9,9 @@ import { clientNavItems } from "@/lib/nav";
 export function ClientHeader({ client }: { client: Client }) {
   const pathname = usePathname();
   const base = `/clientes/${client.slug}`;
-  const items = clientNavItems(base);
+  const items = clientNavItems(base).filter(
+    (item) => !(client.conciliacaoExterna && item.href === `${base}/conciliacao-bancaria`)
+  );
 
   const active = items.find((item) => (item.exact ? pathname === item.href : pathname.startsWith(item.href))) ?? items[0];
 

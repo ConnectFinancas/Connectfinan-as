@@ -25,6 +25,9 @@ export type Client = {
   // "tarefas" troca todo o painel por um quadro de tarefas estilo Todoist — usado pra clientes
   // que na verdade são espaços de organização interna, não empresas com financeiro de verdade.
   tipo?: "financeiro" | "tarefas";
+  // Quando true, esconde a aba "Conciliação Bancária" do menu do cliente — usado quando a
+  // conciliação já é feita fora do sistema (ex.: direto no Conta Azul), como a Store Pluss.
+  conciliacaoExterna?: boolean;
 };
 
 export type MonthlyFinancials = {
