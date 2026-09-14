@@ -15,6 +15,7 @@ import {
 import { dreMonths } from "@/lib/constants";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
+import { Payable } from "@/lib/types";
 
 const DailyBalanceChart = dynamic(() => import("@/components/charts/DailyBalanceChart").then((m) => m.DailyBalanceChart), {
   ssr: false,
@@ -40,6 +41,30 @@ function Kpi({ label, value, hint, tone, isPct }: { label: string; value: number
 
 const destaqueIcons = [Landmark, TrendingUp, Target, Pin];
 
+// Mesmo drill-down (classificação → categoria → lançamentos) da aba Faturamento & DRE, por
+// competência (vencimento) — reaproveitado aqui só pra exibição, sem mexer naquela aba.
+function categoriaRowsFor(payables: Payable[], classificacao: string) {
+  const items = payables.filter((p) => p.classificacao === classificacao);
+  const byCategoria = new Map<string, Payable[]>();
+  for (const p of items) {
+    if (!byCategoria.has(p.categoria)) byCategoria.set(p.categoria, []);
+    byCategoria.get(p.categoria)!.push(p);
+  }
+  return [...byCategoria.entries()]
+    .map(([categoria, list]) => {
+      const values = Array(12).fill(0);
+      for (const p of list) values[new Date(p.vencimento + "T00:00:00").getMonth()] += p.valor;
+      const acumulado = list.reduce((a, p) => a + p.valor, 0);
+      return {
+        categoria,
+        values,
+        acumulado,
+        lancamentos: [...list].sort((a, b) => a.vencimento.localeCompare(b.vencimento)),
+      };
+    })
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 export default function FluxoDeCaixaPage() {
   const {
     fluxoCaixaPeriodo,
@@ -60,6 +85,8 @@ export default function FluxoDeCaixaPage() {
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
+  const [linhaCompAberta, setLinhaCompAberta] = useState<string | null>(null);
+  const [categoriaCompAberta, setCategoriaCompAberta] = useState<string | null>(null);
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
   const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid);
@@ -553,29 +580,86 @@ export default function FluxoDeCaixaPage() {
                         </tr>
                       );
                     }
+                    const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && row.label !== "(-) CMV";
+                    const isOpen = isClassRow && linhaCompAberta === row.label;
                     const rowColor = row.isSubtotal ? "text-brand-900" : row.negative ? "text-warn-500" : "text-muted";
                     const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
                     return (
-                      <tr
-                        key={idx}
-                        className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""}`}
-                      >
-                        <td
-                          className={`py-2 pl-5 pr-3 whitespace-nowrap sticky left-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : "bg-surface"} ${
-                            row.isTotal || row.isSubtotal || row.isHeader ? "font-semibold text-brand-900" : "text-muted"
+                      <Fragment key={idx}>
+                        <tr
+                          onClick={isClassRow ? () => setLinhaCompAberta(isOpen ? null : row.label) : undefined}
+                          className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""} ${
+                            isClassRow ? "cursor-pointer hover:bg-surface-muted/60" : ""
                           }`}
                         >
-                          {row.label}
-                        </td>
-                        {row.values.map((v, i) => (
-                          <td key={i} className={`py-2 px-3 text-right tabular-nums whitespace-nowrap ${rowColor}`}>
-                            {formatCurrencyPrecise(v)}
+                          <td
+                            className={`py-2 pl-5 pr-3 whitespace-nowrap sticky left-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : "bg-surface"} ${
+                              row.isTotal || row.isSubtotal || row.isHeader ? "font-semibold text-brand-900" : "text-muted"
+                            }`}
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              {row.expandable && (
+                                <ChevronRight size={12} className={`text-faint transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                              )}
+                              {row.label}
+                            </span>
                           </td>
-                        ))}
-                        <td className={`py-2 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
-                          {formatCurrencyPrecise(row.acumulado)}
-                        </td>
-                      </tr>
+                          {row.values.map((v, i) => (
+                            <td key={i} className={`py-2 px-3 text-right tabular-nums whitespace-nowrap ${rowColor}`}>
+                              {formatCurrencyPrecise(v)}
+                            </td>
+                          ))}
+                          <td className={`py-2 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                            {formatCurrencyPrecise(row.acumulado)}
+                          </td>
+                        </tr>
+                        {isOpen &&
+                          categoriaRowsFor(payables, row.label).map((catRow) => {
+                            const catKey = `${row.label}|${catRow.categoria}`;
+                            const catOpen = categoriaCompAberta === catKey;
+                            return (
+                              <Fragment key={catKey}>
+                                <tr
+                                  onClick={() => setCategoriaCompAberta(catOpen ? null : catKey)}
+                                  className="cursor-pointer border-b border-border-subtle bg-surface/60 hover:bg-surface-muted/60"
+                                >
+                                  <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">
+                                    <span className="inline-flex items-center gap-1">
+                                      <ChevronRight size={11} className={`text-faint transition-transform ${catOpen ? "rotate-90" : ""}`} />
+                                      {catRow.categoria}
+                                    </span>
+                                  </td>
+                                  {catRow.values.map((v, i) => (
+                                    <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                      {formatCurrencyPrecise(v)}
+                                    </td>
+                                  ))}
+                                  <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                    {formatCurrencyPrecise(catRow.acumulado)}
+                                  </td>
+                                </tr>
+                                {catOpen && (
+                                  <tr className="border-b border-border-subtle bg-surface/30">
+                                    <td colSpan={dreMonths.length + 2} className="py-2 pl-14 pr-5">
+                                      <div className="flex flex-col gap-1">
+                                        {catRow.lancamentos.map((l) => (
+                                          <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
+                                            <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
+                                            <span className="flex-1 truncate">
+                                              {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
+                                              {l.descricao}
+                                            </span>
+                                            <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </Fragment>
+                            );
+                          })}
+                      </Fragment>
                     );
                   })}
                 </tbody>
