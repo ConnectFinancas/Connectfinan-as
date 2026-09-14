@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  ClipboardEdit,
   FileSpreadsheet,
   Landmark,
   LayoutDashboard,
@@ -53,6 +54,14 @@ export function clientNavItems(base: string): NavItem[] {
       pageTitle: "Faturamento & DRE",
       subtitle: "Demonstrativo de resultado por competência",
       icon: FileSpreadsheet,
+    },
+    {
+      href: `${base}/informacoes-dre`,
+      label: "Informações do DRE",
+      shortLabel: "Informações do DRE",
+      pageTitle: "Informações do DRE",
+      subtitle: "Receita, CMV e comissão por marketplace, digitados manualmente",
+      icon: ClipboardEdit,
     },
     {
       href: `${base}/fluxo-de-caixa`,

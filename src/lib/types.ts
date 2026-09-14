@@ -28,6 +28,9 @@ export type Client = {
   // Quando true, esconde a aba "Conciliação Bancária" do menu do cliente — usado quando a
   // conciliação já é feita fora do sistema (ex.: direto no Conta Azul), como a Store Pluss.
   conciliacaoExterna?: boolean;
+  // Quando true, mostra a aba "Informações do DRE" — onde a receita/CMV/comissão por
+  // marketplace são digitadas manualmente (ver ClientFinanceData.marketplaceManual).
+  temInformacoesDre?: boolean;
 };
 
 export type MonthlyFinancials = {
@@ -139,6 +142,31 @@ export type CategoryGroup = {
   categorias: { nome: string; padrao: boolean }[];
 };
 
+// Marketplaces em que a Store Pluss vende — receita, CMV e comissão de cada um são digitados
+// manualmente (vêm de fora do sistema), não de Contas a Receber/Pagar. Cada array tem 12
+// posições (índice 0 = Jan, 11 = Dez).
+export type MarketplaceCanal = "mercadoLivre" | "shopee" | "shein" | "tiktok";
+export type MarketplaceMensal = {
+  receita: number[];
+  cmv: number[];
+  comissao: number[];
+  // Frete que a própria plataforma desconta direto do repasse (ex.: Tiktok Shop, Mercado
+  // Envios) — vira linha própria no DRE, separada do "Frete pago" (Contas a Pagar). Existe em
+  // todos os canais pra manter o formato uniforme, mas só é exibido/usado nos que o cliente pediu.
+  freteDescontado: number[];
+};
+
+// Uma linha de dedução do DRE que aparece destacada, entre a Receita e o "Lucro Bruto ou Valor a
+// Gastar" — em vez de cair genericamente na seção de Despesas lá embaixo. A fonte pode ser: o
+// total de uma ou mais classificações inteiras de Contas a Pagar, categorias específicas dentro
+// de classificações (pra separar sem duplicar), ou um campo digitado manualmente por marketplace.
+export type LinhaDestaqueDre = {
+  rotulo: string;
+  classificacoes?: string[];
+  categorias?: { classificacao: string; categoria: string }[];
+  marketplaceCampo?: { canal: MarketplaceCanal; campo: keyof MarketplaceMensal };
+};
+
 export type ClientFinanceData = {
   seedPayables: Payable[];
   seedReceivables: Receivable[];
@@ -149,6 +177,20 @@ export type ClientFinanceData = {
   // pagamentos a fornecedor em Contas a Pagar. Índice 0 = Jan, 11 = Dez. Ainda pendente de
   // preenchimento com valores reais para a maioria dos clientes.
   cmvManual?: number[];
+  // Classificações de Contas a Pagar que NÃO entram no DRE (nem em despesa nem em CMV) — usado
+  // quando esse custo já está representado de outra forma (ex.: CMV informado por marketplace).
+  classificacoesForaDoDre?: string[];
+  // Classificações de Contas a Pagar que entram no DRE dentro do detalhamento do CMV, em vez de
+  // como linha de despesa própria — ex.: insumos/embalagens que compõem o custo do produto.
+  classificacoesNoCmv?: string[];
+  // Receita/CMV/comissão por marketplace, digitados manualmente (ver MarketplaceMensal acima).
+  // Quando presente, soma automaticamente na RECEITA e no CMV do DRE, e a Comissão vira uma
+  // linha própria de dedução.
+  marketplaceManual?: Record<MarketplaceCanal, MarketplaceMensal>;
+  // Linhas de dedução destacadas do DRE (frete pago, devoluções, impostos etc.), na ordem em que
+  // aparecem entre a Receita e o "Lucro Bruto ou Valor a Gastar" — ver LinhaDestaqueDre acima.
+  // Quando presente, substitui o fluxo padrão de "Receita Líquida" + deducoesManuais por esse.
+  linhasDestaqueDre?: LinhaDestaqueDre[];
   fluxoCaixaPeriodo: string;
   fluxoCaixaKpis: {
     saldoInicial: number;

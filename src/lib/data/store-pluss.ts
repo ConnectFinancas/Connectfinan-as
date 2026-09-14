@@ -12,6 +12,31 @@ export const storePlussData: ClientFinanceData = {
     investimentos: 0,
   },
 
+  // DRE: compra de produto/matéria-prima já é representada pelo CMV informado por marketplace
+  // (aba "Informações do DRE"), então essas duas classificações não entram no DRE pra não contar
+  // em dobro (a categoria "Devolução de Vendas" da Confecção é a exceção — ela sai daqui e vira
+  // linha própria em linhasDestaqueDre, ver abaixo). Insumos (embalagens etc.) entram, mas como
+  // parte do detalhamento do CMV. Logística, Impostos e Reembolso saem da seção genérica de
+  // despesas porque viraram linhas destacadas (frete pago, imposto, devoluções) mais acima no DRE.
+  classificacoesForaDoDre: ["COMPRA DE PRODUTOS", "Confecção", "DESPESAS LOGISTICAS", "IMPOSTOS", "REEMBOLSO CLIENTES"],
+  classificacoesNoCmv: ["INSUMOS"],
+
+  // Estrutura pedida: Receita → (Comissão) → CMV → Frete pago → Devoluções e Reembolso → Frete
+  // descontado (Tiktok / Mercado Livre) → Imposto → Lucro Bruto ou Valor a Gastar → Despesas.
+  linhasDestaqueDre: [
+    { rotulo: "Frete pago", classificacoes: ["DESPESAS LOGISTICAS"] },
+    {
+      rotulo: "Devoluções e Reembolso",
+      categorias: [
+        { classificacao: "Confecção", categoria: "Devolução de Vendas" },
+        { classificacao: "REEMBOLSO CLIENTES", categoria: "reembolso" },
+      ],
+    },
+    { rotulo: "Frete Descontado direto do Tiktok", marketplaceCampo: { canal: "tiktok", campo: "freteDescontado" } },
+    { rotulo: "Frete Descontado pelo Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "freteDescontado" } },
+    { rotulo: "Imposto", classificacoes: ["IMPOSTOS"] },
+  ],
+
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
     saldoInicial: 0,

@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { getFinanceData } from "@/lib/data/financeRegistry";
-import { computeContasPagarKpis, computeContasReceberKpis, computeFinanceSummary, computeFluxoCaixa } from "@/lib/derive";
-import { CategoryGroup, Client, ClientFinanceData, Payable, Receivable, TransferenciaConta } from "@/lib/types";
+import { computeContasPagarKpis, computeContasReceberKpis, computeFinanceSummary, computeFluxoCaixa, emptyMarketplaceManual } from "@/lib/derive";
+import { CategoryGroup, Client, ClientFinanceData, MarketplaceCanal, MarketplaceMensal, Payable, Receivable, TransferenciaConta } from "@/lib/types";
 
 const PALETTE = ["#22d3a0", "#5b93fd", "#f2665c", "#a78bfa", "#f2a93c", "#f472b6", "#38bdf8", "#94a3b8"];
 
@@ -14,6 +14,7 @@ type FinanceState = {
   categoriasReceber: CategoryGroup[];
   transferencias: TransferenciaConta[];
   saldosIniciais: Record<string, number>;
+  marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>;
 };
 
 type Tipo = "pagar" | "receber";
@@ -47,6 +48,7 @@ type FinanceContextValue = FinanceState &
   addTransferencia: (t: TransferenciaConta) => void;
   deleteTransferencias: (ids: string[]) => void;
   setSaldoInicial: (conta: string, valor: number) => void;
+  setMarketplaceValor: (canal: MarketplaceCanal, campo: keyof MarketplaceMensal, mesIndex: number, valor: number) => void;
   summary: ReturnType<typeof computeFinanceSummary>;
   contasPagarKpis: ReturnType<typeof computeContasPagarKpis>;
   contasReceberKpis: ReturnType<typeof computeContasReceberKpis>;
@@ -73,6 +75,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     categoriasReceber: seed.seedCategoriasReceber,
     transferencias: [],
     saldosIniciais: {},
+    marketplaceManual: seed.marketplaceManual ?? emptyMarketplaceManual(),
   });
   const [hydrated, setHydrated] = useState(false);
 
@@ -86,7 +89,13 @@ export function FinanceProvider({ client, children }: { client: Client; children
         // não têm essas chaves, então caem pra [] / {} em vez de deixar o estado com undefined.
         const parsed = JSON.parse(raw);
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setState((s) => ({ ...s, ...parsed, transferencias: parsed.transferencias ?? [], saldosIniciais: parsed.saldosIniciais ?? {} }));
+        setState((s) => ({
+          ...s,
+          ...parsed,
+          transferencias: parsed.transferencias ?? [],
+          saldosIniciais: parsed.saldosIniciais ?? {},
+          marketplaceManual: parsed.marketplaceManual ?? s.marketplaceManual,
+        }));
       }
     } catch {
       // ignora estado salvo corrompido
@@ -172,9 +181,37 @@ export function FinanceProvider({ client, children }: { client: Client; children
   const setSaldoInicial = (conta: string, valor: number) =>
     setState((s) => ({ ...s, saldosIniciais: { ...s.saldosIniciais, [conta]: valor } }));
 
+  const setMarketplaceValor = (canal: MarketplaceCanal, campo: keyof MarketplaceMensal, mesIndex: number, valor: number) =>
+    setState((s) => {
+      const atualCanal = s.marketplaceManual[canal];
+      const novoCampo = [...atualCanal[campo]];
+      novoCampo[mesIndex] = valor;
+      return {
+        ...s,
+        marketplaceManual: { ...s.marketplaceManual, [canal]: { ...atualCanal, [campo]: novoCampo } },
+      };
+    });
+
+  const dreConfig = useMemo(
+    () => ({
+      classificacoesForaDoDre: seed.classificacoesForaDoDre,
+      classificacoesNoCmv: seed.classificacoesNoCmv,
+      marketplaceManual: client.temInformacoesDre ? state.marketplaceManual : undefined,
+    }),
+    [seed.classificacoesForaDoDre, seed.classificacoesNoCmv, client.temInformacoesDre, state.marketplaceManual]
+  );
+
   const summary = useMemo(
-    () => computeFinanceSummary(state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais, seed.cmvManual),
-    [state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais, seed.cmvManual]
+    () =>
+      computeFinanceSummary(
+        state.payables,
+        state.receivables,
+        state.categoriasPagar,
+        seed.deducoesManuais,
+        seed.cmvManual,
+        dreConfig
+      ),
+    [state.payables, state.receivables, state.categoriasPagar, seed.deducoesManuais, seed.cmvManual, dreConfig]
   );
   const contasPagarKpis = useMemo(() => computeContasPagarKpis(state.payables), [state.payables]);
   const contasReceberKpis = useMemo(() => computeContasReceberKpis(state.receivables), [state.receivables]);
@@ -217,6 +254,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     addTransferencia,
     deleteTransferencias,
     setSaldoInicial,
+    setMarketplaceValor,
     summary,
     contasPagarKpis,
     contasReceberKpis,

@@ -1,9 +1,78 @@
 import { categoryColor } from "@/lib/categoryColor";
 import { dreMonths, fullMonthNames } from "@/lib/constants";
 import { formatDateBR, HOJE, isVencido, parseISO } from "@/lib/today";
-import { CategoryGroup, DreGridRow, ExpenseSlice, MonthlyFinancials, Payable, Receivable, Status } from "@/lib/types";
+import {
+  CategoryGroup,
+  DreGridRow,
+  ExpenseSlice,
+  LinhaDestaqueDre,
+  MarketplaceCanal,
+  MarketplaceMensal,
+  MonthlyFinancials,
+  Payable,
+  Receivable,
+  Status,
+} from "@/lib/types";
 
 type DeducoesManuais = { impostos: number; inadimplencia: number; investimentos: number };
+
+export const MARKETPLACE_LABELS: Record<MarketplaceCanal, string> = {
+  mercadoLivre: "Mercado Livre",
+  shopee: "Shopee",
+  shein: "Shein",
+  tiktok: "TikTok Shop",
+};
+
+export function emptyMarketplaceManual(): Record<MarketplaceCanal, MarketplaceMensal> {
+  const canal = (): MarketplaceMensal => ({
+    receita: Array(12).fill(0),
+    cmv: Array(12).fill(0),
+    comissao: Array(12).fill(0),
+    freteDescontado: Array(12).fill(0),
+  });
+  return { mercadoLivre: canal(), shopee: canal(), shein: canal(), tiktok: canal() };
+}
+
+// Configuração de DRE específica de um cliente — ver campos equivalentes em ClientFinanceData.
+type DreConfig = {
+  classificacoesForaDoDre?: string[];
+  classificacoesNoCmv?: string[];
+  marketplaceManual?: Record<MarketplaceCanal, MarketplaceMensal>;
+  linhasDestaqueDre?: LinhaDestaqueDre[];
+};
+
+// Total mensal de uma linha de destaque do DRE — soma classificações inteiras, categorias
+// específicas, ou um campo digitado manualmente por marketplace (ver LinhaDestaqueDre).
+function valoresDestaque(
+  payables: Payable[],
+  marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal> | undefined,
+  linha: LinhaDestaqueDre
+): number[] {
+  if (linha.classificacoes) {
+    return monthTotals(payables.filter((p) => linha.classificacoes!.includes(p.classificacao)));
+  }
+  if (linha.categorias) {
+    const chaves = new Set(linha.categorias.map((c) => `${c.classificacao}|${c.categoria}`));
+    return monthTotals(payables.filter((p) => chaves.has(`${p.classificacao}|${p.categoria}`)));
+  }
+  if (linha.marketplaceCampo && marketplaceManual) {
+    return marketplaceManual[linha.marketplaceCampo.canal][linha.marketplaceCampo.campo];
+  }
+  return Array(12).fill(0);
+}
+
+// Soma um campo (receita/cmv/comissao) dos marketplaces, mês a mês.
+function somarMarketplace(
+  dados: Record<MarketplaceCanal, MarketplaceMensal> | undefined,
+  campo: keyof MarketplaceMensal
+): number[] {
+  const totals = Array(12).fill(0);
+  if (!dados) return totals;
+  for (const canal of Object.values(dados)) {
+    canal[campo].forEach((v, i) => (totals[i] += v || 0));
+  }
+  return totals;
+}
 
 // Categoria usada nos lançamentos de pagamento a fornecedor (custo de mercadoria vendida).
 // Esses lançamentos ficam em Contas a Pagar mas NÃO entram no DRE — o CMV do DRE é informado
@@ -59,21 +128,25 @@ export function computeContasReceberKpis(receivables: Receivable[]) {
   };
 }
 
-export function computeMonthlyFinancials(payables: Payable[], receivables: Receivable[]): MonthlyFinancials[] {
+export function computeMonthlyFinancials(
+  payables: Payable[],
+  receivables: Receivable[],
+  receitaExtra: number[] = Array(12).fill(0)
+): MonthlyFinancials[] {
   const receitaPorMes = monthTotals(receivables);
   const despesaPorMes = monthTotals(payables);
   return dreMonths.map((m, i) => ({
     month: `${m}/${String(anoCorrenteShort())}`,
-    receita: round2(receitaPorMes[i]),
+    receita: round2(receitaPorMes[i] + receitaExtra[i]),
     despesa: round2(despesaPorMes[i]),
   }));
 }
 
-export function computeEvolucaoReceita(receivables: Receivable[]) {
+export function computeEvolucaoReceita(receivables: Receivable[], receitaExtra: number[] = Array(12).fill(0)) {
   const receitaPorMes = monthTotals(receivables);
   let acumulado = 0;
   return dreMonths.map((m, i) => {
-    acumulado += receitaPorMes[i];
+    acumulado += receitaPorMes[i] + receitaExtra[i];
     return { month: `${m}/${anoCorrenteShort()}`, acumulado: round2(acumulado) };
   });
 }
@@ -81,16 +154,26 @@ export function computeEvolucaoReceita(receivables: Receivable[]) {
 export function computeSaidasPorClassificacao(
   payables: Payable[],
   categorias: CategoryGroup[],
-  cmvManual: number[] = Array(12).fill(0)
+  cmvManual: number[] = Array(12).fill(0),
+  dreConfig: DreConfig = {}
 ): ExpenseSlice[] {
+  const foraDoDre = new Set(dreConfig.classificacoesForaDoDre ?? []);
+  const noCmv = new Set(dreConfig.classificacoesNoCmv ?? []);
   const byClass = new Map<string, number>();
   for (const p of payables) {
     // Pagamento a fornecedor não entra no DRE (ver computeDreGrid) — mantido fora daqui também
     // para o "Saídas por classificação" bater com o "Saídas totais" do Resumo.
     if (p.classificacao === "CMV" && p.categoria === CUSTO_MERCADORIA_CATEGORIA) continue;
+    if (foraDoDre.has(p.classificacao)) continue;
+    if (noCmv.has(p.classificacao)) {
+      byClass.set("CMV", (byClass.get("CMV") ?? 0) + p.valor);
+      continue;
+    }
     byClass.set(p.classificacao, (byClass.get(p.classificacao) ?? 0) + p.valor);
   }
-  const cmvManualTotal = cmvManual.reduce((a, v) => a + v, 0);
+  const cmvManualTotal =
+    cmvManual.reduce((a, v) => a + v, 0) +
+    somarMarketplace(dreConfig.marketplaceManual, "cmv").reduce((a, v) => a + v, 0);
   if (cmvManualTotal > 0) {
     byClass.set("CMV", (byClass.get("CMV") ?? 0) + cmvManualTotal);
   }
@@ -103,10 +186,19 @@ export function computeSaidasPorClassificacao(
     }));
 }
 
-export function computeReceitaPorServico(receivables: Receivable[]): ExpenseSlice[] {
+export function computeReceitaPorServico(
+  receivables: Receivable[],
+  marketplaceManual?: Record<MarketplaceCanal, MarketplaceMensal>
+): ExpenseSlice[] {
   const byCategoria = new Map<string, number>();
   for (const r of receivables) {
     byCategoria.set(r.categoria, (byCategoria.get(r.categoria) ?? 0) + r.valor);
+  }
+  if (marketplaceManual) {
+    for (const canal of Object.keys(marketplaceManual) as MarketplaceCanal[]) {
+      const total = marketplaceManual[canal].receita.reduce((a, v) => a + (v || 0), 0);
+      if (total > 0) byCategoria.set(MARKETPLACE_LABELS[canal], (byCategoria.get(MARKETPLACE_LABELS[canal]) ?? 0) + total);
+    }
   }
   return [...byCategoria.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -116,28 +208,74 @@ export function computeReceitaPorServico(receivables: Receivable[]): ExpenseSlic
 export function computeDreGrid(
   payables: Payable[],
   categorias: CategoryGroup[],
-  receitaBruta: number[],
-  acumReceita: number,
+  receitaBrutaBase: number[],
+  acumReceitaBase: number,
   deducoesManuais: DeducoesManuais,
-  cmvManual: number[] = Array(12).fill(0)
+  cmvManual: number[] = Array(12).fill(0),
+  dreConfig: DreConfig = {}
 ): DreGridRow[] {
+  const foraDoDre = new Set(dreConfig.classificacoesForaDoDre ?? []);
+  const noCmv = new Set(dreConfig.classificacoesNoCmv ?? []);
+  const temMarketplace = !!dreConfig.marketplaceManual;
+
+  // Receita = a do sistema (Contas a Receber) + a informada manualmente por marketplace
+  // (quando o cliente não lança Contas a Receber, como a Store Pluss).
+  const receitaExtra = somarMarketplace(dreConfig.marketplaceManual, "receita");
+  const receitaBruta = receitaBrutaBase.map((v, i) => round2(v + receitaExtra[i]));
+  const acumReceita = round2(acumReceitaBase + receitaExtra.reduce((a, v) => a + v, 0));
+
+  // Comissão de marketplace: linha própria de dedução, só aparece pra clientes com esse dado.
+  const comissaoValues = somarMarketplace(dreConfig.marketplaceManual, "comissao").map(round2);
+  const acumComissao = round2(comissaoValues.reduce((a, v) => a + v, 0));
+  const receitaAposComissao = receitaBruta.map((v, i) => round2(v - comissaoValues[i]));
+  const acumReceitaAposComissao = round2(acumReceita - acumComissao);
+
   // CMV do DRE = CSV (custo sobre serviços, automático via lançamentos) + CMV manual do mês
-  // (preço de custo do produto vendido, informado à parte). Pagamentos a fornecedor NÃO entram aqui.
+  // (preço de custo do produto vendido, informado à parte) + classificações marcadas como
+  // "entram no detalhamento do CMV" (ex.: insumos) + CMV manual por marketplace. Pagamentos a
+  // fornecedor (CUSTO_MERCADORIA_CATEGORIA) e classificações "fora do DRE" NÃO entram aqui.
   const csvAutoValues = monthTotals(
     payables.filter((p) => p.classificacao === "CMV" && p.categoria !== CUSTO_MERCADORIA_CATEGORIA)
   );
-  const cmvValues = csvAutoValues.map((v, i) => round2(v + (cmvManual[i] ?? 0)));
+  const noCmvValues = monthTotals(payables.filter((p) => noCmv.has(p.classificacao)));
+  const cmvExtra = somarMarketplace(dreConfig.marketplaceManual, "cmv");
+  const cmvValues = csvAutoValues.map((v, i) => round2(v + (cmvManual[i] ?? 0) + noCmvValues[i] + cmvExtra[i]));
   const acumCmv = round2(cmvValues.reduce((a, v) => a + v, 0));
 
-  const receitaLiquida = receitaBruta.map((v, i) => v - cmvValues[i]);
-  const acumReceitaLiquida = round2(acumReceita - acumCmv);
+  const receitaLiquida = receitaAposComissao.map((v, i) => v - cmvValues[i]);
+  const acumReceitaLiquida = round2(acumReceitaAposComissao - acumCmv);
+
+  // Linhas de destaque (frete pago, devoluções, impostos etc.) — quando o cliente tem essa
+  // config (ver LinhaDestaqueDre), elas substituem o fluxo padrão de "Receita Líquida" +
+  // deduções manuais, indo direto pro "Lucro Bruto ou Valor a Gastar".
+  const linhasDestaque = dreConfig.linhasDestaqueDre ?? [];
+  const destaqueRows = linhasDestaque.map((linha) => {
+    const values = valoresDestaque(payables, dreConfig.marketplaceManual, linha).map(round2);
+    const acumulado = round2(values.reduce((a, v) => a + v, 0));
+    return { label: linha.rotulo, values, acumulado, negative: true };
+  });
+  const totalDestaqueValues = Array(12).fill(0);
+  let acumTotalDestaque = 0;
+  for (const row of destaqueRows) {
+    row.values.forEach((v, i) => (totalDestaqueValues[i] += v));
+    acumTotalDestaque += row.acumulado;
+  }
+  acumTotalDestaque = round2(acumTotalDestaque);
 
   const { impostos, inadimplencia, investimentos } = deducoesManuais;
-  const valorAGastar = receitaLiquida.map((v) => v); // deduções manuais aplicadas só no acumulado/valor final
-  const acumValorAGastar = round2(acumReceitaLiquida - impostos - inadimplencia - investimentos);
+  const usaDestaque = linhasDestaque.length > 0;
+
+  // "Lucro Bruto ou Valor a Gastar": com linhas de destaque, é receita − comissão − CMV − todas
+  // as linhas de destaque; sem elas, é o fluxo padrão (receita líquida − deduções manuais).
+  const valorAGastar = usaDestaque
+    ? receitaLiquida.map((v, i) => round2(v - totalDestaqueValues[i]))
+    : receitaLiquida.map((v) => v); // deduções manuais aplicadas só no acumulado/valor final
+  const acumValorAGastar = usaDestaque
+    ? round2(acumReceitaLiquida - acumTotalDestaque)
+    : round2(acumReceitaLiquida - impostos - inadimplencia - investimentos);
 
   const classRows = categorias
-    .filter((c) => c.classificacao !== "CMV")
+    .filter((c) => c.classificacao !== "CMV" && !foraDoDre.has(c.classificacao) && !noCmv.has(c.classificacao))
     .map((c) => {
       const values = monthTotals(payables.filter((p) => p.classificacao === c.classificacao));
       const acumulado = round2(values.reduce((a, v) => a + v, 0));
@@ -153,22 +291,29 @@ export function computeDreGrid(
   }
   acumDespesasTotais = round2(acumDespesasTotais);
 
-  const geracaoDeCaixaValues = valorAGastar.map((v, i) => round2(v - despesasTotaisValues[i]));
-  const acumGeracaoDeCaixa = round2(acumValorAGastar - acumDespesasTotais);
+  const resultadoValues = valorAGastar.map((v, i) => round2(v - despesasTotaisValues[i]));
+  const acumResultado = round2(acumValorAGastar - acumDespesasTotais);
 
   const rows: DreGridRow[] = [
     { label: "RECEITA", values: receitaBruta.map(round2), acumulado: round2(acumReceita), isHeader: true, expandable: true },
     { label: "= Receita bruta", values: receitaBruta.map(round2), acumulado: round2(acumReceita), indent: true },
+    ...(temMarketplace
+      ? [{ label: "(-) Comissões de Marketplace", values: comissaoValues, acumulado: acumComissao, negative: true }]
+      : []),
     { label: "(-) CMV", values: cmvValues.map(round2), acumulado: acumCmv, negative: true, expandable: true },
-    { label: "= Receita líquida", values: receitaLiquida.map(round2), acumulado: acumReceitaLiquida, isSubtotal: true },
-    { label: "(-) Impostos", values: Array(12).fill(0), acumulado: impostos, negative: true },
-    { label: "(-) Inadimplência", values: Array(12).fill(0), acumulado: inadimplencia, negative: true },
-    { label: "(-) Investimentos", values: Array(12).fill(0), acumulado: investimentos, negative: true },
-    { label: "= Valor a gastar", values: valorAGastar.map(round2), acumulado: acumValorAGastar, isSubtotal: true },
+    ...(usaDestaque
+      ? [...destaqueRows, { label: "= Lucro Bruto ou Valor a Gastar", values: valorAGastar.map(round2), acumulado: acumValorAGastar, isSubtotal: true }]
+      : [
+          { label: "= Receita líquida", values: receitaLiquida.map(round2), acumulado: acumReceitaLiquida, isSubtotal: true },
+          { label: "(-) Impostos", values: Array(12).fill(0), acumulado: impostos, negative: true },
+          { label: "(-) Inadimplência", values: Array(12).fill(0), acumulado: inadimplencia, negative: true },
+          { label: "(-) Investimentos", values: Array(12).fill(0), acumulado: investimentos, negative: true },
+          { label: "= Valor a gastar", values: valorAGastar.map(round2), acumulado: acumValorAGastar, isSubtotal: true },
+        ]),
     { label: "DESPESAS", values: [], acumulado: 0, isSection: true },
     ...classRows,
     { label: "= Despesas totais", values: despesasTotaisValues.map(round2), acumulado: acumDespesasTotais, isSubtotal: true, negative: true },
-    { label: "= Geração de caixa", values: geracaoDeCaixaValues, acumulado: acumGeracaoDeCaixa, isTotal: true },
+    { label: "= Geração de caixa", values: resultadoValues, acumulado: acumResultado, isTotal: true },
   ];
 
   return rows;
@@ -244,15 +389,25 @@ export function computeFinanceSummary(
   receivables: Receivable[],
   categoriasPagar: CategoryGroup[],
   deducoesManuais: DeducoesManuais,
-  cmvManual: number[] = Array(12).fill(0)
+  cmvManual: number[] = Array(12).fill(0),
+  dreConfig: DreConfig = {}
 ) {
-  const receitaBrutaPorMes = monthTotals(receivables);
-  const acumReceita = round2(receitaBrutaPorMes.reduce((a, v) => a + v, 0));
+  const receitaBrutaPorMesBase = monthTotals(receivables);
+  const acumReceitaBase = round2(receitaBrutaPorMesBase.reduce((a, v) => a + v, 0));
 
-  const dreGrid = computeDreGrid(payables, categoriasPagar, receitaBrutaPorMes, acumReceita, deducoesManuais, cmvManual);
+  const dreGrid = computeDreGrid(payables, categoriasPagar, receitaBrutaPorMesBase, acumReceitaBase, deducoesManuais, cmvManual, dreConfig);
+  // Receita "oficial" pro resto do Resumo (inclui a receita extra de marketplace, se houver) —
+  // lida direto da linha RECEITA do próprio grid pra não duplicar a soma aqui.
+  const receitaBrutaPorMes = dreGrid.find((r) => r.label === "RECEITA")?.values ?? receitaBrutaPorMesBase;
+  const acumReceita = dreGrid.find((r) => r.label === "RECEITA")?.acumulado ?? acumReceitaBase;
   const cmv = dreGrid.find((r) => r.label === "(-) CMV")?.acumulado ?? 0;
   const geracaoDeCaixa = dreGrid.find((r) => r.isTotal)?.acumulado ?? 0;
-  const receitaLiquida = dreGrid.find((r) => r.label === "= Receita líquida")?.acumulado ?? 0;
+  // Com linhas de destaque (ver computeDreGrid), não existe mais "Receita Líquida" separada —
+  // usa o "Lucro Bruto ou Valor a Gastar" no lugar (já é receita menos CMV e as outras deduções).
+  const receitaLiquida =
+    dreGrid.find((r) => r.label === "= Receita líquida")?.acumulado ??
+    dreGrid.find((r) => r.label === "= Lucro Bruto ou Valor a Gastar")?.acumulado ??
+    0;
   const deducoesDespesas = round2(acumReceita - geracaoDeCaixa);
   // Despesas totais do "Resumo do ano": consistentes com o DRE (exclui pagamentos a
   // fornecedor, que não entram no demonstrativo — ver computeDreGrid).
@@ -268,14 +423,15 @@ export function computeFinanceSummary(
       break;
     }
   }
-  const receitaMes = round2(receivables.filter((r) => monthIndex(r.vencimento) === mesReferencia).reduce((a, r) => a + r.valor, 0));
+  const receitaMes = round2(receitaBrutaPorMes[mesReferencia] ?? 0);
   const saidasMes = round2(payables.filter((p) => monthIndex(p.vencimento) === mesReferencia).reduce((a, p) => a + p.valor, 0));
   const mesReferenciaLabel = `${fullMonthNames[mesReferencia]}/2026`;
 
   const mesesComMovimento = dreMonths.filter((_, i) => receitaBrutaPorMes[i] > 0 || monthTotals(payables)[i] > 0).length;
   const recebido = round2(receivables.filter((r) => r.status === "recebido").reduce((a, r) => a + r.valor, 0));
-  const saidasPorClassificacao = computeSaidasPorClassificacao(payables, categoriasPagar, cmvManual);
+  const saidasPorClassificacao = computeSaidasPorClassificacao(payables, categoriasPagar, cmvManual, dreConfig);
   const maiorGrupoSaida = saidasPorClassificacao[0] ?? { label: "—", value: 0 };
+  const receitaExtraPorMes = somarMarketplace(dreConfig.marketplaceManual, "receita");
 
   return {
     anoCorrente: 2026,
@@ -302,10 +458,10 @@ export function computeFinanceSummary(
       deducoesDespesas: { value: deducoesDespesas, hint: "CMV + impostos + despesas" },
       geracaoDeCaixa: { value: geracaoDeCaixa, hint: "resultado do ano" },
     },
-    monthlyFinancials: computeMonthlyFinancials(payables, receivables),
-    evolucaoReceitaAcumulada: computeEvolucaoReceita(receivables),
+    monthlyFinancials: computeMonthlyFinancials(payables, receivables, receitaExtraPorMes),
+    evolucaoReceitaAcumulada: computeEvolucaoReceita(receivables, receitaExtraPorMes),
     saidasPorClassificacao,
-    receitaPorServico: computeReceitaPorServico(receivables),
+    receitaPorServico: computeReceitaPorServico(receivables, dreConfig.marketplaceManual),
     dreGrid,
     cmv,
   };

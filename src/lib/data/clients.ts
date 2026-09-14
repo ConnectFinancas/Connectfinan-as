@@ -84,6 +84,7 @@ export const clients: Client[] = [
     regime: "Simples Nacional",
     theme: "light",
     conciliacaoExterna: true,
+    temInformacoesDre: true,
   },
   {
     slug: "connect",
