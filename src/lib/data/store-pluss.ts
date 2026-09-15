@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 5,
+  dataVersion: 7,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -24,6 +24,10 @@ export const storePlussData: ClientFinanceData = {
   // afiliados + Taxa de Serviço (8.075,90 + 8.558,00 + 6.478,77 + 6.813,43); o restante do
   // relatório (frete pago pelo vendedor, imposto, descontos, custos extras, ads etc.) foi
   // desconsiderado a pedido do Ewerton.
+  // Shein (UpSeller, Análises > Vendas por Anúncio): Valor de Vendas → receita; CMV = quantidade
+  // de Unidades Vendidas × R$ 10,50 (custo por unidade informado pelo Ewerton, sem relatório de
+  // custo detalhado nessa plataforma) — 19 unidades × 10,50 = 199,50. Sem comissão/frete
+  // descontado ainda (sem relatório equivalente pra esse canal).
   marketplaceManual: {
     mercadoLivre: {
       receita: [0, 0, 0, 0, 0, 0, 0, 840780.34, 0, 0, 0, 0],
@@ -37,7 +41,12 @@ export const storePlussData: ClientFinanceData = {
       comissao: [0, 0, 0, 0, 0, 0, 0, 17796.69, 0, 0, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 0, 0, 2118.99, 0, 0, 0, 0],
     },
-    shein: { receita: Array(12).fill(0), cmv: Array(12).fill(0), comissao: Array(12).fill(0), freteDescontado: Array(12).fill(0) },
+    shein: {
+      receita: [0, 0, 0, 0, 0, 0, 0, 588.81, 0, 0, 0, 0],
+      cmv: [0, 0, 0, 0, 0, 0, 0, 199.5, 0, 0, 0, 0],
+      comissao: Array(12).fill(0),
+      freteDescontado: Array(12).fill(0),
+    },
     tiktok: {
       receita: [0, 0, 0, 0, 0, 0, 0, 105339.24, 0, 0, 0, 0],
       cmv: [0, 0, 0, 0, 0, 0, 0, 51561.0, 0, 0, 0, 0],
