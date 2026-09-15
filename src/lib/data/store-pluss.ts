@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 9,
+  dataVersion: 10,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -1193,6 +1193,43 @@ export const storePlussData: ClientFinanceData = {
     { id: "p810", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 47166.77, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. NOVEMBRO/2025" },
     { id: "p811", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 40759.9, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. FEVEREIRO/2026" },
     { id: "p812", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 53722.98, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. JANEIRO/2026" },
+
+    // Ads/afiliados/cupom de marketplace de abril a julho/2026 — não vieram em nenhum relatório
+    // de Contas a Pagar nem no detalhamento por lançamento da planilha de DRE (só existem como
+    // total mensal na aba "Ano 2026"), por isso entram como 1 lançamento por categoria por mês
+    // (sem data/lançamento individual, só o total do mês) em vez de vários lançamentos como os
+    // outros. Confirmado com o Ewerton que era pra reconstruir da própria planilha de DRE.
+    { id: "p813", favorecido: "Shopee", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-04-30", valor: 681.38, status: "pago", pagamento: "2026-04-30", descricao: "Afiliados Shopee - abril/2026 (total do mês, planilha de DRE)" },
+    { id: "p814", favorecido: "Shopee", categoria: "Cupom", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-04-30", valor: 173.97, status: "pago", pagamento: "2026-04-30", descricao: "Cupom Shopee - abril/2026 (total do mês, planilha de DRE)" },
+    { id: "p815", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-04-30", valor: 35131.1, status: "pago", pagamento: "2026-04-30", descricao: "Mercado Livre Ads - abril/2026 (total do mês, planilha de DRE)" },
+    { id: "p816", favorecido: "Mercado Livre", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-04-30", valor: 3517.28, status: "pago", pagamento: "2026-04-30", descricao: "Afiliados Mercado Livre - abril/2026 (total do mês, planilha de DRE)" },
+    { id: "p817", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-04-30", valor: 5732.33, status: "pago", pagamento: "2026-04-30", descricao: "Taxa de envio para o Full - abril/2026 (total do mês, planilha de DRE)" },
+    { id: "p818", favorecido: "Shopee", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-04-30", valor: 6600.0, status: "pago", pagamento: "2026-04-30", descricao: "Shopee Ads - abril/2026 (total do mês, planilha de DRE)" },
+
+    { id: "p819", favorecido: "Shopee", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-31", valor: 2661.54, status: "pago", pagamento: "2026-05-31", descricao: "Afiliados Shopee - maio/2026 (total do mês, planilha de DRE)" },
+    { id: "p820", favorecido: "Shopee", categoria: "Cupom", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-31", valor: 3493.33, status: "pago", pagamento: "2026-05-31", descricao: "Cupom Shopee - maio/2026 (total do mês, planilha de DRE)" },
+    { id: "p821", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-31", valor: 33105.39, status: "pago", pagamento: "2026-05-31", descricao: "Mercado Livre Ads - maio/2026 (total do mês, planilha de DRE)" },
+    { id: "p822", favorecido: "Mercado Livre", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-31", valor: 1438.59, status: "pago", pagamento: "2026-05-31", descricao: "Afiliados Mercado Livre - maio/2026 (total do mês, planilha de DRE)" },
+    { id: "p823", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-05-31", valor: 7254.09, status: "pago", pagamento: "2026-05-31", descricao: "Taxa de envio para o Full - maio/2026 (total do mês, planilha de DRE)" },
+    { id: "p824", favorecido: "—", categoria: "Movimentos Comerciais / Brindes", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-31", valor: 336.0, status: "pago", pagamento: "2026-05-31", descricao: "Movimentos comerciais / brindes para clientes - maio/2026 (total do mês, planilha de DRE)" },
+    { id: "p825", favorecido: "Shopee", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-31", valor: 16700.0, status: "pago", pagamento: "2026-05-31", descricao: "Shopee Ads - maio/2026 (total do mês, planilha de DRE)" },
+
+    { id: "p826", favorecido: "Shopee", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 507.62, status: "pago", pagamento: "2026-06-30", descricao: "Afiliados Shopee - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p827", favorecido: "Shopee", categoria: "Cupom", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 1.99, status: "pago", pagamento: "2026-06-30", descricao: "Cupom Shopee - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p828", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 39783.05, status: "pago", pagamento: "2026-06-30", descricao: "Mercado Livre Ads - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p829", favorecido: "Mercado Livre", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 3928.87, status: "pago", pagamento: "2026-06-30", descricao: "Afiliados Mercado Livre - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p830", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-06-30", valor: 9761.57, status: "pago", pagamento: "2026-06-30", descricao: "Taxa de envio para o Full - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p831", favorecido: "Tiktok", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 16255.48, status: "pago", pagamento: "2026-06-30", descricao: "Afiliados Tiktok - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p832", favorecido: "Tiktok", categoria: "Comissão Tiktok (Taxa de Serviços)", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 8632.92, status: "pago", pagamento: "2026-06-30", descricao: "Comissão Tiktok Shop (taxa de serviços) - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p833", favorecido: "Shopee", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 8104.16, status: "pago", pagamento: "2026-06-30", descricao: "Shopee Ads - junho/2026 (total do mês, planilha de DRE)" },
+
+    { id: "p834", favorecido: "Shopee", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 552.33, status: "pago", pagamento: "2026-07-31", descricao: "Afiliados Shopee - julho/2026 (total do mês, planilha de DRE)" },
+    { id: "p835", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 36042.62, status: "pago", pagamento: "2026-07-31", descricao: "Mercado Livre Ads - julho/2026 (total do mês, planilha de DRE)" },
+    { id: "p836", favorecido: "Mercado Livre", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 9347.7, status: "pago", pagamento: "2026-07-31", descricao: "Afiliados Mercado Livre - julho/2026 (total do mês, planilha de DRE)" },
+    { id: "p837", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-07-31", valor: 3282.11, status: "pago", pagamento: "2026-07-31", descricao: "Taxa de envio para o Full - julho/2026 (total do mês, planilha de DRE)" },
+    { id: "p838", favorecido: "Tiktok", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 3563.78, status: "pago", pagamento: "2026-07-31", descricao: "Afiliados Tiktok - julho/2026 (total do mês, planilha de DRE)" },
+    { id: "p839", favorecido: "Tiktok", categoria: "Comissão Tiktok (Taxa de Serviços)", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 2985.79, status: "pago", pagamento: "2026-07-31", descricao: "Comissão Tiktok Shop (taxa de serviços) - julho/2026 (total do mês, planilha de DRE)" },
+    { id: "p840", favorecido: "Shopee", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 4693.97, status: "pago", pagamento: "2026-07-31", descricao: "Shopee Ads - julho/2026 (total do mês, planilha de DRE)" },
   ],
 
   seedCategoriasPagar: [
@@ -1285,6 +1322,10 @@ export const storePlussData: ClientFinanceData = {
       categorias: [
         { nome: "Taxa de Parcelamento", padrao: false },
         { nome: "Tarifa de Campanha de Publicidade", padrao: false },
+        { nome: "Afiliados", padrao: false },
+        { nome: "Cupom", padrao: false },
+        { nome: "Movimentos Comerciais / Brindes", padrao: false },
+        { nome: "Comissão Tiktok (Taxa de Serviços)", padrao: false },
       ],
     },
     {
