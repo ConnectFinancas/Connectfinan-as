@@ -199,6 +199,13 @@ export type ClientFinanceData = {
   // aparecem entre a Receita e o "Lucro Bruto ou Valor a Gastar" — ver LinhaDestaqueDre acima.
   // Quando presente, substitui o fluxo padrão de "Receita Líquida" + deducoesManuais por esse.
   linhasDestaqueDre?: LinhaDestaqueDre[];
+  // Saldo bancário real (soma de todas as contas) que o cliente informa mês a mês, pra conferir
+  // se o Fluxo de Caixa calculado a partir dos lançamentos bate com o banco de verdade. Índice 0
+  // = Jan, 11 = Dez; meses sem valor informado ficam undefined (não é o mesmo que "saldo zero").
+  // Quando presente pro mês de referência do Fluxo de Caixa, vira o saldoInicial do cálculo (em
+  // vez de 0) e o saldoFinal calculado é comparado com o saldoFinalInformado — uma diferença aqui
+  // costuma indicar lançamento faltando ou duplicado.
+  saldoBancarioMensal?: ({ saldoInicial: number; saldoFinalInformado: number } | undefined)[];
   fluxoCaixaPeriodo: string;
   fluxoCaixaKpis: {
     saldoInicial: number;
@@ -208,6 +215,9 @@ export type ClientFinanceData = {
     geracaoLiquidaPct: number;
     saldoFinal: number;
     crescimentoCaixa: number;
+    // Presentes só quando o mês de referência tem saldoBancarioMensal informado (ver acima).
+    saldoFinalInformado?: number;
+    diferencaSaldo?: number;
   };
   faturamentoXRecebimentos: { faturamento: number; recebido: number; conversaoEmCaixa: number; diferenca: number };
   maioresRecebimentos: { data: string; valor: number; pctTotal: number }[];

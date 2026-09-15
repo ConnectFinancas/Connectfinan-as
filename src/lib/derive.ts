@@ -473,9 +473,13 @@ export function computeFinanceSummary(
 
 // Fluxo de Caixa é por regime de CAIXA (data de recebimento/pagamento efetivo), diferente do
 // resto do sistema (DRE/Resumo), que é por competência (vencimento) — por isso tem uma conta
-// própria em vez de reusar computeFinanceSummary. Sem saldo bancário inicial cadastrado no
-// sistema ainda, o saldo inicial do período fica em zero (só a geração líquida do período conta).
-export function computeFluxoCaixa(payables: Payable[], receivables: Receivable[]) {
+// própria em vez de reusar computeFinanceSummary. Sem saldoBancarioMensal informado pro mês de
+// referência, o saldo inicial do período fica em zero (só a geração líquida do período conta).
+export function computeFluxoCaixa(
+  payables: Payable[],
+  receivables: Receivable[],
+  saldoBancarioMensal?: ({ saldoInicial: number; saldoFinalInformado: number } | undefined)[]
+) {
   const recebidos = receivables.filter((r) => r.status === "recebido" && r.recebimento);
   const pagos = payables.filter((p) => p.status === "pago" && p.pagamento);
 
@@ -498,8 +502,11 @@ export function computeFluxoCaixa(payables: Payable[], receivables: Receivable[]
   const geracaoLiquida = round2(recebimentos - pagamentos);
   const geracaoLiquidaPct = recebimentos > 0 ? round2((geracaoLiquida / recebimentos) * 100) : 0;
 
-  const saldoInicial = 0;
+  const saldoReal = saldoBancarioMensal?.[mesReferencia];
+  const saldoInicial = saldoReal?.saldoInicial ?? 0;
   const saldoFinal = round2(saldoInicial + geracaoLiquida);
+  const saldoFinalInformado = saldoReal?.saldoFinalInformado;
+  const diferencaSaldo = saldoFinalInformado !== undefined ? round2(saldoFinal - saldoFinalInformado) : undefined;
   const crescimentoCaixa = recebimentos > 0 || pagamentos > 0 ? geracaoLiquidaPct : 0;
 
   const faturamentoMes = round2(
@@ -527,7 +534,17 @@ export function computeFluxoCaixa(payables: Payable[], receivables: Receivable[]
 
   return {
     fluxoCaixaPeriodo,
-    fluxoCaixaKpis: { saldoInicial, recebimentos, pagamentos, geracaoLiquida, geracaoLiquidaPct, saldoFinal, crescimentoCaixa },
+    fluxoCaixaKpis: {
+      saldoInicial,
+      recebimentos,
+      pagamentos,
+      geracaoLiquida,
+      geracaoLiquidaPct,
+      saldoFinal,
+      crescimentoCaixa,
+      saldoFinalInformado,
+      diferencaSaldo,
+    },
     faturamentoXRecebimentos: { faturamento: faturamentoMes, recebido: recebimentos, conversaoEmCaixa, diferenca },
     maioresRecebimentos,
     maioresPagamentos,

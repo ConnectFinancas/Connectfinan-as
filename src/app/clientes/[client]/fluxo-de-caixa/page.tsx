@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, ChevronRight, Download, Gauge, Landmark, Pin, Target, TrendingUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Download, Gauge, Landmark, Pin, Target, TrendingUp } from "lucide-react";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { MiniBarCompare } from "@/components/charts/MiniBarCompare";
 import { useFinance } from "@/lib/store/FinanceContext";
@@ -153,6 +153,43 @@ export default function FluxoDeCaixaPage() {
           hint={capitalDeGiro.mesesComMovimento > 0 ? "≈ 1 mês de despesas médias" : "sem histórico suficiente"}
         />
       </div>
+
+      {fluxoCaixaKpis.saldoFinalInformado !== undefined && (
+        <div className="card flex flex-col gap-3 p-5">
+          <h2 className="text-sm font-semibold text-brand-900">Conferência de saldo bancário</h2>
+          <p className="-mt-2 text-xs text-faint">
+            Saldo final calculado a partir dos lançamentos comparado com o saldo real informado pelo cliente (todas as
+            contas somadas) — uma diferença aqui costuma indicar lançamento faltando ou duplicado.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-surface-muted p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-faint">Saldo final calculado</p>
+              <p className="mt-1 text-base font-semibold text-brand-900">{formatCurrencyPrecise(fluxoCaixaKpis.saldoFinal)}</p>
+            </div>
+            <div className="rounded-lg bg-surface-muted p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-faint">Saldo final informado (banco)</p>
+              <p className="mt-1 text-base font-semibold text-brand-900">{formatCurrencyPrecise(fluxoCaixaKpis.saldoFinalInformado)}</p>
+            </div>
+            <div
+              className={`flex items-center gap-2 rounded-lg p-3 ${
+                Math.abs(fluxoCaixaKpis.diferencaSaldo ?? 0) < 1 ? "bg-accent-500/10" : "bg-danger-500/10"
+              }`}
+            >
+              {Math.abs(fluxoCaixaKpis.diferencaSaldo ?? 0) < 1 ? (
+                <CheckCircle2 size={18} className="shrink-0 text-accent-500" />
+              ) : (
+                <AlertTriangle size={18} className="shrink-0 text-danger-500" />
+              )}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-faint">Diferença</p>
+                <p className={`text-base font-semibold ${Math.abs(fluxoCaixaKpis.diferencaSaldo ?? 0) < 1 ? "text-accent-500" : "text-danger-500"}`}>
+                  {Math.abs(fluxoCaixaKpis.diferencaSaldo ?? 0) < 1 ? "Bate certinho" : formatCurrencyPrecise(fluxoCaixaKpis.diferencaSaldo ?? 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="card p-5">

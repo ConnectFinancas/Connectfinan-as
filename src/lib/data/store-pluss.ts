@@ -97,6 +97,24 @@ export const storePlussData: ClientFinanceData = {
     { rotulo: "Imposto", classificacoes: ["IMPOSTOS"] },
   ],
 
+  // Saldo bancário real (todas as contas somadas) que o Ewerton informou pra agosto/2026 —
+  // índice 7. Usado como saldo inicial de verdade do Fluxo de Caixa e pra conferir o saldo final
+  // calculado contra o real (foi assim que achamos o DAS de abril que faltava no relatório).
+  saldoBancarioMensal: [
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    { saldoInicial: 2318428.43, saldoFinalInformado: 2283036.97 },
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+  ],
+
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
     saldoInicial: 0,
