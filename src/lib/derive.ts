@@ -23,6 +23,19 @@ export const MARKETPLACE_LABELS: Record<MarketplaceCanal, string> = {
   tiktok: "TikTok Shop",
 };
 
+// Drill-down da linha "(-) Comissões de Marketplace" do DRE: abre em vez de lançamentos (essa
+// linha não vem de Contas a Pagar) o valor de comissão de cada canal, mês a mês.
+export function comissaoMarketplacePorCanal(marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>) {
+  return (Object.keys(marketplaceManual) as MarketplaceCanal[])
+    .map((canal) => {
+      const values = marketplaceManual[canal].comissao.map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { canal, label: MARKETPLACE_LABELS[canal], values, acumulado };
+    })
+    .filter((row) => row.acumulado > 0)
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 export function emptyMarketplaceManual(): Record<MarketplaceCanal, MarketplaceMensal> {
   const canal = (): MarketplaceMensal => ({
     receita: Array(12).fill(0),
@@ -302,7 +315,7 @@ export function computeDreGrid(
     { label: "RECEITA", values: receitaBruta.map(round2), acumulado: round2(acumReceita), isHeader: true, expandable: true },
     { label: "= Receita bruta", values: receitaBruta.map(round2), acumulado: round2(acumReceita), indent: true },
     ...(temMarketplace
-      ? [{ label: "(-) Comissões de Marketplace", values: comissaoValues, acumulado: acumComissao, negative: true }]
+      ? [{ label: "(-) Comissões de Marketplace", values: comissaoValues, acumulado: acumComissao, negative: true, expandable: true }]
       : []),
     { label: "(-) CMV", values: cmvValues.map(round2), acumulado: acumCmv, negative: true, expandable: true },
     ...(usaDestaque

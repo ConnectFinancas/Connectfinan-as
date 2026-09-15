@@ -7,6 +7,7 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { DetalhamentoMesModal } from "@/components/client/DetalhamentoMesModal";
 import { dreMonths } from "@/lib/constants";
 import { useFinance } from "@/lib/store/FinanceContext";
+import { comissaoMarketplacePorCanal } from "@/lib/derive";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 import { Payable } from "@/lib/types";
@@ -54,7 +55,7 @@ function categoriaRowsFor(payables: Payable[], classificacao: string) {
 }
 
 export default function FaturamentoDrePage() {
-  const { summary, payables } = useFinance();
+  const { summary, payables, marketplaceManual } = useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
   const [detalhamentoAberto, setDetalhamentoAberto] = useState(false);
   const [classAberta, setClassAberta] = useState<string | null>(null);
@@ -146,8 +147,10 @@ export default function FaturamentoDrePage() {
                     </tr>
                   );
                 }
-                const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && row.label !== "(-) CMV";
-                const isOpen = isClassRow && classAberta === row.label;
+                const isComissaoRow = row.label === "(-) Comissões de Marketplace";
+                const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && row.label !== "(-) CMV" && !isComissaoRow;
+                const isExpandableRow = isClassRow || (isComissaoRow && !!row.expandable);
+                const isOpen = isExpandableRow && classAberta === row.label;
                 const rowColor = row.isSubtotal
                   ? "text-brand-900"
                   : row.negative
@@ -157,9 +160,9 @@ export default function FaturamentoDrePage() {
                 return (
                   <Fragment key={idx}>
                     <tr
-                      onClick={isClassRow ? () => setClassAberta(isOpen ? null : row.label) : undefined}
+                      onClick={isExpandableRow ? () => setClassAberta(isOpen ? null : row.label) : undefined}
                       className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""} ${
-                        isClassRow ? "cursor-pointer hover:bg-surface-muted/60" : ""
+                        isExpandableRow ? "cursor-pointer hover:bg-surface-muted/60" : ""
                       }`}
                     >
                       <td
@@ -189,6 +192,7 @@ export default function FaturamentoDrePage() {
                       </td>
                     </tr>
                     {isOpen &&
+                      isClassRow &&
                       categoriaRowsFor(payables, row.label).map((catRow) => {
                         const catKey = `${row.label}|${catRow.categoria}`;
                         const catOpen = categoriaAberta === catKey;
@@ -234,6 +238,21 @@ export default function FaturamentoDrePage() {
                           </Fragment>
                         );
                       })}
+                    {isOpen &&
+                      isComissaoRow &&
+                      comissaoMarketplacePorCanal(marketplaceManual).map((canalRow) => (
+                        <tr key={canalRow.canal} className="border-b border-border-subtle bg-surface/60">
+                          <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
+                          {canalRow.values.map((v, i) => (
+                            <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(v)}
+                            </td>
+                          ))}
+                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                            {formatCurrencyPrecise(canalRow.acumulado)}
+                          </td>
+                        </tr>
+                      ))}
                   </Fragment>
                 );
               })}
