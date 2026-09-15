@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 7,
+  dataVersion: 8,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -28,30 +28,38 @@ export const storePlussData: ClientFinanceData = {
   // de Unidades Vendidas × R$ 10,50 (custo por unidade informado pelo Ewerton, sem relatório de
   // custo detalhado nessa plataforma) — 19 unidades × 10,50 = 199,50. Sem comissão/frete
   // descontado ainda (sem relatório equivalente pra esse canal).
+  //
+  // Abril a Julho/2026 (índices 3 a 6) — vieram da planilha "DRE 2026 - STORE PLUS", aba "Ano
+  // 2026" (linhas de RECEITA/CMV/TAXA SOBRE A VENDA por marketplace, já abertas por mês). A linha
+  // única "FRETE DESCONTADO DIRETO PELO TIKTOK SHOPEE" dessa planilha foi lançada inteira como
+  // frete descontado do Tiktok (confirmado com o Ewerton) — Shopee fica em 0 nesses meses. Frete
+  // pago, devoluções/reembolso, insumos e imposto desses meses NÃO entram aqui: eles são
+  // recalculados automaticamente a partir de Contas a Pagar (linhasDestaqueDre/
+  // classificacoesNoCmv acima) assim que os lançamentos desses meses forem importados.
   marketplaceManual: {
     mercadoLivre: {
-      receita: [0, 0, 0, 0, 0, 0, 0, 840780.34, 0, 0, 0, 0],
-      cmv: [0, 0, 0, 0, 0, 0, 0, 402180.0, 0, 0, 0, 0],
-      comissao: [0, 0, 0, 0, 0, 0, 0, 56197.83, 0, 0, 0, 0],
-      freteDescontado: [0, 0, 0, 0, 0, 0, 0, 114865.02, 0, 0, 0, 0],
+      receita: [0, 0, 0, 986206.55, 1130083.33, 1435690.35, 1031264.96, 840780.34, 0, 0, 0, 0],
+      cmv: [0, 0, 0, 392940.14, 442756.6, 583944.9, 494594.0, 402180.0, 0, 0, 0, 0],
+      comissao: [0, 0, 0, 162758.59, 169738.49, 188871.7, 85081.5, 56197.83, 0, 0, 0, 0],
+      freteDescontado: [0, 0, 0, 167818.31, 181548.4, 211377.6, 139541.96, 114865.02, 0, 0, 0, 0],
     },
     shopee: {
-      receita: [0, 0, 0, 0, 0, 0, 0, 52535.26, 0, 0, 0, 0],
-      cmv: [0, 0, 0, 0, 0, 0, 0, 23195.08, 0, 0, 0, 0],
-      comissao: [0, 0, 0, 0, 0, 0, 0, 17796.69, 0, 0, 0, 0],
+      receita: [0, 0, 0, 108645.61, 164422.41, 87670.33, 56141.23, 52535.26, 0, 0, 0, 0],
+      cmv: [0, 0, 0, 38385.92, 76105.4, 36340.8, 24274.18, 23195.08, 0, 0, 0, 0],
+      comissao: [0, 0, 0, 28294.7, 47833.3, 26507.38, 18427.89, 17796.69, 0, 0, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 0, 0, 2118.99, 0, 0, 0, 0],
     },
     shein: {
-      receita: [0, 0, 0, 0, 0, 0, 0, 588.81, 0, 0, 0, 0],
-      cmv: [0, 0, 0, 0, 0, 0, 0, 199.5, 0, 0, 0, 0],
-      comissao: Array(12).fill(0),
+      receita: [0, 0, 0, 0, 1885.28, 2343.28, 1394.55, 588.81, 0, 0, 0, 0],
+      cmv: [0, 0, 0, 0, 588.0, 798.0, 367.05, 199.5, 0, 0, 0, 0],
+      comissao: [0, 0, 0, 0, 301.65, 374.9248, 223.128, 0, 0, 0, 0, 0],
       freteDescontado: Array(12).fill(0),
     },
     tiktok: {
-      receita: [0, 0, 0, 0, 0, 0, 0, 105339.24, 0, 0, 0, 0],
-      cmv: [0, 0, 0, 0, 0, 0, 0, 51561.0, 0, 0, 0, 0],
-      comissao: [0, 0, 0, 0, 0, 0, 0, 29926.1, 0, 0, 0, 0],
-      freteDescontado: Array(12).fill(0),
+      receita: [0, 0, 0, 35564.37, 59357.68, 75469.33, 47552.63, 105339.24, 0, 0, 0, 0],
+      cmv: [0, 0, 0, 9930.7, 7927.5, 38826.0, 23619.8, 51561.0, 0, 0, 0, 0],
+      comissao: [0, 0, 0, 7829.38, 7122.92, 4636.92, 6147.79, 29926.1, 0, 0, 0, 0],
+      freteDescontado: [0, 0, 0, 0, 0, 7120.73, 1983.96, 0, 0, 0, 0, 0],
     },
   },
 
