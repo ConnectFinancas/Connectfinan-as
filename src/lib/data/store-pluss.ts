@@ -10,15 +10,20 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 3,
+  dataVersion: 4,
 
-  // Agosto/2026 — números que o Ewerton passou a partir do relatório do Mercado Turbo (print da
-  // tela de Resumo Financeiro de cada canal, 01/08 a 31/08). Índice 7 = agosto.
-  // Mercado Livre: Vendas Aprovadas → receita; só o "Custo" (não o Imposto) do quadro Custo &
-  // Imposto → CMV; Tarifa de Venda → comissão; Frete Vendedor (dentro de Frete Total) → frete
-  // descontado direto na plataforma.
-  // Shopee: Vendas Aprovadas → receita; só o "Custo" (não o Imposto) → CMV; Tarifa de Venda →
-  // comissão; Frete Vendedor + Frete Entrega Direta (NÃO o Frete Comprador) → frete descontado.
+  // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
+  // 31/08). Índice 7 = agosto.
+  // Mercado Livre (Mercado Turbo): Vendas Aprovadas → receita; só o "Custo" (não o Imposto) do
+  // quadro Custo & Imposto → CMV; Tarifa de Venda → comissão; Frete Vendedor → frete descontado.
+  // Shopee (Mercado Turbo): Vendas Aprovadas → receita; só o "Custo" (não o Imposto) → CMV;
+  // Tarifa de Venda → comissão; Frete Vendedor + Frete Entrega Direta (não o Frete Comprador) →
+  // frete descontado.
+  // Tiktok (relatório "Financeiro - Resumo", Gestor Seller): Faturamento → receita; Custo dos
+  // produtos → CMV; Comissão da plataforma = Comissão + Taxa por item vendido + Comissão de
+  // afiliados + Taxa de Serviço (8.075,90 + 8.558,00 + 6.478,77 + 6.813,43); o restante do
+  // relatório (frete pago pelo vendedor, imposto, descontos, custos extras, ads etc.) foi
+  // desconsiderado a pedido do Ewerton.
   marketplaceManual: {
     mercadoLivre: {
       receita: [0, 0, 0, 0, 0, 0, 0, 840780.34, 0, 0, 0, 0],
@@ -33,7 +38,12 @@ export const storePlussData: ClientFinanceData = {
       freteDescontado: [0, 0, 0, 0, 0, 0, 0, 2118.99, 0, 0, 0, 0],
     },
     shein: { receita: Array(12).fill(0), cmv: Array(12).fill(0), comissao: Array(12).fill(0), freteDescontado: Array(12).fill(0) },
-    tiktok: { receita: Array(12).fill(0), cmv: Array(12).fill(0), comissao: Array(12).fill(0), freteDescontado: Array(12).fill(0) },
+    tiktok: {
+      receita: [0, 0, 0, 0, 0, 0, 0, 105339.24, 0, 0, 0, 0],
+      cmv: [0, 0, 0, 0, 0, 0, 0, 51561.0, 0, 0, 0, 0],
+      comissao: [0, 0, 0, 0, 0, 0, 0, 29926.1, 0, 0, 0, 0],
+      freteDescontado: Array(12).fill(0),
+    },
   },
 
   deducoesManuais: {
