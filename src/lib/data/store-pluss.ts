@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 4,
+  dataVersion: 5,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -365,6 +365,14 @@ export const storePlussData: ClientFinanceData = {
     { id: "p203", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 53722.98, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF. JANEIRO/2026", conta: "Inter St" },
     { id: "p204", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 40759.9, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF. FEVEREIRO/2026", conta: "Inter St" },
     { id: "p205", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 27091.21, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF.SETEMBRO/2025", conta: "Inter St" },
+    // Tarifas do relatório "Pendentes de pagamento" do Mercado Livre, agosto/2026 — descontadas
+    // direto do saldo do ML (por isso lançadas como pagas, com data igual ao fim do período). O
+    // restante do relatório (tarifas de envios, tarifas de venda, impostos, cancelamentos etc.,
+    // já contabilizados via marketplaceManual) foi desconsiderado a pedido do Ewerton.
+    { id: "p206", favorecido: "Mercado Livre", categoria: "Taxa de Parcelamento", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-08-31", valor: 9124.42, status: "pago", pagamento: "2026-08-31", descricao: "Taxa de parcelamento - Mercado Livre", conta: "Mercado Livre" },
+    { id: "p207", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-08-31", valor: 7586.98, status: "pago", pagamento: "2026-08-31", descricao: "Tarifa por campanha de publicidade - Mercado Livre", conta: "Mercado Livre" },
+    { id: "p208", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-08-31", valor: 5146.58, status: "pago", pagamento: "2026-08-31", descricao: "Tarifas de envios Full - Mercado Livre", conta: "Mercado Livre" },
+    { id: "p209", favorecido: "Mercado Livre", categoria: "Tarifas da Minha Página", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-08-31", valor: 99.0, status: "pago", pagamento: "2026-08-31", descricao: "Tarifas da Minha Página - Mercado Livre", conta: "Mercado Livre" },
   ],
 
   seedCategoriasPagar: [
@@ -424,6 +432,16 @@ export const storePlussData: ClientFinanceData = {
         { nome: "Manutenção Predial", padrao: true },
         { nome: "Diaristas - Freelances", padrao: true },
         { nome: "Água e Saneamento", padrao: true },
+        { nome: "Tarifas da Minha Página", padrao: false },
+      ],
+    },
+    {
+      classificacao: "DESPESAS COMERCIAIS / MARKETING",
+      color: "#f97316",
+      padrao: true,
+      categorias: [
+        { nome: "Taxa de Parcelamento", padrao: false },
+        { nome: "Tarifa de Campanha de Publicidade", padrao: false },
       ],
     },
     {
@@ -443,6 +461,7 @@ export const storePlussData: ClientFinanceData = {
         { nome: "Frete Sobre Vendas", padrao: true },
         { nome: "Transporte Urbano (táxi, Uber)", padrao: true },
         { nome: "Combustíveis", padrao: true },
+        { nome: "Tarifas de Envios Full", padrao: false },
       ],
     },
     {
