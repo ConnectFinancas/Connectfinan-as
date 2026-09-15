@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Info, Paperclip, Trash2, Upload } from "lucide-react";
 import { dreMonths } from "@/lib/constants";
 import { ComprovanteMarketplace, useFinance } from "@/lib/store/FinanceContext";
@@ -31,6 +31,10 @@ function somaAno(valores: number[]) {
 
 function pct(parte: number, todo: number) {
   return todo > 0 ? (parte / todo) * 100 : 0;
+}
+
+function mesTemAlgumDado(manual: Record<MarketplaceCanal, MarketplaceMensal>, mesIndex: number) {
+  return CANAIS.some((canal) => manual[canal].receita[mesIndex] > 0);
 }
 
 function ComprovantesDoCanal({
@@ -114,8 +118,9 @@ function ComprovantesDoCanal({
   );
 }
 
-function CanalCard({
+function CanalMonthCard({
   canal,
+  mesIndex,
   dados,
   comprovantes,
   onChange,
@@ -123,72 +128,47 @@ function CanalCard({
   onRemoverComprovante,
 }: {
   canal: MarketplaceCanal;
+  mesIndex: number;
   dados: MarketplaceMensal;
   comprovantes: ComprovanteMarketplace[];
-  onChange: (campo: keyof MarketplaceMensal, mesIndex: number, valor: number) => void;
+  onChange: (campo: keyof MarketplaceMensal, valor: number) => void;
   onAnexarComprovante: (nome: string, dataUrl: string) => void;
   onRemoverComprovante: (index: number) => void;
 }) {
   const metricas = metricasDoCanal(canal);
-  const totalReceita = somaAno(dados.receita);
-  const totalCmv = somaAno(dados.cmv);
-  const totalComissao = somaAno(dados.comissao);
+  const receitaMes = dados.receita[mesIndex] || 0;
+  const cmvMes = dados.cmv[mesIndex] || 0;
+  const comissaoMes = dados.comissao[mesIndex] || 0;
 
   return (
     <div className="card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 p-4 pb-3">
         <h3 className="text-sm font-semibold text-brand-900">{MARKETPLACE_LABELS[canal]}</h3>
-        {totalReceita > 0 && (
+        {receitaMes > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-surface-muted px-2 py-1 text-[11px] font-medium text-muted">
-              CMV: {pct(totalCmv, totalReceita).toFixed(1)}% da receita
+              CMV: {pct(cmvMes, receitaMes).toFixed(1)}% da receita
             </span>
             <span className="rounded-full bg-surface-muted px-2 py-1 text-[11px] font-medium text-muted">
-              Comissão: {pct(totalComissao, totalReceita).toFixed(1)}% da receita
+              Comissão: {pct(comissaoMes, receitaMes).toFixed(1)}% da receita
             </span>
           </div>
         )}
       </div>
-      <div className="overflow-x-auto pb-2">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border-subtle text-left text-[11px] text-faint">
-              <th className="py-2 pl-4 pr-3 font-medium sticky left-0 bg-surface whitespace-nowrap">Informação</th>
-              {dreMonths.map((m) => (
-                <th key={m} className="py-2 px-2 text-right font-medium whitespace-nowrap">
-                  {m.toUpperCase()}
-                </th>
-              ))}
-              <th className="py-2 pl-2 pr-4 text-right font-medium whitespace-nowrap">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {metricas.map(({ campo, label }) => {
-              const valores = dados[campo];
-              const total = somaAno(valores);
-              return (
-                <tr key={campo} className="border-b border-border-subtle last:border-0">
-                  <td className="py-1.5 pl-4 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{label}</td>
-                  {valores.map((v, i) => (
-                    <td key={i} className="py-1.5 px-1">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={v || ""}
-                        onChange={(e) => onChange(campo, i, e.target.value === "" ? 0 : Number(e.target.value))}
-                        placeholder="0"
-                        className="w-20 rounded-md border border-border-subtle bg-surface-muted px-1.5 py-1 text-right text-xs text-brand-900 outline-none focus:border-client-accent"
-                      />
-                    </td>
-                  ))}
-                  <td className="py-1.5 pl-2 pr-4 text-right text-xs font-semibold tabular-nums text-brand-900 whitespace-nowrap">
-                    {formatCurrencyPrecise(total)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="flex flex-col gap-2.5 px-4 pb-4">
+        {metricas.map(({ campo, label }) => (
+          <label key={campo} className="flex items-center justify-between gap-3">
+            <span className="text-xs text-muted">{label}</span>
+            <input
+              type="number"
+              step="0.01"
+              value={dados[campo][mesIndex] || ""}
+              onChange={(e) => onChange(campo, e.target.value === "" ? 0 : Number(e.target.value))}
+              placeholder="0"
+              className="w-32 rounded-md border border-border-subtle bg-surface-muted px-2.5 py-1.5 text-right text-sm text-brand-900 outline-none focus:border-client-accent"
+            />
+          </label>
+        ))}
       </div>
       <ComprovantesDoCanal comprovantes={comprovantes} onAnexar={onAnexarComprovante} onRemover={onRemoverComprovante} />
     </div>
@@ -198,6 +178,13 @@ function CanalCard({
 export default function InformacoesDrePage() {
   const { marketplaceManual, setMarketplaceValor, comprovantesMarketplace, adicionarComprovanteMarketplace, removerComprovanteMarketplace } =
     useFinance();
+
+  const [mesIndex, setMesIndex] = useState(0);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMesIndex(new Date().getMonth());
+  }, []);
 
   const totalPorMetrica = (campo: keyof MarketplaceMensal) =>
     CANAIS.reduce((soma, canal) => soma + somaAno(marketplaceManual[canal][campo]), 0);
@@ -212,8 +199,9 @@ export default function InformacoesDrePage() {
         <Info size={14} className="mt-0.5 shrink-0" />
         <p>
           Essas informações vêm de fora do sistema (das próprias plataformas de venda) e são digitadas aqui mês a mês.
-          Elas entram automaticamente no DRE: a receita soma na <span className="text-brand-700 font-medium">Receita</span>,
-          o CMV soma na linha <span className="text-brand-700 font-medium">(-) CMV</span>, a comissão vira a linha{" "}
+          Escolha o mês abaixo e preencha por marketplace. Elas entram automaticamente no DRE: a receita soma na{" "}
+          <span className="text-brand-700 font-medium">Receita</span>, o CMV soma na linha{" "}
+          <span className="text-brand-700 font-medium">(-) CMV</span>, a comissão vira a linha{" "}
           <span className="text-brand-700 font-medium">(-) Comissões de Marketplace</span>, e o frete descontado vira as
           linhas próprias de frete descontado.
         </p>
@@ -236,17 +224,44 @@ export default function InformacoesDrePage() {
         </div>
       </div>
 
-      {CANAIS.map((canal) => (
-        <CanalCard
-          key={canal}
-          canal={canal}
-          dados={marketplaceManual[canal]}
-          comprovantes={comprovantesMarketplace[canal]}
-          onChange={(campo, mesIndex, valor) => setMarketplaceValor(canal, campo, mesIndex, valor)}
-          onAnexarComprovante={(nome, dataUrl) => adicionarComprovanteMarketplace(canal, nome, dataUrl)}
-          onRemoverComprovante={(index) => removerComprovanteMarketplace(canal, index)}
-        />
-      ))}
+      <div className="card flex flex-wrap gap-1.5 p-2">
+        {dreMonths.map((m, i) => {
+          const selecionado = i === mesIndex;
+          const preenchido = mesTemAlgumDado(marketplaceManual, i);
+          return (
+            <button
+              key={m}
+              onClick={() => setMesIndex(i)}
+              className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                selecionado ? "bg-client-accent text-white" : "text-muted hover:bg-surface-muted"
+              }`}
+            >
+              {m}
+              {preenchido && (
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${selecionado ? "bg-white" : "bg-accent-500"}`}
+                  title="Já tem dados lançados nesse mês"
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {CANAIS.map((canal) => (
+          <CanalMonthCard
+            key={canal}
+            canal={canal}
+            mesIndex={mesIndex}
+            dados={marketplaceManual[canal]}
+            comprovantes={comprovantesMarketplace[canal]}
+            onChange={(campo, valor) => setMarketplaceValor(canal, campo, mesIndex, valor)}
+            onAnexarComprovante={(nome, dataUrl) => adicionarComprovanteMarketplace(canal, nome, dataUrl)}
+            onRemoverComprovante={(index) => removerComprovanteMarketplace(canal, index)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
