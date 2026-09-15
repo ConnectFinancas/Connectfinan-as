@@ -10,12 +10,15 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 2,
+  dataVersion: 3,
 
-  // Mercado Livre · Agosto/2026 — números que o Ewerton passou a partir do relatório do Mercado
-  // Turbo (print da tela de Resumo Financeiro, 01/08 a 31/08): Vendas Aprovadas → receita; só o
-  // "Custo" (não o Imposto) do quadro Custo & Imposto → CMV; Tarifa de Venda → comissão; Frete
-  // Vendedor (dentro de Frete Total) → frete descontado direto na plataforma. Índice 7 = agosto.
+  // Agosto/2026 — números que o Ewerton passou a partir do relatório do Mercado Turbo (print da
+  // tela de Resumo Financeiro de cada canal, 01/08 a 31/08). Índice 7 = agosto.
+  // Mercado Livre: Vendas Aprovadas → receita; só o "Custo" (não o Imposto) do quadro Custo &
+  // Imposto → CMV; Tarifa de Venda → comissão; Frete Vendedor (dentro de Frete Total) → frete
+  // descontado direto na plataforma.
+  // Shopee: Vendas Aprovadas → receita; só o "Custo" (não o Imposto) → CMV; Tarifa de Venda →
+  // comissão; Frete Vendedor + Frete Entrega Direta (NÃO o Frete Comprador) → frete descontado.
   marketplaceManual: {
     mercadoLivre: {
       receita: [0, 0, 0, 0, 0, 0, 0, 840780.34, 0, 0, 0, 0],
@@ -23,7 +26,12 @@ export const storePlussData: ClientFinanceData = {
       comissao: [0, 0, 0, 0, 0, 0, 0, 56197.83, 0, 0, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 0, 0, 114865.02, 0, 0, 0, 0],
     },
-    shopee: { receita: Array(12).fill(0), cmv: Array(12).fill(0), comissao: Array(12).fill(0), freteDescontado: Array(12).fill(0) },
+    shopee: {
+      receita: [0, 0, 0, 0, 0, 0, 0, 52535.26, 0, 0, 0, 0],
+      cmv: [0, 0, 0, 0, 0, 0, 0, 23195.08, 0, 0, 0, 0],
+      comissao: [0, 0, 0, 0, 0, 0, 0, 17796.69, 0, 0, 0, 0],
+      freteDescontado: [0, 0, 0, 0, 0, 0, 0, 2118.99, 0, 0, 0, 0],
+    },
     shein: { receita: Array(12).fill(0), cmv: Array(12).fill(0), comissao: Array(12).fill(0), freteDescontado: Array(12).fill(0) },
     tiktok: { receita: Array(12).fill(0), cmv: Array(12).fill(0), comissao: Array(12).fill(0), freteDescontado: Array(12).fill(0) },
   },
@@ -56,6 +64,7 @@ export const storePlussData: ClientFinanceData = {
     },
     { rotulo: "Frete Descontado direto do Tiktok", marketplaceCampo: { canal: "tiktok", campo: "freteDescontado" } },
     { rotulo: "Frete Descontado pelo Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "freteDescontado" } },
+    { rotulo: "Frete Descontado pela Shopee", marketplaceCampo: { canal: "shopee", campo: "freteDescontado" } },
     { rotulo: "Imposto", classificacoes: ["IMPOSTOS"] },
   ],
 

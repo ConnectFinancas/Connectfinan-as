@@ -10,8 +10,8 @@ import { MarketplaceCanal, MarketplaceMensal } from "@/lib/types";
 
 const CANAIS: MarketplaceCanal[] = ["mercadoLivre", "shopee", "shein", "tiktok"];
 
-// Só Mercado Livre e Tiktok têm frete descontado direto no repasse, por enquanto.
-const CANAIS_COM_FRETE_DESCONTADO = new Set<MarketplaceCanal>(["mercadoLivre", "tiktok"]);
+// Canais que têm frete descontado direto no repasse da plataforma, por enquanto.
+const CANAIS_COM_FRETE_DESCONTADO = new Set<MarketplaceCanal>(["mercadoLivre", "shopee", "tiktok"]);
 
 function metricasDoCanal(canal: MarketplaceCanal): { campo: keyof MarketplaceMensal; label: string }[] {
   const base: { campo: keyof MarketplaceMensal; label: string }[] = [
