@@ -1,8 +1,9 @@
 "use client";
 
-import { Info } from "lucide-react";
+import { useRef, useState } from "react";
+import { Info, Paperclip, Trash2, Upload } from "lucide-react";
 import { dreMonths } from "@/lib/constants";
-import { useFinance } from "@/lib/store/FinanceContext";
+import { ComprovanteMarketplace, useFinance } from "@/lib/store/FinanceContext";
 import { MARKETPLACE_LABELS } from "@/lib/derive";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { MarketplaceCanal, MarketplaceMensal } from "@/lib/types";
@@ -32,14 +33,101 @@ function pct(parte: number, todo: number) {
   return todo > 0 ? (parte / todo) * 100 : 0;
 }
 
+function ComprovantesDoCanal({
+  comprovantes,
+  onAnexar,
+  onRemover,
+}: {
+  comprovantes: ComprovanteMarketplace[];
+  onAnexar: (nome: string, dataUrl: string) => void;
+  onRemover: (index: number) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [enviando, setEnviando] = useState(false);
+
+  function handleFiles(fileList: FileList | null) {
+    const arquivo = fileList?.[0];
+    if (!arquivo) return;
+    setEnviando(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      onAnexar(arquivo.name, reader.result as string);
+      setEnviando(false);
+    };
+    reader.onerror = () => setEnviando(false);
+    reader.readAsDataURL(arquivo);
+  }
+
+  return (
+    <div className="border-t border-border-subtle p-4">
+      <div className="flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
+          <Paperclip size={13} />
+          Prints/comprovantes anexados (só como referência — não entram em nenhum cálculo)
+        </p>
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={enviando}
+          className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-2.5 py-1.5 text-[11px] font-medium text-brand-700 hover:bg-surface-muted transition-colors disabled:opacity-60"
+        >
+          <Upload size={12} />
+          {enviando ? "Enviando..." : "Anexar imagem"}
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          className="hidden"
+          onChange={(e) => {
+            handleFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {comprovantes.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {comprovantes.map((c, i) => (
+            <div key={`${c.nome}-${i}`} className="group relative">
+              <a href={c.dataUrl} target="_blank" rel="noopener noreferrer" title={c.nome}>
+                {c.dataUrl.startsWith("data:image") ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.dataUrl} alt={c.nome} className="h-16 w-16 rounded-lg border border-border-subtle object-cover" />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border-subtle bg-surface-muted text-[10px] text-muted">
+                    PDF
+                  </div>
+                )}
+              </a>
+              <button
+                onClick={() => onRemover(i)}
+                title="Remover"
+                className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-danger-500 text-white group-hover:flex"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CanalCard({
   canal,
   dados,
+  comprovantes,
   onChange,
+  onAnexarComprovante,
+  onRemoverComprovante,
 }: {
   canal: MarketplaceCanal;
   dados: MarketplaceMensal;
+  comprovantes: ComprovanteMarketplace[];
   onChange: (campo: keyof MarketplaceMensal, mesIndex: number, valor: number) => void;
+  onAnexarComprovante: (nome: string, dataUrl: string) => void;
+  onRemoverComprovante: (index: number) => void;
 }) {
   const metricas = metricasDoCanal(canal);
   const totalReceita = somaAno(dados.receita);
@@ -102,12 +190,14 @@ function CanalCard({
           </tbody>
         </table>
       </div>
+      <ComprovantesDoCanal comprovantes={comprovantes} onAnexar={onAnexarComprovante} onRemover={onRemoverComprovante} />
     </div>
   );
 }
 
 export default function InformacoesDrePage() {
-  const { marketplaceManual, setMarketplaceValor } = useFinance();
+  const { marketplaceManual, setMarketplaceValor, comprovantesMarketplace, adicionarComprovanteMarketplace, removerComprovanteMarketplace } =
+    useFinance();
 
   const totalPorMetrica = (campo: keyof MarketplaceMensal) =>
     CANAIS.reduce((soma, canal) => soma + somaAno(marketplaceManual[canal][campo]), 0);
@@ -151,7 +241,10 @@ export default function InformacoesDrePage() {
           key={canal}
           canal={canal}
           dados={marketplaceManual[canal]}
+          comprovantes={comprovantesMarketplace[canal]}
           onChange={(campo, mesIndex, valor) => setMarketplaceValor(canal, campo, mesIndex, valor)}
+          onAnexarComprovante={(nome, dataUrl) => adicionarComprovanteMarketplace(canal, nome, dataUrl)}
+          onRemoverComprovante={(index) => removerComprovanteMarketplace(canal, index)}
         />
       ))}
     </div>

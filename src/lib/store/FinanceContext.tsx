@@ -7,6 +7,8 @@ import { CategoryGroup, Client, ClientFinanceData, MarketplaceCanal, Marketplace
 
 const PALETTE = ["#22d3a0", "#5b93fd", "#f2665c", "#a78bfa", "#f2a93c", "#f472b6", "#38bdf8", "#94a3b8"];
 
+export type ComprovanteMarketplace = { nome: string; dataUrl: string; adicionadoEm: string };
+
 type FinanceState = {
   payables: Payable[];
   receivables: Receivable[];
@@ -15,10 +17,17 @@ type FinanceState = {
   transferencias: TransferenciaConta[];
   saldosIniciais: Record<string, number>;
   marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>;
+  // Prints/comprovantes anexados como referência de cada marketplace (ex.: tela do Mercado
+  // Turbo) — só guardados pra consulta, não entram em nenhum cálculo.
+  comprovantesMarketplace: Record<MarketplaceCanal, ComprovanteMarketplace[]>;
   // Ver ClientFinanceData.dataVersion — usado só pra saber se os dados base (seed) mudaram desde
   // a última vez que esse navegador salvou o estado; não é exibido em lugar nenhum.
   dataVersion: number;
 };
+
+function comprovantesVazios(): Record<MarketplaceCanal, ComprovanteMarketplace[]> {
+  return { mercadoLivre: [], shopee: [], shein: [], tiktok: [] };
+}
 
 // genId() sempre gera algo como "p_1a2b3c4d5e" (com "_"); ids que vêm do seed são simples
 // ("p1", "r12"...). Serve pra separar, na hora de descartar dados antigos por causa de um
@@ -26,6 +35,29 @@ type FinanceState = {
 // cadastrou pela tela em "Nova despesa"/"Nova conta a receber" (isso nunca pode ser apagado).
 function criadoPelaTela(id: string) {
   return id.includes("_");
+}
+
+// Preenche só as células (mês/canal/campo) que o cliente ainda não digitou (continuam 0) com o
+// que veio de uma atualização de seed — nunca sobrescreve um valor que ele já tenha preenchido
+// pela tela, mesmo quando o dataVersion muda.
+function preencherMarketplaceComSeed(
+  seedDados: Record<MarketplaceCanal, MarketplaceMensal>,
+  cachedDados: Record<MarketplaceCanal, MarketplaceMensal> | undefined
+): Record<MarketplaceCanal, MarketplaceMensal> {
+  const campos: (keyof MarketplaceMensal)[] = ["receita", "cmv", "comissao", "freteDescontado"];
+  const resultado = {} as Record<MarketplaceCanal, MarketplaceMensal>;
+  for (const canal of Object.keys(seedDados) as MarketplaceCanal[]) {
+    const seedCanal = seedDados[canal];
+    const cachedCanal = cachedDados?.[canal];
+    const canalMesclado = {} as MarketplaceMensal;
+    for (const campo of campos) {
+      const seedArr = seedCanal[campo];
+      const cachedArr = cachedCanal?.[campo];
+      canalMesclado[campo] = seedArr.map((v, i) => (cachedArr?.[i] ? cachedArr[i] : v));
+    }
+    resultado[canal] = canalMesclado;
+  }
+  return resultado;
 }
 
 type Tipo = "pagar" | "receber";
@@ -60,6 +92,8 @@ type FinanceContextValue = FinanceState &
   deleteTransferencias: (ids: string[]) => void;
   setSaldoInicial: (conta: string, valor: number) => void;
   setMarketplaceValor: (canal: MarketplaceCanal, campo: keyof MarketplaceMensal, mesIndex: number, valor: number) => void;
+  adicionarComprovanteMarketplace: (canal: MarketplaceCanal, nome: string, dataUrl: string) => void;
+  removerComprovanteMarketplace: (canal: MarketplaceCanal, index: number) => void;
   summary: ReturnType<typeof computeFinanceSummary>;
   contasPagarKpis: ReturnType<typeof computeContasPagarKpis>;
   contasReceberKpis: ReturnType<typeof computeContasReceberKpis>;
@@ -89,6 +123,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     transferencias: [],
     saldosIniciais: {},
     marketplaceManual: seed.marketplaceManual ?? emptyMarketplaceManual(),
+    comprovantesMarketplace: comprovantesVazios(),
     dataVersion: seedVersion,
   });
   const [hydrated, setHydrated] = useState(false);
@@ -119,7 +154,10 @@ export function FinanceProvider({ client, children }: { client: Client; children
           categoriasReceber: dadosBaseMudaram ? seed.seedCategoriasReceber : parsed.categoriasReceber,
           transferencias: parsed.transferencias ?? [],
           saldosIniciais: parsed.saldosIniciais ?? {},
-          marketplaceManual: parsed.marketplaceManual ?? s.marketplaceManual,
+          marketplaceManual: dadosBaseMudaram
+            ? preencherMarketplaceComSeed(seed.marketplaceManual ?? emptyMarketplaceManual(), parsed.marketplaceManual)
+            : (parsed.marketplaceManual ?? s.marketplaceManual),
+          comprovantesMarketplace: parsed.comprovantesMarketplace ?? s.comprovantesMarketplace,
           dataVersion: seedVersion,
         }));
       }
@@ -218,6 +256,24 @@ export function FinanceProvider({ client, children }: { client: Client; children
       };
     });
 
+  const adicionarComprovanteMarketplace = (canal: MarketplaceCanal, nome: string, dataUrl: string) =>
+    setState((s) => ({
+      ...s,
+      comprovantesMarketplace: {
+        ...s.comprovantesMarketplace,
+        [canal]: [{ nome, dataUrl, adicionadoEm: new Date().toISOString() }, ...s.comprovantesMarketplace[canal]],
+      },
+    }));
+
+  const removerComprovanteMarketplace = (canal: MarketplaceCanal, index: number) =>
+    setState((s) => ({
+      ...s,
+      comprovantesMarketplace: {
+        ...s.comprovantesMarketplace,
+        [canal]: s.comprovantesMarketplace[canal].filter((_, i) => i !== index),
+      },
+    }));
+
   const dreConfig = useMemo(
     () => ({
       classificacoesForaDoDre: seed.classificacoesForaDoDre,
@@ -281,6 +337,8 @@ export function FinanceProvider({ client, children }: { client: Client; children
     deleteTransferencias,
     setSaldoInicial,
     setMarketplaceValor,
+    adicionarComprovanteMarketplace,
+    removerComprovanteMarketplace,
     summary,
     contasPagarKpis,
     contasReceberKpis,
