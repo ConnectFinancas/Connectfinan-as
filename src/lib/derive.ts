@@ -730,6 +730,7 @@ export function computeMargemEPontoEquilibrioPorMes(
   const receitaValues = dreGrid.find((r) => r.label === "RECEITA")?.values ?? Array(12).fill(0);
   const cmvValues = dreGrid.find((r) => r.label === "(-) CMV")?.values ?? Array(12).fill(0);
   const custosFixosValuesBase = dreGrid.find((r) => r.label === "= Despesas totais")?.values ?? Array(12).fill(0);
+  const resultadoValues = dreGrid.find((r) => r.isTotal)?.values ?? Array(12).fill(0);
   const extrasRows = (custosVariaveisDre ?? []).map((label) => dreGrid.find((r) => r.label === label)?.values ?? Array(12).fill(0));
   const custosFixosExtraValues =
     payables && custosFixosClassificacoesExtras
@@ -743,6 +744,7 @@ export function computeMargemEPontoEquilibrioPorMes(
     const custosFixos = (custosFixosValuesBase[i] ?? 0) + (custosFixosExtraValues[i] ?? 0);
     const margemContribuicao = round2(receita - custosVariaveisTotal);
     const margemContribuicaoPct = receita > 0 ? round2((margemContribuicao / receita) * 100) : 0;
+    const margemLiquidaPct = receita > 0 ? round2(((resultadoValues[i] ?? 0) / receita) * 100) : 0;
     const pontoEquilibrio = margemContribuicaoPct > 0 ? round2(custosFixos / (margemContribuicaoPct / 100)) : 0;
     const folga = round2(receita - pontoEquilibrio);
     return {
@@ -750,6 +752,7 @@ export function computeMargemEPontoEquilibrioPorMes(
       receita: round2(receita),
       margemContribuicao,
       margemContribuicaoPct,
+      margemLiquidaPct,
       custosFixos: round2(custosFixos),
       pontoEquilibrio,
       folga,

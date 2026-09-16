@@ -104,6 +104,32 @@ export default function FluxoDeCaixaPage() {
   );
   const capitalDeGiro = computeCapitalDeGiroRecomendado(payables);
 
+  // Card "Margem e Ponto de Equilíbrio" acompanha o filtro de mês: com um mês escolhido, mostra os
+  // números daquele mês; com "ano inteiro", mostra a MÉDIA dos meses com movimento (em vez do
+  // acumulado do ano, que fica distorcido por meses fora da curva, como abril com o DAS atrasado).
+  const mesesComMovimentoPE = margemEPontoEquilibrioPorMes.filter((m) => m.receita > 0);
+  const mediaPontoEquilibrio =
+    mesesComMovimentoPE.length > 0
+      ? {
+          receita: mesesComMovimentoPE.reduce((a, m) => a + m.receita, 0) / mesesComMovimentoPE.length,
+          margemContribuicaoPct: mesesComMovimentoPE.reduce((a, m) => a + m.margemContribuicaoPct, 0) / mesesComMovimentoPE.length,
+          margemLiquidaPct: mesesComMovimentoPE.reduce((a, m) => a + m.margemLiquidaPct, 0) / mesesComMovimentoPE.length,
+          custosFixos: mesesComMovimentoPE.reduce((a, m) => a + m.custosFixos, 0) / mesesComMovimentoPE.length,
+          pontoEquilibrio: mesesComMovimentoPE.reduce((a, m) => a + m.pontoEquilibrio, 0) / mesesComMovimentoPE.length,
+        }
+      : { receita: 0, margemContribuicaoPct: 0, margemLiquidaPct: 0, custosFixos: 0, pontoEquilibrio: 0 };
+  const cardMargem =
+    mesFiltro !== null
+      ? margemEPontoEquilibrioPorMes[mesFiltro]
+      : {
+          ...mediaPontoEquilibrio,
+          atingiuPontoEquilibrio: mediaPontoEquilibrio.receita >= mediaPontoEquilibrio.pontoEquilibrio && mediaPontoEquilibrio.pontoEquilibrio > 0,
+          distanciaDoPontoEquilibrio: mediaPontoEquilibrio.receita - mediaPontoEquilibrio.pontoEquilibrio,
+        };
+  const cardMargemDistancia =
+    "distanciaDoPontoEquilibrio" in cardMargem ? cardMargem.distanciaDoPontoEquilibrio : cardMargem.folga;
+  const cardMargemLabel = mesFiltro !== null ? `Receita de ${dreMonths[mesFiltro]}` : "Receita média mensal";
+
   // Visão inspirada em outro sistema que o cliente usa (Arken): os mesmos dados do DRE por
   // competência (o de sempre, sem alteração nenhuma nele), só que também exibidos aqui dentro do
   // Fluxo de Caixa, com 4 cards de resumo + tabela mês a mês em visual navy/dourado.
@@ -475,7 +501,8 @@ export default function FluxoDeCaixaPage() {
           <h2 className="text-sm font-semibold text-brand-900">Margem e Ponto de Equilíbrio</h2>
         </div>
         <p className="-mt-3 mb-4 text-xs text-faint">
-          A partir do DRE por competência: custos variáveis = CMV
+          {mesFiltro !== null ? `Números de ${dreMonths[mesFiltro]}` : "Média dos meses com movimento no período"}, a partir do DRE por
+          competência: custos variáveis = CMV
           {custosVariaveisDre && custosVariaveisDre.length > 0 ? " + comissão + frete + imposto + devoluções" : ""}; custos fixos =
           demais despesas do período
           {custosFixosClassificacoesExtras && custosFixosClassificacoesExtras.length > 0 ? " + valor pago a fornecedores" : ""}.
@@ -483,46 +510,46 @@ export default function FluxoDeCaixaPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg bg-surface-muted p-3">
             <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Margem de Contribuição</p>
-            <p className="mt-1 text-lg font-semibold text-brand-900">{margemEPontoEquilibrio.margemContribuicaoPct.toFixed(1)}%</p>
+            <p className="mt-1 text-lg font-semibold text-brand-900">{cardMargem.margemContribuicaoPct.toFixed(1)}%</p>
           </div>
           <div className="rounded-lg bg-surface-muted p-3">
             <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Margem Líquida</p>
-            <p className={`mt-1 text-lg font-semibold ${margemEPontoEquilibrio.margemLiquidaPct >= 0 ? "text-accent-500" : "text-danger-500"}`}>
-              {margemEPontoEquilibrio.margemLiquidaPct.toFixed(1)}%
+            <p className={`mt-1 text-lg font-semibold ${cardMargem.margemLiquidaPct >= 0 ? "text-accent-500" : "text-danger-500"}`}>
+              {cardMargem.margemLiquidaPct.toFixed(1)}%
             </p>
           </div>
           <div className="rounded-lg bg-surface-muted p-3">
             <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Custos Fixos</p>
-            <p className="mt-1 text-lg font-semibold text-brand-900">{formatCurrencyPrecise(margemEPontoEquilibrio.custosFixos)}</p>
+            <p className="mt-1 text-lg font-semibold text-brand-900">{formatCurrencyPrecise(cardMargem.custosFixos)}</p>
           </div>
           <div className="rounded-lg bg-surface-muted p-3">
             <p className="text-[10px] font-medium uppercase tracking-wide text-faint">Ponto de Equilíbrio</p>
-            <p className="mt-1 text-lg font-semibold text-brand-900">{formatCurrencyPrecise(margemEPontoEquilibrio.pontoEquilibrio)}</p>
+            <p className="mt-1 text-lg font-semibold text-brand-900">{formatCurrencyPrecise(cardMargem.pontoEquilibrio)}</p>
           </div>
         </div>
         <div className="mt-4 rounded-lg border border-border-subtle p-4">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted">Receita do ano</span>
-            <span className="font-medium text-brand-900">{formatCurrencyPrecise(margemEPontoEquilibrio.receita)}</span>
+            <span className="text-muted">{cardMargemLabel}</span>
+            <span className="font-medium text-brand-900">{formatCurrencyPrecise(cardMargem.receita)}</span>
           </div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
             <div
-              className={`h-full rounded-full ${margemEPontoEquilibrio.atingiuPontoEquilibrio ? "bg-accent-500" : "bg-warn-500"}`}
+              className={`h-full rounded-full ${cardMargem.atingiuPontoEquilibrio ? "bg-accent-500" : "bg-warn-500"}`}
               style={{
                 width: `${
-                  margemEPontoEquilibrio.pontoEquilibrio > 0
-                    ? Math.min(100, Math.round((margemEPontoEquilibrio.receita / margemEPontoEquilibrio.pontoEquilibrio) * 100))
+                  cardMargem.pontoEquilibrio > 0
+                    ? Math.min(100, Math.round((cardMargem.receita / cardMargem.pontoEquilibrio) * 100))
                     : 0
                 }%`,
               }}
             />
           </div>
-          <p className={`mt-2 text-xs ${margemEPontoEquilibrio.atingiuPontoEquilibrio ? "text-accent-500" : "text-warn-500"}`}>
-            {margemEPontoEquilibrio.pontoEquilibrio <= 0
+          <p className={`mt-2 text-xs ${cardMargem.atingiuPontoEquilibrio ? "text-accent-500" : "text-warn-500"}`}>
+            {cardMargem.pontoEquilibrio <= 0
               ? "Sem margem de contribuição suficiente no período pra calcular o ponto de equilíbrio."
-              : margemEPontoEquilibrio.atingiuPontoEquilibrio
-                ? `Ponto de equilíbrio já atingido — ${formatCurrencyPrecise(margemEPontoEquilibrio.distanciaDoPontoEquilibrio)} acima do necessário.`
-                : `Faltam ${formatCurrencyPrecise(Math.abs(margemEPontoEquilibrio.distanciaDoPontoEquilibrio))} em receita pra atingir o ponto de equilíbrio.`}
+              : cardMargem.atingiuPontoEquilibrio
+                ? `Ponto de equilíbrio já atingido — ${formatCurrencyPrecise(cardMargemDistancia)} acima do necessário.`
+                : `Faltam ${formatCurrencyPrecise(Math.abs(cardMargemDistancia))} em receita pra atingir o ponto de equilíbrio.`}
           </p>
         </div>
       </div>
