@@ -685,15 +685,25 @@ export function lancamentosFluxoCaixaPorLinha(
 // outras despesas do DRE (pessoal, administrativas, comerciais etc.), que não escalam
 // diretamente com a receita. É a leitura padrão de ponto de equilíbrio pra um negócio de
 // serviços/varejo, dado o que já está classificado no plano de contas.
+function valorExcluidoDoPE(rotulo: string, mes: number, excecoesPontoEquilibrio?: { mes: number; linhas: string[] }[]) {
+  return excecoesPontoEquilibrio?.some((e) => e.mes === mes && e.linhas.includes(rotulo)) ?? false;
+}
+
 export function computeMargemEPontoEquilibrio(
   dreGrid: DreGridRow[],
   custosVariaveisDre?: string[],
   payables?: Payable[],
-  custosFixosClassificacoesExtras?: string[]
+  custosFixosClassificacoesExtras?: string[],
+  excecoesPontoEquilibrio?: { mes: number; linhas: string[] }[]
 ) {
   const receita = dreGrid.find((r) => r.label === "RECEITA")?.acumulado ?? 0;
   const cmv = dreGrid.find((r) => r.label === "(-) CMV")?.acumulado ?? 0;
-  const extras = (custosVariaveisDre ?? []).reduce((a, label) => a + (dreGrid.find((r) => r.label === label)?.acumulado ?? 0), 0);
+  const extras = (custosVariaveisDre ?? []).reduce((a, label) => {
+    const row = dreGrid.find((r) => r.label === label);
+    if (!row) return a;
+    const total = row.values.reduce((sum, v, i) => sum + (valorExcluidoDoPE(label, i, excecoesPontoEquilibrio) ? 0 : v), 0);
+    return a + total;
+  }, 0);
   const custosVariaveisTotal = round2(cmv + extras);
   const custosFixosExtras =
     payables && custosFixosClassificacoesExtras
@@ -725,13 +735,15 @@ export function computeMargemEPontoEquilibrioPorMes(
   dreGrid: DreGridRow[],
   custosVariaveisDre?: string[],
   payables?: Payable[],
-  custosFixosClassificacoesExtras?: string[]
+  custosFixosClassificacoesExtras?: string[],
+  excecoesPontoEquilibrio?: { mes: number; linhas: string[] }[]
 ) {
   const receitaValues = dreGrid.find((r) => r.label === "RECEITA")?.values ?? Array(12).fill(0);
   const cmvValues = dreGrid.find((r) => r.label === "(-) CMV")?.values ?? Array(12).fill(0);
   const custosFixosValuesBase = dreGrid.find((r) => r.label === "= Despesas totais")?.values ?? Array(12).fill(0);
   const resultadoValues = dreGrid.find((r) => r.isTotal)?.values ?? Array(12).fill(0);
-  const extrasRows = (custosVariaveisDre ?? []).map((label) => dreGrid.find((r) => r.label === label)?.values ?? Array(12).fill(0));
+  const extrasLabels = custosVariaveisDre ?? [];
+  const extrasRows = extrasLabels.map((label) => dreGrid.find((r) => r.label === label)?.values ?? Array(12).fill(0));
   const custosFixosExtraValues =
     payables && custosFixosClassificacoesExtras
       ? monthTotals(payables.filter((p) => custosFixosClassificacoesExtras.includes(p.classificacao)))
@@ -739,7 +751,10 @@ export function computeMargemEPontoEquilibrioPorMes(
 
   return dreMonths.map((mes, i) => {
     const receita = receitaValues[i] ?? 0;
-    const extras = extrasRows.reduce((a, values) => a + (values[i] ?? 0), 0);
+    const extras = extrasRows.reduce((a, values, idx) => {
+      if (valorExcluidoDoPE(extrasLabels[idx], i, excecoesPontoEquilibrio)) return a;
+      return a + (values[i] ?? 0);
+    }, 0);
     const custosVariaveisTotal = (cmvValues[i] ?? 0) + extras;
     const custosFixos = (custosFixosValuesBase[i] ?? 0) + (custosFixosExtraValues[i] ?? 0);
     const margemContribuicao = round2(receita - custosVariaveisTotal);

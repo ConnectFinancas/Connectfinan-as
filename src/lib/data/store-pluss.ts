@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 13,
+  dataVersion: 14,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -130,6 +130,13 @@ export const storePlussData: ClientFinanceData = {
   // Somar Compra de Produtos (o pagamento real ao fornecedor) por cima conta o custo do produto
   // DUAS vezes e infla o Ponto de Equilíbrio pra um valor impossível (~R$19,4 milhões/ano contra
   // R$6,2 milhões de receita real) — confirmado com o Ewerton antes de reverter.
+
+  // Abril/2026 (índice 3) teve os 5 DAS atrasados pagos em lote (R$216.992,22, referentes a meses
+  // anteriores) — não é o imposto recorrente daquele mês, então distorce pra cima o Ponto de
+  // Equilíbrio de abril (chegava a R$13,7 milhões). A pedido do Ewerton, o Imposto de abril fica
+  // fora só dessa análise de Margem de Contribuição/Ponto de Equilíbrio (o DRE e o Fluxo de Caixa
+  // continuam mostrando o valor pago normalmente).
+  excecoesPontoEquilibrio: [{ mes: 3, linhas: ["Imposto"] }],
 
   // Saldo bancário real (todas as contas somadas) que o Ewerton informou pra agosto/2026 —
   // índice 7. Usado como saldo inicial de verdade do Fluxo de Caixa e pra conferir o saldo final

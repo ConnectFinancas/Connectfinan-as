@@ -221,6 +221,11 @@ export type ClientFinanceData = {
   // PRODUTOS, que fica fora do DRE pra não duplicar o CMV que já vem do marketplace, mas
   // continua sendo dinheiro que precisa sair pra manter o negócio girando).
   custosFixosClassificacoesExtras?: string[];
+  // Exceções pontuais pro cálculo de Margem de Contribuição/Ponto de Equilíbrio: exclui, só no(s)
+  // mês(es) indicado(s) (0 = Jan ... 11 = Dez), o valor de linhas específicas de custosVariaveisDre
+  // (ex.: um imposto atrasado pago em lote num único mês, que não representa o custo variável
+  // recorrente e distorce o PE daquele mês pra cima). Não afeta o DRE em si — só essa análise.
+  excecoesPontoEquilibrio?: { mes: number; linhas: string[] }[];
   fluxoCaixaPeriodo: string;
   fluxoCaixaKpis: {
     saldoInicial: number;

@@ -77,6 +77,7 @@ type FinanceContextValue = FinanceState &
     | "classificacoesNoCmv"
     | "custosVariaveisDre"
     | "custosFixosClassificacoesExtras"
+    | "excecoesPontoEquilibrio"
   > & {
   client: Client;
   fluxoDiario: { dia: string; saldo: number }[];
@@ -332,6 +333,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     classificacoesNoCmv: seed.classificacoesNoCmv,
     custosVariaveisDre: seed.custosVariaveisDre,
     custosFixosClassificacoesExtras: seed.custosFixosClassificacoesExtras,
+    excecoesPontoEquilibrio: seed.excecoesPontoEquilibrio,
     addPayable,
     addReceivable,
     markPago,

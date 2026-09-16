@@ -84,6 +84,7 @@ export default function FluxoDeCaixaPage() {
     summary,
     custosVariaveisDre,
     custosFixosClassificacoesExtras,
+    excecoesPontoEquilibrio,
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
@@ -95,12 +96,19 @@ export default function FluxoDeCaixaPage() {
   const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
-  const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid, custosVariaveisDre, payables, custosFixosClassificacoesExtras);
+  const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(
+    summary.dreGrid,
+    custosVariaveisDre,
+    payables,
+    custosFixosClassificacoesExtras,
+    excecoesPontoEquilibrio
+  );
   const margemEPontoEquilibrioPorMes = computeMargemEPontoEquilibrioPorMes(
     summary.dreGrid,
     custosVariaveisDre,
     payables,
-    custosFixosClassificacoesExtras
+    custosFixosClassificacoesExtras,
+    excecoesPontoEquilibrio
   );
   const capitalDeGiro = computeCapitalDeGiroRecomendado(payables);
 
