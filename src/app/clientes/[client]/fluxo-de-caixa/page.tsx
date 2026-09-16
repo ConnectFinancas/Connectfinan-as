@@ -7,6 +7,8 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { MiniBarCompare } from "@/components/charts/MiniBarCompare";
 import { useFinance } from "@/lib/store/FinanceContext";
 import {
+  cmvMarketplacePorCanal,
+  comissaoMarketplacePorCanal,
   computeCapitalDeGiroRecomendado,
   computeFluxoCaixaDreGrid,
   computeMargemEPontoEquilibrio,
@@ -44,6 +46,14 @@ const destaqueIcons = [Landmark, TrendingUp, Target, Pin];
 
 // Mesmo drill-down (classificação → categoria → lançamentos) da aba Faturamento & DRE, por
 // competência (vencimento) — reaproveitado aqui só pra exibição, sem mexer naquela aba.
+function classTotals(payables: Payable[], classificacao: string) {
+  const items = payables.filter((p) => p.classificacao === classificacao);
+  const values = Array(12).fill(0);
+  for (const p of items) values[new Date(p.vencimento + "T00:00:00").getMonth()] += p.valor;
+  const acumulado = items.reduce((a, p) => a + p.valor, 0);
+  return { values, acumulado };
+}
+
 function categoriaRowsFor(payables: Payable[], classificacao: string) {
   const items = payables.filter((p) => p.classificacao === classificacao);
   const byCategoria = new Map<string, Payable[]>();
@@ -85,11 +95,14 @@ export default function FluxoDeCaixaPage() {
     custosVariaveisDre,
     custosFixosClassificacoesExtras,
     excecoesPontoEquilibrio,
+    marketplaceManual,
+    classificacoesNoCmv,
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
   const [linhaCompAberta, setLinhaCompAberta] = useState<string | null>(null);
   const [categoriaCompAberta, setCategoriaCompAberta] = useState<string | null>(null);
+  const [cmvSubCompAberta, setCmvSubCompAberta] = useState<string | null>(null);
   // null = mostra o ano inteiro (12 colunas); um índice = filtra as duas tabelas largas (DRE de
   // Caixa e Demonstrativo por Competência) pra mostrar só aquele mês.
   const [mesFiltro, setMesFiltro] = useState<number | null>(null);
@@ -685,16 +698,19 @@ export default function FluxoDeCaixaPage() {
                         </tr>
                       );
                     }
-                    const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && row.label !== "(-) CMV";
-                    const isOpen = isClassRow && linhaCompAberta === row.label;
+                    const isComissaoRow = row.label === "(-) Comissões de Marketplace";
+                    const isCmvRow = row.label === "(-) CMV";
+                    const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow;
+                    const isExpandableRow = (isClassRow || isComissaoRow || isCmvRow) && !!row.expandable;
+                    const isOpen = isExpandableRow && linhaCompAberta === row.label;
                     const rowColor = row.isSubtotal ? "text-brand-900" : row.negative ? "text-warn-500" : "text-muted";
                     const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
                     return (
                       <Fragment key={idx}>
                         <tr
-                          onClick={isClassRow ? () => setLinhaCompAberta(isOpen ? null : row.label) : undefined}
+                          onClick={isExpandableRow ? () => setLinhaCompAberta(isOpen ? null : row.label) : undefined}
                           className={`border-b border-border-subtle last:border-0 ${row.isSubtotal || row.isTotal ? "bg-surface-muted" : ""} ${
-                            isClassRow ? "cursor-pointer hover:bg-surface-muted/60" : ""
+                            isExpandableRow ? "cursor-pointer hover:bg-surface-muted/60" : ""
                           }`}
                         >
                           <td
@@ -719,6 +735,7 @@ export default function FluxoDeCaixaPage() {
                           </td>
                         </tr>
                         {isOpen &&
+                          isClassRow &&
                           categoriaRowsFor(payables, row.label).map((catRow) => {
                             const catKey = `${row.label}|${catRow.categoria}`;
                             const catOpen = categoriaCompAberta === catKey;
@@ -765,6 +782,116 @@ export default function FluxoDeCaixaPage() {
                                     </td>
                                   </tr>
                                 )}
+                              </Fragment>
+                            );
+                          })}
+                        {isOpen &&
+                          isComissaoRow &&
+                          comissaoMarketplacePorCanal(marketplaceManual).map((canalRow) => (
+                            <tr key={canalRow.canal} className="border-b border-border-subtle bg-surface/60">
+                              <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
+                              {mesesExibidos.map((i) => (
+                                <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(canalRow.values[i])}
+                                </td>
+                              ))}
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                {formatCurrencyPrecise(canalRow.acumulado)}
+                              </td>
+                            </tr>
+                          ))}
+                        {isOpen &&
+                          isCmvRow &&
+                          cmvMarketplacePorCanal(marketplaceManual).map((canalRow) => (
+                            <tr key={canalRow.canal} className="border-b border-border-subtle bg-surface/60">
+                              <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
+                              {mesesExibidos.map((i) => (
+                                <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(canalRow.values[i])}
+                                </td>
+                              ))}
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                {formatCurrencyPrecise(canalRow.acumulado)}
+                              </td>
+                            </tr>
+                          ))}
+                        {isOpen &&
+                          isCmvRow &&
+                          (classificacoesNoCmv ?? []).map((classificacao) => {
+                            const { values, acumulado } = classTotals(payables, classificacao);
+                            if (acumulado <= 0) return null;
+                            const subOpen = cmvSubCompAberta === classificacao;
+                            return (
+                              <Fragment key={classificacao}>
+                                <tr
+                                  onClick={() => setCmvSubCompAberta(subOpen ? null : classificacao)}
+                                  className="cursor-pointer border-b border-border-subtle bg-surface/60 hover:bg-surface-muted/60"
+                                >
+                                  <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">
+                                    <span className="inline-flex items-center gap-1">
+                                      <ChevronRight size={11} className={`text-faint transition-transform ${subOpen ? "rotate-90" : ""}`} />
+                                      {classificacao}
+                                    </span>
+                                  </td>
+                                  {mesesExibidos.map((i) => (
+                                    <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                      {formatCurrencyPrecise(values[i])}
+                                    </td>
+                                  ))}
+                                  <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                    {formatCurrencyPrecise(acumulado)}
+                                  </td>
+                                </tr>
+                                {subOpen &&
+                                  categoriaRowsFor(payables, classificacao).map((catRow) => {
+                                    const catKey = `${classificacao}|${catRow.categoria}`;
+                                    const catOpen = categoriaCompAberta === catKey;
+                                    const catLancamentos = catRow.lancamentos.filter(
+                                      (l) => mesFiltro === null || new Date(l.vencimento + "T00:00:00").getMonth() === mesFiltro
+                                    );
+                                    return (
+                                      <Fragment key={catKey}>
+                                        <tr
+                                          onClick={() => setCategoriaCompAberta(catOpen ? null : catKey)}
+                                          className="cursor-pointer border-b border-border-subtle bg-surface/30 hover:bg-surface-muted/60"
+                                        >
+                                          <td className="py-2 pl-14 pr-3 whitespace-nowrap sticky left-0 bg-surface text-[11px] text-faint">
+                                            <span className="inline-flex items-center gap-1">
+                                              <ChevronRight size={10} className={`text-faint transition-transform ${catOpen ? "rotate-90" : ""}`} />
+                                              {catRow.categoria}
+                                            </span>
+                                          </td>
+                                          {mesesExibidos.map((i) => (
+                                            <td key={i} className="py-2 px-3 text-right text-[11px] tabular-nums text-faint whitespace-nowrap">
+                                              {formatCurrencyPrecise(catRow.values[i])}
+                                            </td>
+                                          ))}
+                                          <td className="py-2 pl-3 pr-5 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
+                                            {formatCurrencyPrecise(catRow.acumulado)}
+                                          </td>
+                                        </tr>
+                                        {catOpen && (
+                                          <tr className="border-b border-border-subtle bg-surface/20">
+                                            <td colSpan={mesesExibidos.length + 2} className="py-2 pl-20 pr-5">
+                                              <div className="flex max-w-2xl flex-col gap-1">
+                                                {catLancamentos.map((l) => (
+                                                  <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
+                                                    <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
+                                                    <span className="flex-1 truncate">
+                                                      {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
+                                                      {l.descricao}
+                                                    </span>
+                                                    <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                                  </div>
+                                                ))}
+                                                {catLancamentos.length === 0 && <p className="text-[11px] text-faint">Sem lançamentos</p>}
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        )}
+                                      </Fragment>
+                                    );
+                                  })}
                               </Fragment>
                             );
                           })}
