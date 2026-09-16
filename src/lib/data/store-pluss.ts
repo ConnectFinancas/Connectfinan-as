@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 11,
+  dataVersion: 12,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -598,11 +598,11 @@ export const storePlussData: ClientFinanceData = {
     { id: "p198", favorecido: "Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-08-29", valor: 1200.0, status: "pago", pagamento: "2026-08-29", descricao: "Transferência enviada|Jusinete Cabral da Silva", conta: "Nubank St" },
     { id: "p199", favorecido: "LALAMOVE TECNOLOGIA (BRASIL) LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-08-29", valor: 192.81, status: "pago", pagamento: "2026-08-29", descricao: "Transferência enviada|LALAMOVE TECNOLOGIA (BRASIL) LTDA.", conta: "Nubank St" },
     { id: "p200", favorecido: "UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Transporte Urbano (táxi, Uber)", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-08-29", valor: 22.98, status: "pago", pagamento: "2026-08-29", descricao: "Transferência enviada|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
-    { id: "p201", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 47166.77, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF.NOVEMBRO/2025", conta: "Inter St" },
-    { id: "p202", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 48251.36, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF. DEZEMBRO/2025", conta: "Inter St" },
-    { id: "p203", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 53722.98, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF. JANEIRO/2026", conta: "Inter St" },
-    { id: "p204", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 40759.9, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF. FEVEREIRO/2026", conta: "Inter St" },
-    { id: "p205", favorecido: "RECEITA FEDERAL", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-08-31", valor: 27091.21, status: "pendente", pagamento: undefined, descricao: "SIMPLES NACIONAL REF.SETEMBRO/2025", conta: "Inter St" },
+    // p201-p205 (5 DAS de Set/25, Nov/25, Dez/25, Jan/26, Fev/26, "pendente", venc. 31/08) foram
+    // removidos daqui — são o MESMO pagamento que já está lançado como pago em 13/04 (ver
+    // p808-p812, achados no detalhamento da planilha de DRE). Ficavam em aberto em agosto desde
+    // antes dessa sessão só como um lançamento pendente desatualizado; confirmado com o Ewerton
+    // que o pagamento de verdade foi em abril, então tirar daqui evita contar o imposto duas vezes.
     // Tarifas do relatório "Pendentes de pagamento" do Mercado Livre, agosto/2026 — descontadas
     // direto do saldo do ML (por isso lançadas como pagas, com data igual ao fim do período). O
     // restante do relatório (tarifas de envios, tarifas de venda, impostos, cancelamentos etc.,
