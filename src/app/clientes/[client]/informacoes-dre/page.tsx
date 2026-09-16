@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Info, Paperclip, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, Info, Paperclip, Trash2, Upload } from "lucide-react";
 import { dreMonths } from "@/lib/constants";
 import { ComprovanteMarketplace, useFinance } from "@/lib/store/FinanceContext";
 import { MARKETPLACE_LABELS } from "@/lib/derive";
@@ -13,6 +13,10 @@ const CANAIS: MarketplaceCanal[] = ["mercadoLivre", "shopee", "shein", "tiktok"]
 // Canais que têm frete descontado direto no repasse da plataforma, por enquanto.
 const CANAIS_COM_FRETE_DESCONTADO = new Set<MarketplaceCanal>(["mercadoLivre", "shopee", "tiktok"]);
 
+// Canais sem relatório automático de Ads/afiliados — o cliente digita esse valor mês a mês aqui
+// (Shopee Ads, Afiliados Mercado Livre); a tela avisa quando o mês atual ainda está zerado.
+const CANAIS_COM_ADS = new Set<MarketplaceCanal>(["mercadoLivre", "shopee"]);
+
 function metricasDoCanal(canal: MarketplaceCanal): { campo: keyof MarketplaceMensal; label: string }[] {
   const base: { campo: keyof MarketplaceMensal; label: string }[] = [
     { campo: "receita", label: "Receita de Vendas" },
@@ -21,6 +25,9 @@ function metricasDoCanal(canal: MarketplaceCanal): { campo: keyof MarketplaceMen
   ];
   if (CANAIS_COM_FRETE_DESCONTADO.has(canal)) {
     base.push({ campo: "freteDescontado", label: "Frete Descontado pela Plataforma" });
+  }
+  if (CANAIS_COM_ADS.has(canal)) {
+    base.push({ campo: "ads", label: "Ads / Afiliados (digitar manualmente)" });
   }
   return base;
 }
@@ -139,6 +146,8 @@ function CanalMonthCard({
   const receitaMes = dados.receita[mesIndex] || 0;
   const cmvMes = dados.cmv[mesIndex] || 0;
   const comissaoMes = dados.comissao[mesIndex] || 0;
+  const adsMes = dados.ads[mesIndex] || 0;
+  const faltaAds = CANAIS_COM_ADS.has(canal) && receitaMes > 0 && adsMes === 0;
 
   return (
     <div className="card overflow-hidden">
@@ -155,6 +164,12 @@ function CanalMonthCard({
           </div>
         )}
       </div>
+      {faltaAds && (
+        <div className="mx-4 mb-3 flex items-start gap-2 rounded-lg bg-warn-500/10 p-2.5 text-[11px] text-warn-500">
+          <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+          <p>Falta preencher Ads/Afiliados de {MARKETPLACE_LABELS[canal]} desse mês — sem relatório automático, não esquece de digitar.</p>
+        </div>
+      )}
       <div className="flex flex-col gap-2.5 px-4 pb-4">
         {metricas.map(({ campo, label }) => (
           <label key={campo} className="flex items-center justify-between gap-3">

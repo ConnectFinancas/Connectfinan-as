@@ -55,6 +55,7 @@ export function emptyMarketplaceManual(): Record<MarketplaceCanal, MarketplaceMe
     cmv: Array(12).fill(0),
     comissao: Array(12).fill(0),
     freteDescontado: Array(12).fill(0),
+    ads: Array(12).fill(0),
   });
   return { mercadoLivre: canal(), shopee: canal(), shein: canal(), tiktok: canal() };
 }

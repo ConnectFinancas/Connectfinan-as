@@ -154,6 +154,10 @@ export type MarketplaceMensal = {
   // Envios) — vira linha própria no DRE, separada do "Frete pago" (Contas a Pagar). Existe em
   // todos os canais pra manter o formato uniforme, mas só é exibido/usado nos que o cliente pediu.
   freteDescontado: number[];
+  // Ads/afiliados/publicidade paga dentro do próprio marketplace (ex.: Shopee Ads, Afiliados
+  // Mercado Livre) — meses sem relatório automático pra puxar esse valor; o cliente digita aqui
+  // mês a mês. Existe em todos os canais, mas só é exibido nos que o cliente pediu.
+  ads: number[];
 };
 
 // Uma linha de dedução do DRE que aparece destacada, entre a Receita e o "Lucro Bruto ou Valor a

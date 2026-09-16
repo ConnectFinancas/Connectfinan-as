@@ -44,7 +44,7 @@ function preencherMarketplaceComSeed(
   seedDados: Record<MarketplaceCanal, MarketplaceMensal>,
   cachedDados: Record<MarketplaceCanal, MarketplaceMensal> | undefined
 ): Record<MarketplaceCanal, MarketplaceMensal> {
-  const campos: (keyof MarketplaceMensal)[] = ["receita", "cmv", "comissao", "freteDescontado"];
+  const campos: (keyof MarketplaceMensal)[] = ["receita", "cmv", "comissao", "freteDescontado", "ads"];
   const resultado = {} as Record<MarketplaceCanal, MarketplaceMensal>;
   for (const canal of Object.keys(seedDados) as MarketplaceCanal[]) {
     const seedCanal = seedDados[canal];

@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 12,
+  dataVersion: 13,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -42,24 +42,33 @@ export const storePlussData: ClientFinanceData = {
       cmv: [0, 0, 0, 392940.14, 442756.6, 583944.9, 494594.0, 402180.0, 0, 0, 0, 0],
       comissao: [0, 0, 0, 162758.59, 169738.49, 188871.7, 85081.5, 56197.83, 0, 0, 0, 0],
       freteDescontado: [0, 0, 0, 167818.31, 181548.4, 211377.6, 139541.96, 114865.02, 0, 0, 0, 0],
+      // Agosto/2026 de Afiliados Mercado Livre ainda não informado — o Ewerton confirmou que quer
+      // incluir, mas falta o valor. Preencher assim que ele mandar (índice 7).
+      ads: Array(12).fill(0),
     },
     shopee: {
       receita: [0, 0, 0, 108645.61, 164422.41, 87670.33, 56141.23, 52535.26, 0, 0, 0, 0],
       cmv: [0, 0, 0, 38385.92, 76105.4, 36340.8, 24274.18, 23195.08, 0, 0, 0, 0],
       comissao: [0, 0, 0, 28294.7, 47833.3, 26507.38, 18427.89, 17796.69, 0, 0, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 0, 0, 2118.99, 0, 0, 0, 0],
+      // Shopee Ads de agosto (R$ 3.299,00) já entrou como lançamento próprio em Contas a Pagar
+      // (p841, DESPESAS COMERCIAIS / MARKETING) — não repete aqui pra não contar em dobro. Esse
+      // campo é só pros PRÓXIMOS meses, que o Ewerton preenche direto aqui.
+      ads: Array(12).fill(0),
     },
     shein: {
       receita: [0, 0, 0, 0, 1885.28, 2343.28, 1394.55, 588.81, 0, 0, 0, 0],
       cmv: [0, 0, 0, 0, 588.0, 798.0, 367.05, 199.5, 0, 0, 0, 0],
       comissao: [0, 0, 0, 0, 301.65, 374.9248, 223.128, 0, 0, 0, 0, 0],
       freteDescontado: Array(12).fill(0),
+      ads: Array(12).fill(0),
     },
     tiktok: {
       receita: [0, 0, 0, 35564.37, 59357.68, 75469.33, 47552.63, 105339.24, 0, 0, 0, 0],
       cmv: [0, 0, 0, 9930.7, 7927.5, 38826.0, 23619.8, 51561.0, 0, 0, 0, 0],
       comissao: [0, 0, 0, 7829.38, 7122.92, 4636.92, 6147.79, 29926.1, 0, 0, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 7120.73, 1983.96, 0, 0, 0, 0, 0],
+      ads: Array(12).fill(0),
     },
   },
 
@@ -92,6 +101,11 @@ export const storePlussData: ClientFinanceData = {
     { rotulo: "Frete Descontado direto do Tiktok", marketplaceCampo: { canal: "tiktok", campo: "freteDescontado" } },
     { rotulo: "Frete Descontado pelo Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "freteDescontado" } },
     { rotulo: "Frete Descontado pela Shopee", marketplaceCampo: { canal: "shopee", campo: "freteDescontado" } },
+    // Ads/afiliados digitados manualmente na aba Informações do DRE (sem relatório automático) —
+    // agosto da Shopee fica de fora porque já está lançada em Contas a Pagar (ver marketplaceManual
+    // acima); Mercado Livre ainda não tem valor, fica pendente do Ewerton.
+    { rotulo: "Afiliados Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "ads" } },
+    { rotulo: "Ads Shopee", marketplaceCampo: { canal: "shopee", campo: "ads" } },
     { rotulo: "Imposto", classificacoes: ["IMPOSTOS"] },
   ],
 
@@ -106,6 +120,8 @@ export const storePlussData: ClientFinanceData = {
     "Frete Descontado pela Shopee",
     "Imposto",
     "Devoluções e Reembolso",
+    "Afiliados Mercado Livre",
+    "Ads Shopee",
   ],
 
   // NÃO soma COMPRA DE PRODUTOS aqui (mecanismo de custosFixosClassificacoesExtras existe em
