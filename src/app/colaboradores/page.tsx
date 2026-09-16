@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Pencil, RefreshCw, Trash2, X } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { clients } from "@/lib/data/clients";
 
@@ -193,12 +193,190 @@ function EditarColaboradorModal({
   );
 }
 
+function gerarSenhaAleatoria() {
+  const alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  return Array.from({ length: 12 }, () => alfabeto[Math.floor(Math.random() * alfabeto.length)]).join("");
+}
+
+function NovoColaboradorModal({ onClose, onCriado }: { onClose: () => void; onCriado: (mensagem: string) => void }) {
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState(gerarSenhaAleatoria());
+  const [role, setRole] = useState<Role>("colaborador");
+  const [clientSlug, setClientSlug] = useState("");
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  const clientesAtivos = clients.filter((c) => c.status === "ativo");
+  const clientesParaCliente = clientesAtivos.filter((c) => c.tipo !== "tarefas");
+
+  function alternar(slug: string) {
+    setSelecionados((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(slug)) novo.delete(slug);
+      else novo.add(slug);
+      return novo;
+    });
+  }
+
+  async function handleCriar() {
+    if (!nome.trim() || !email.trim()) {
+      setErro("Preencha nome e e-mail.");
+      return;
+    }
+    if (senha.length < 8) {
+      setErro("A senha precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (role === "cliente" && !clientSlug) {
+      setErro("Selecione qual cliente esse login representa.");
+      return;
+    }
+    setSalvando(true);
+    setErro("");
+
+    const resposta = await fetch("/api/colaboradores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: nome.trim(),
+        email: email.trim(),
+        senha,
+        role,
+        clientSlug: role === "cliente" ? clientSlug : undefined,
+        clientSlugs: role === "colaborador" ? [...selecionados] : undefined,
+      }),
+    });
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      setErro(resultado.erro ?? "Não consegui criar o login. Tenta de novo.");
+      setSalvando(false);
+      return;
+    }
+
+    onCriado(`Login de ${nome.trim()} criado. Senha: ${senha} — copie e envie pra pessoa, essa tela não guarda isso.`);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-10 sm:pt-16" onClick={onClose}>
+      <div className="card w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-brand-900">Novo colaborador ou cliente</h2>
+          <button onClick={onClose} className="text-faint hover:text-brand-900 transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Nome</label>
+            <input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="w-full rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900"
+              placeholder="Nome da pessoa"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">E-mail</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900"
+              placeholder="pessoa@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Senha inicial</label>
+            <div className="flex gap-2">
+              <input
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                className="w-full rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900"
+              />
+              <button
+                type="button"
+                onClick={() => setSenha(gerarSenhaAleatoria())}
+                className="shrink-0 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+              >
+                Gerar outra
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-faint">Anote essa senha pra passar pra pessoa — depois de criar, ela some daqui.</p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Papel</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as Role)}
+              className="w-full rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900"
+            >
+              <option value="admin">Administrador (acesso total)</option>
+              <option value="colaborador">Colaborador (só os clientes selecionados)</option>
+              <option value="cliente">Cliente (só o próprio painel)</option>
+            </select>
+          </div>
+
+          {role === "cliente" && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted">Qual cliente esse login representa</label>
+              <select
+                value={clientSlug}
+                onChange={(e) => setClientSlug(e.target.value)}
+                className="w-full rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900"
+              >
+                <option value="">Selecione…</option>
+                {clientesParaCliente.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {role === "colaborador" && (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted">Clientes que esse colaborador pode ver</label>
+              <div className="flex max-h-48 flex-col gap-1 overflow-y-auto rounded-lg border border-border-subtle p-2">
+                {clientesAtivos.map((c) => (
+                  <label key={c.slug} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-brand-900 hover:bg-surface-muted">
+                    <input type="checkbox" checked={selecionados.has(c.slug)} onChange={() => alternar(c.slug)} />
+                    {c.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {erro && <p className="text-xs font-medium text-danger-500">{erro}</p>}
+
+          <button
+            onClick={handleCriar}
+            disabled={salvando}
+            className="mt-1 rounded-lg bg-brand-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
+          >
+            {salvando ? "Criando…" : "Criar login"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ColaboradoresPage() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [permissoes, setPermissoes] = useState<Record<string, string[]>>({});
   const [auditLog, setAuditLog] = useState<AuditRow[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [editando, setEditando] = useState<ProfileRow | null>(null);
+  const [criando, setCriando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
 
   async function carregar() {
@@ -261,13 +439,22 @@ export default function ColaboradoresPage() {
             <ArrowLeft size={15} />
             Portfólio de Clientes
           </Link>
-          <button
-            onClick={carregar}
-            className="flex items-center gap-1.5 rounded-full border border-border-subtle px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
-          >
-            <RefreshCw size={13} />
-            Atualizar lista
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCriando(true)}
+              className="flex items-center gap-1.5 rounded-full bg-client-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:opacity-90"
+            >
+              <Plus size={13} />
+              Novo colaborador
+            </button>
+            <button
+              onClick={carregar}
+              className="flex items-center gap-1.5 rounded-full border border-border-subtle px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+            >
+              <RefreshCw size={13} />
+              Atualizar lista
+            </button>
+          </div>
         </div>
       </header>
 
@@ -278,28 +465,8 @@ export default function ColaboradoresPage() {
         </div>
 
         {mensagem && (
-          <div className="mb-4 rounded-lg border border-accent-200 bg-accent-100 px-3 py-2 text-xs font-medium text-accent-600">{mensagem}</div>
+          <div className="mb-8 rounded-lg border border-accent-200 bg-accent-100 px-3 py-2 text-xs font-medium text-accent-600">{mensagem}</div>
         )}
-
-        <div className="card mb-8 p-5">
-          <h2 className="text-sm font-semibold text-brand-900">Como cadastrar um novo colaborador ou cliente</h2>
-          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-            Ainda não dá pra criar o login direto por aqui — falta uma chave de servidor que precisa ser configurada com cuidado
-            (fica só nas variáveis de ambiente da Vercel, nunca no código). Por enquanto, cadastre assim:
-          </p>
-          <ol className="mt-2.5 flex list-decimal flex-col gap-1 pl-4 text-xs leading-relaxed text-slate-500">
-            <li>No painel do Supabase, vá em <strong>Authentication → Users → Add user</strong>.</li>
-            <li>Preencha e-mail e uma senha temporária (a pessoa pode trocar depois).</li>
-            <li>
-              Em <strong>User Metadata</strong>, cole um JSON assim (troque o nome):
-              <br />
-              Colaborador: <code className="rounded bg-surface-muted px-1 py-0.5">{`{"nome": "Fulano", "role": "colaborador"}`}</code>
-              <br />
-              Cliente: <code className="rounded bg-surface-muted px-1 py-0.5">{`{"nome": "MJ Prime", "role": "cliente", "client_slug": "mj-prime"}`}</code>
-            </li>
-            <li>Volte aqui, clique em &ldquo;Atualizar lista&rdquo; e depois em &ldquo;Editar&rdquo; pra escolher quais clientes esse colaborador vê.</li>
-          </ol>
-        </div>
 
         <div className="card mb-8 overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
@@ -375,6 +542,17 @@ export default function ColaboradoresPage() {
           onClose={() => setEditando(null)}
           onSaved={(msg) => {
             setEditando(null);
+            setMensagem(msg);
+            carregar();
+          }}
+        />
+      )}
+
+      {criando && (
+        <NovoColaboradorModal
+          onClose={() => setCriando(false)}
+          onCriado={(msg) => {
+            setCriando(false);
             setMensagem(msg);
             carregar();
           }}
