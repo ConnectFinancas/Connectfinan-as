@@ -137,11 +137,18 @@ export const storePlussData: ClientFinanceData = {
     { label: "Conversão do faturamento", value: "—" },
     { label: "Variação do caixa no período", value: "—" },
   ],
-  destaquesPeriodo: [],
-  resumoExecutivo: [
-    "Contas a Pagar (812 lançamentos, Abril a Agosto/2026) e Contas a Receber (222 lançamentos, Abril a Agosto/2026) importados dos relatórios enviados. A receita do DRE vem da aba \"Informações do DRE\", não de Contas a Receber.",
+  destaquesPeriodo: [
+    { title: "Caixa encerrou em R$ 2.270.584,99", desc: "Consumiu R$ 47.843,44 no período." },
+    { title: "Geração negativa de R$ 47.843,44", desc: "-7,3% dos recebimentos." },
+    { title: "Conversão em caixa de 100,0%", desc: "Todo o faturamento do mês (Contas a Receber) já entrou no caixa." },
+    { title: "48 recebimentos · 205 pagamentos", desc: "Maior entrada = 7,5% do total (R$ 49.000,00)." },
   ],
-  pontoDeAtencao: "Preencha a aba \"Informações do DRE\" (receita/CMV/comissão por marketplace) para o DRE refletir o resultado real.",
+  resumoExecutivo: [
+    "No período (agosto/2026), a Store Pluss teve R$ 652.172,98 em recebimentos e R$ 700.016,42 em pagamentos, resultando em geração de caixa negativa de R$ 47.843,44 (-7,3% dos recebimentos) — Compra de Produtos concentrou 73,5% de tudo que foi pago no mês (R$ 514.179,66).",
+    "O saldo calculado a partir dos lançamentos (R$ 2.270.584,99) ficou R$ 12.451,98 abaixo do saldo real informado pelo banco (R$ 2.283.036,97, ver \"Conferência de saldo bancário\" na aba Fluxo de Caixa) — diferença pequena frente ao volume movimentado, mas vale checar se falta algum lançamento de agosto.",
+  ],
+  pontoDeAtencao:
+    "Compra de Produtos respondeu por 73,5% dos pagamentos de agosto (R$ 514.179,66) — concentração alta que aumenta a dependência de caixa disponível pra manter o giro de estoque.",
 
   seedReceivables: [
     { id: "r1", cliente: "STORE PLUSS LTDA", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", descricao: "Transferência Recebida|STORE PLUSS LTDA", vencimento: "2026-08-01", valor: 18000.0, status: "recebido", recebimento: "2026-08-01", formaRecebimento: "Transferência", conta: "Nubank St" },
