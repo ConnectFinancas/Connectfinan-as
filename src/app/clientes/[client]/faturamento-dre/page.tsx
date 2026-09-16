@@ -230,7 +230,7 @@ export default function FaturamentoDrePage() {
                             {catOpen && (
                               <tr className="border-b border-border-subtle bg-surface/30">
                                 <td colSpan={dreMonths.length + 2} className="py-2 pl-14 pr-5">
-                                  <div className="flex flex-col gap-1">
+                                  <div className="flex max-w-2xl flex-col gap-1">
                                     {catRow.lancamentos.map((l) => (
                                       <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
                                         <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
@@ -238,7 +238,7 @@ export default function FaturamentoDrePage() {
                                           {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
                                           {l.descricao}
                                         </span>
-                                        <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                        <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -333,7 +333,7 @@ export default function FaturamentoDrePage() {
                                     {catOpen && (
                                       <tr className="border-b border-border-subtle bg-surface/20">
                                         <td colSpan={dreMonths.length + 2} className="py-2 pl-20 pr-5">
-                                          <div className="flex flex-col gap-1">
+                                          <div className="flex max-w-2xl flex-col gap-1">
                                             {catRow.lancamentos.map((l) => (
                                               <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
                                                 <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
@@ -341,7 +341,7 @@ export default function FaturamentoDrePage() {
                                                   {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
                                                   {l.descricao}
                                                 </span>
-                                                <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                                <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
                                               </div>
                                             ))}
                                           </div>

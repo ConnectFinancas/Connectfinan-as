@@ -87,6 +87,10 @@ export default function FluxoDeCaixaPage() {
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
   const [linhaCompAberta, setLinhaCompAberta] = useState<string | null>(null);
   const [categoriaCompAberta, setCategoriaCompAberta] = useState<string | null>(null);
+  // null = mostra o ano inteiro (12 colunas); um índice = filtra as duas tabelas largas (DRE de
+  // Caixa e Demonstrativo por Competência) pra mostrar só aquele mês.
+  const [mesFiltro, setMesFiltro] = useState<number | null>(null);
+  const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
   const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid);
@@ -111,8 +115,17 @@ export default function FluxoDeCaixaPage() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Mês</label>
-            <select className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900">
-              <option>Agosto/2026</option>
+            <select
+              value={mesFiltro === null ? "" : mesFiltro}
+              onChange={(e) => setMesFiltro(e.target.value === "" ? null : Number(e.target.value))}
+              className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900"
+            >
+              <option value="">Ano inteiro</option>
+              {dreMonths.map((m, i) => (
+                <option key={m} value={i}>
+                  {m}/2026
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex flex-col gap-1">
@@ -358,10 +371,10 @@ export default function FluxoDeCaixaPage() {
             <thead>
               <tr className="border-b border-border-subtle text-left text-[11px] text-faint">
                 <th className="py-2 pl-5 pr-3 font-medium sticky left-0 bg-surface">Conta</th>
-                {dreMonths.map((m) => (
-                  <th key={m} className="py-2 px-3 text-right font-medium whitespace-nowrap">{m.toUpperCase()}</th>
+                {mesesExibidos.map((i) => (
+                  <th key={dreMonths[i]} className="py-2 px-3 text-right font-medium whitespace-nowrap">{dreMonths[i].toUpperCase()}</th>
                 ))}
-                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">Acumulado</th>
+                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">{mesFiltro === null ? "Acumulado" : "Acum. ano"}</th>
               </tr>
             </thead>
             <tbody>
@@ -369,7 +382,7 @@ export default function FluxoDeCaixaPage() {
                 if (row.isSection) {
                   return (
                     <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
-                      <td colSpan={dreMonths.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                      <td colSpan={mesesExibidos.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
                         {row.label}
                       </td>
                     </tr>
@@ -380,6 +393,11 @@ export default function FluxoDeCaixaPage() {
                 const tipo: "entrada" | "saida" = row.negative ? "saida" : "entrada";
                 const rowColor = row.isSubtotal ? "text-brand-900" : row.negative ? "text-warn-500" : "text-muted";
                 const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
+                const lancamentos = lancamentosFluxoCaixaPorLinha(payables, receivables, tipo, row.label).filter((l) => {
+                  if (mesFiltro === null) return true;
+                  const data = tipo === "entrada" ? (l as { recebimento?: string }).recebimento : (l as { pagamento?: string }).pagamento;
+                  return !!data && new Date(data + "T00:00:00").getMonth() === mesFiltro;
+                });
                 return (
                   <Fragment key={idx}>
                     <tr
@@ -400,14 +418,14 @@ export default function FluxoDeCaixaPage() {
                           {row.label}
                         </span>
                       </td>
-                      {row.values.map((v, i) => (
+                      {mesesExibidos.map((i) => (
                         <td
                           key={i}
                           className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
-                            row.isTotal ? (v >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
+                            row.isTotal ? (row.values[i] >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
                           }`}
                         >
-                          {formatCurrencyPrecise(v)}
+                          {formatCurrencyPrecise(row.values[i])}
                         </td>
                       ))}
                       <td className={`py-2.5 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
@@ -416,9 +434,9 @@ export default function FluxoDeCaixaPage() {
                     </tr>
                     {isOpen && (
                       <tr className="border-b border-border-subtle bg-surface/60">
-                        <td colSpan={dreMonths.length + 2} className="py-2 pl-9 pr-5">
-                          <div className="flex flex-col gap-1">
-                            {lancamentosFluxoCaixaPorLinha(payables, receivables, tipo, row.label).map((l) => (
+                        <td colSpan={mesesExibidos.length + 2} className="py-2 pl-9 pr-5">
+                          <div className="flex max-w-2xl flex-col gap-1">
+                            {lancamentos.map((l) => (
                               <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
                                 <span className="w-16 shrink-0">
                                   {formatDateBR(tipo === "entrada" ? (l as { recebimento?: string }).recebimento! : (l as { pagamento?: string }).pagamento!)}
@@ -427,12 +445,10 @@ export default function FluxoDeCaixaPage() {
                                   {("favorecido" in l ? l.favorecido : l.cliente) !== "—" ? `${"favorecido" in l ? l.favorecido : l.cliente} — ` : ""}
                                   {l.descricao}
                                 </span>
-                                <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
                               </div>
                             ))}
-                            {lancamentosFluxoCaixaPorLinha(payables, receivables, tipo, row.label).length === 0 && (
-                              <p className="text-[11px] text-faint">Sem lançamentos</p>
-                            )}
+                            {lancamentos.length === 0 && <p className="text-[11px] text-faint">Sem lançamentos</p>}
                           </div>
                         </td>
                       </tr>
@@ -605,12 +621,12 @@ export default function FluxoDeCaixaPage() {
                     <th className="py-2.5 pl-5 pr-3 font-medium sticky left-0" style={{ backgroundColor: "#0a1330" }}>
                       Linha
                     </th>
-                    {dreMonths.map((m) => (
-                      <th key={m} className="py-2.5 px-3 text-right font-medium whitespace-nowrap">
-                        {m.toUpperCase()}/26
+                    {mesesExibidos.map((i) => (
+                      <th key={dreMonths[i]} className="py-2.5 px-3 text-right font-medium whitespace-nowrap">
+                        {dreMonths[i].toUpperCase()}/26
                       </th>
                     ))}
-                    <th className="py-2.5 pl-3 pr-5 text-right font-medium whitespace-nowrap">Total</th>
+                    <th className="py-2.5 pl-3 pr-5 text-right font-medium whitespace-nowrap">{mesFiltro === null ? "Total" : "Total ano"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -618,7 +634,7 @@ export default function FluxoDeCaixaPage() {
                     if (row.isSection) {
                       return (
                         <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
-                          <td colSpan={dreMonths.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                          <td colSpan={mesesExibidos.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
                             {row.label}
                           </td>
                         </tr>
@@ -648,9 +664,9 @@ export default function FluxoDeCaixaPage() {
                               {row.label}
                             </span>
                           </td>
-                          {row.values.map((v, i) => (
+                          {mesesExibidos.map((i) => (
                             <td key={i} className={`py-2 px-3 text-right tabular-nums whitespace-nowrap ${rowColor}`}>
-                              {formatCurrencyPrecise(v)}
+                              {formatCurrencyPrecise(row.values[i])}
                             </td>
                           ))}
                           <td className={`py-2 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
@@ -661,6 +677,9 @@ export default function FluxoDeCaixaPage() {
                           categoriaRowsFor(payables, row.label).map((catRow) => {
                             const catKey = `${row.label}|${catRow.categoria}`;
                             const catOpen = categoriaCompAberta === catKey;
+                            const catLancamentos = catRow.lancamentos.filter(
+                              (l) => mesFiltro === null || new Date(l.vencimento + "T00:00:00").getMonth() === mesFiltro
+                            );
                             return (
                               <Fragment key={catKey}>
                                 <tr
@@ -673,9 +692,9 @@ export default function FluxoDeCaixaPage() {
                                       {catRow.categoria}
                                     </span>
                                   </td>
-                                  {catRow.values.map((v, i) => (
+                                  {mesesExibidos.map((i) => (
                                     <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
-                                      {formatCurrencyPrecise(v)}
+                                      {formatCurrencyPrecise(catRow.values[i])}
                                     </td>
                                   ))}
                                   <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
@@ -684,18 +703,19 @@ export default function FluxoDeCaixaPage() {
                                 </tr>
                                 {catOpen && (
                                   <tr className="border-b border-border-subtle bg-surface/30">
-                                    <td colSpan={dreMonths.length + 2} className="py-2 pl-14 pr-5">
-                                      <div className="flex flex-col gap-1">
-                                        {catRow.lancamentos.map((l) => (
+                                    <td colSpan={mesesExibidos.length + 2} className="py-2 pl-14 pr-5">
+                                      <div className="flex max-w-2xl flex-col gap-1">
+                                        {catLancamentos.map((l) => (
                                           <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
                                             <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
                                             <span className="flex-1 truncate">
                                               {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
                                               {l.descricao}
                                             </span>
-                                            <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                            <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
                                           </div>
                                         ))}
+                                        {catLancamentos.length === 0 && <p className="text-[11px] text-faint">Sem lançamentos</p>}
                                       </div>
                                     </td>
                                   </tr>
