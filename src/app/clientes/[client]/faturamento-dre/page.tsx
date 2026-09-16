@@ -7,7 +7,7 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { DetalhamentoMesModal } from "@/components/client/DetalhamentoMesModal";
 import { dreMonths } from "@/lib/constants";
 import { useFinance } from "@/lib/store/FinanceContext";
-import { comissaoMarketplacePorCanal } from "@/lib/derive";
+import { cmvMarketplacePorCanal, comissaoMarketplacePorCanal } from "@/lib/derive";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 import { Payable } from "@/lib/types";
@@ -30,6 +30,14 @@ function Kpi({ label, value, hint, tone }: { label: string; value: number; hint:
       <p className="mt-1.5 text-xs text-faint">{hint}</p>
     </div>
   );
+}
+
+function classTotals(payables: Payable[], classificacao: string) {
+  const items = payables.filter((p) => p.classificacao === classificacao);
+  const values = Array(12).fill(0);
+  for (const p of items) values[new Date(p.vencimento + "T00:00:00").getMonth()] += p.valor;
+  const acumulado = items.reduce((a, p) => a + p.valor, 0);
+  return { values, acumulado };
 }
 
 function categoriaRowsFor(payables: Payable[], classificacao: string) {
@@ -55,11 +63,12 @@ function categoriaRowsFor(payables: Payable[], classificacao: string) {
 }
 
 export default function FaturamentoDrePage() {
-  const { summary, payables, marketplaceManual } = useFinance();
+  const { summary, payables, marketplaceManual, classificacoesNoCmv } = useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
   const [detalhamentoAberto, setDetalhamentoAberto] = useState(false);
   const [classAberta, setClassAberta] = useState<string | null>(null);
   const [categoriaAberta, setCategoriaAberta] = useState<string | null>(null);
+  const [cmvSubAberta, setCmvSubAberta] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-6">
@@ -148,8 +157,9 @@ export default function FaturamentoDrePage() {
                   );
                 }
                 const isComissaoRow = row.label === "(-) Comissões de Marketplace";
-                const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && row.label !== "(-) CMV" && !isComissaoRow;
-                const isExpandableRow = isClassRow || (isComissaoRow && !!row.expandable);
+                const isCmvRow = row.label === "(-) CMV";
+                const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow;
+                const isExpandableRow = (isClassRow || isComissaoRow || isCmvRow) && !!row.expandable;
                 const isOpen = isExpandableRow && classAberta === row.label;
                 const rowColor = row.isSubtotal
                   ? "text-brand-900"
@@ -253,6 +263,97 @@ export default function FaturamentoDrePage() {
                           </td>
                         </tr>
                       ))}
+                    {isOpen &&
+                      isCmvRow &&
+                      cmvMarketplacePorCanal(marketplaceManual).map((canalRow) => (
+                        <tr key={canalRow.canal} className="border-b border-border-subtle bg-surface/60">
+                          <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
+                          {canalRow.values.map((v, i) => (
+                            <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(v)}
+                            </td>
+                          ))}
+                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                            {formatCurrencyPrecise(canalRow.acumulado)}
+                          </td>
+                        </tr>
+                      ))}
+                    {isOpen &&
+                      isCmvRow &&
+                      (classificacoesNoCmv ?? []).map((classificacao) => {
+                        const { values, acumulado } = classTotals(payables, classificacao);
+                        if (acumulado <= 0) return null;
+                        const subOpen = cmvSubAberta === classificacao;
+                        return (
+                          <Fragment key={classificacao}>
+                            <tr
+                              onClick={() => setCmvSubAberta(subOpen ? null : classificacao)}
+                              className="cursor-pointer border-b border-border-subtle bg-surface/60 hover:bg-surface-muted/60"
+                            >
+                              <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">
+                                <span className="inline-flex items-center gap-1">
+                                  <ChevronRight size={11} className={`text-faint transition-transform ${subOpen ? "rotate-90" : ""}`} />
+                                  {classificacao}
+                                </span>
+                              </td>
+                              {values.map((v, i) => (
+                                <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(v)}
+                                </td>
+                              ))}
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                {formatCurrencyPrecise(acumulado)}
+                              </td>
+                            </tr>
+                            {subOpen &&
+                              categoriaRowsFor(payables, classificacao).map((catRow) => {
+                                const catKey = `${classificacao}|${catRow.categoria}`;
+                                const catOpen = categoriaAberta === catKey;
+                                return (
+                                  <Fragment key={catKey}>
+                                    <tr
+                                      onClick={() => setCategoriaAberta(catOpen ? null : catKey)}
+                                      className="cursor-pointer border-b border-border-subtle bg-surface/30 hover:bg-surface-muted/60"
+                                    >
+                                      <td className="py-2 pl-14 pr-3 whitespace-nowrap sticky left-0 bg-surface text-[11px] text-faint">
+                                        <span className="inline-flex items-center gap-1">
+                                          <ChevronRight size={10} className={`text-faint transition-transform ${catOpen ? "rotate-90" : ""}`} />
+                                          {catRow.categoria}
+                                        </span>
+                                      </td>
+                                      {catRow.values.map((v, i) => (
+                                        <td key={i} className="py-2 px-3 text-right text-[11px] tabular-nums text-faint whitespace-nowrap">
+                                          {formatCurrencyPrecise(v)}
+                                        </td>
+                                      ))}
+                                      <td className="py-2 pl-3 pr-5 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
+                                        {formatCurrencyPrecise(catRow.acumulado)}
+                                      </td>
+                                    </tr>
+                                    {catOpen && (
+                                      <tr className="border-b border-border-subtle bg-surface/20">
+                                        <td colSpan={dreMonths.length + 2} className="py-2 pl-20 pr-5">
+                                          <div className="flex flex-col gap-1">
+                                            {catRow.lancamentos.map((l) => (
+                                              <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
+                                                <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
+                                                <span className="flex-1 truncate">
+                                                  {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
+                                                  {l.descricao}
+                                                </span>
+                                                <span className="tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </Fragment>
+                                );
+                              })}
+                          </Fragment>
+                        );
+                      })}
                   </Fragment>
                 );
               })}

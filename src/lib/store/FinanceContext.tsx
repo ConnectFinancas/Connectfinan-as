@@ -74,6 +74,7 @@ type FinanceContextValue = FinanceState &
     | "destaquesPeriodo"
     | "resumoExecutivo"
     | "pontoDeAtencao"
+    | "classificacoesNoCmv"
   > & {
   client: Client;
   fluxoDiario: { dia: string; saldo: number }[];
@@ -326,6 +327,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     destaquesPeriodo: seed.destaquesPeriodo,
     resumoExecutivo: seed.resumoExecutivo,
     pontoDeAtencao: seed.pontoDeAtencao,
+    classificacoesNoCmv: seed.classificacoesNoCmv,
     addPayable,
     addReceivable,
     markPago,

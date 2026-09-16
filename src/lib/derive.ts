@@ -36,6 +36,19 @@ export function comissaoMarketplacePorCanal(marketplaceManual: Record<Marketplac
     .sort((a, b) => b.acumulado - a.acumulado);
 }
 
+// Mesma ideia, mas pra parte do CMV que vem de marketplaceManual (o restante do CMV vem de
+// Contas a Pagar, via classificacoesNoCmv — esse drill-down fica a cargo de categoriaRowsFor).
+export function cmvMarketplacePorCanal(marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>) {
+  return (Object.keys(marketplaceManual) as MarketplaceCanal[])
+    .map((canal) => {
+      const values = marketplaceManual[canal].cmv.map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { canal, label: MARKETPLACE_LABELS[canal], values, acumulado };
+    })
+    .filter((row) => row.acumulado > 0)
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 export function emptyMarketplaceManual(): Record<MarketplaceCanal, MarketplaceMensal> {
   const canal = (): MarketplaceMensal => ({
     receita: Array(12).fill(0),
