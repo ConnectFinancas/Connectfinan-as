@@ -82,6 +82,8 @@ export default function FluxoDeCaixaPage() {
     receivables,
     categoriasPagar,
     summary,
+    custosVariaveisDre,
+    custosFixosClassificacoesExtras,
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
@@ -93,8 +95,13 @@ export default function FluxoDeCaixaPage() {
   const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
-  const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid);
-  const margemEPontoEquilibrioPorMes = computeMargemEPontoEquilibrioPorMes(summary.dreGrid);
+  const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(summary.dreGrid, custosVariaveisDre, payables, custosFixosClassificacoesExtras);
+  const margemEPontoEquilibrioPorMes = computeMargemEPontoEquilibrioPorMes(
+    summary.dreGrid,
+    custosVariaveisDre,
+    payables,
+    custosFixosClassificacoesExtras
+  );
   const capitalDeGiro = computeCapitalDeGiroRecomendado(payables);
 
   // Visão inspirada em outro sistema que o cliente usa (Arken): os mesmos dados do DRE por
@@ -468,7 +475,10 @@ export default function FluxoDeCaixaPage() {
           <h2 className="text-sm font-semibold text-brand-900">Margem e Ponto de Equilíbrio</h2>
         </div>
         <p className="-mt-3 mb-4 text-xs text-faint">
-          A partir do DRE por competência: custos variáveis = CMV; custos fixos = demais despesas do período.
+          A partir do DRE por competência: custos variáveis = CMV
+          {custosVariaveisDre && custosVariaveisDre.length > 0 ? " + comissão + frete + imposto + devoluções" : ""}; custos fixos =
+          demais despesas do período
+          {custosFixosClassificacoesExtras && custosFixosClassificacoesExtras.length > 0 ? " + valor pago a fornecedores" : ""}.
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg bg-surface-muted p-3">

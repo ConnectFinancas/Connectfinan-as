@@ -206,6 +206,17 @@ export type ClientFinanceData = {
   // vez de 0) e o saldoFinal calculado é comparado com o saldoFinalInformado — uma diferença aqui
   // costuma indicar lançamento faltando ou duplicado.
   saldoBancarioMensal?: ({ saldoInicial: number; saldoFinalInformado: number } | undefined)[];
+  // Linhas do DRE (por "label", igual aparecem em dreGrid — ex.: "(-) Comissões de Marketplace",
+  // "Frete pago", "Imposto") que devem contar como custo VARIÁVEL no cálculo de Margem de
+  // Contribuição/Ponto de Equilíbrio, além do CMV (que já entra sempre). Sem isso, só o CMV é
+  // considerado variável — correto pra a maioria dos clientes, mas subestima o custo variável real
+  // de quem vende em marketplace (onde comissão/frete/imposto também variam com cada venda).
+  custosVariaveisDre?: string[];
+  // Classificações de Contas a Pagar que somam em cima de "custos fixos" na Margem de
+  // Contribuição/Ponto de Equilíbrio, mesmo quando excluídas do DRE em si (ex.: COMPRA DE
+  // PRODUTOS, que fica fora do DRE pra não duplicar o CMV que já vem do marketplace, mas
+  // continua sendo dinheiro que precisa sair pra manter o negócio girando).
+  custosFixosClassificacoesExtras?: string[];
   fluxoCaixaPeriodo: string;
   fluxoCaixaKpis: {
     saldoInicial: number;

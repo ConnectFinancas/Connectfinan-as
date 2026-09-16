@@ -684,20 +684,31 @@ export function lancamentosFluxoCaixaPorLinha(
 // outras despesas do DRE (pessoal, administrativas, comerciais etc.), que não escalam
 // diretamente com a receita. É a leitura padrão de ponto de equilíbrio pra um negócio de
 // serviços/varejo, dado o que já está classificado no plano de contas.
-export function computeMargemEPontoEquilibrio(dreGrid: DreGridRow[]) {
+export function computeMargemEPontoEquilibrio(
+  dreGrid: DreGridRow[],
+  custosVariaveisDre?: string[],
+  payables?: Payable[],
+  custosFixosClassificacoesExtras?: string[]
+) {
   const receita = dreGrid.find((r) => r.label === "RECEITA")?.acumulado ?? 0;
   const cmv = dreGrid.find((r) => r.label === "(-) CMV")?.acumulado ?? 0;
-  const custosFixos = dreGrid.find((r) => r.label === "= Despesas totais")?.acumulado ?? 0;
+  const extras = (custosVariaveisDre ?? []).reduce((a, label) => a + (dreGrid.find((r) => r.label === label)?.acumulado ?? 0), 0);
+  const custosVariaveisTotal = round2(cmv + extras);
+  const custosFixosExtras =
+    payables && custosFixosClassificacoesExtras
+      ? payables.filter((p) => custosFixosClassificacoesExtras.includes(p.classificacao)).reduce((a, p) => a + p.valor, 0)
+      : 0;
+  const custosFixos = round2((dreGrid.find((r) => r.label === "= Despesas totais")?.acumulado ?? 0) + custosFixosExtras);
   const resultado = dreGrid.find((r) => r.isTotal)?.acumulado ?? 0;
 
-  const margemContribuicaoPct = receita > 0 ? round2(((receita - cmv) / receita) * 100) : 0;
+  const margemContribuicaoPct = receita > 0 ? round2(((receita - custosVariaveisTotal) / receita) * 100) : 0;
   const margemLiquidaPct = receita > 0 ? round2((resultado / receita) * 100) : 0;
   const pontoEquilibrio = margemContribuicaoPct > 0 ? round2(custosFixos / (margemContribuicaoPct / 100)) : 0;
   const distanciaDoPontoEquilibrio = round2(receita - pontoEquilibrio);
 
   return {
     receita,
-    custosVariaveis: cmv,
+    custosVariaveis: custosVariaveisTotal,
     custosFixos,
     margemContribuicaoPct,
     margemLiquidaPct,
@@ -709,16 +720,27 @@ export function computeMargemEPontoEquilibrio(dreGrid: DreGridRow[]) {
 
 // Mesma conta de computeMargemEPontoEquilibrio, mas mês a mês em vez de só o acumulado do ano —
 // pra clientes que precisam ver quanto precisam faturar por mês, não só no total.
-export function computeMargemEPontoEquilibrioPorMes(dreGrid: DreGridRow[]) {
+export function computeMargemEPontoEquilibrioPorMes(
+  dreGrid: DreGridRow[],
+  custosVariaveisDre?: string[],
+  payables?: Payable[],
+  custosFixosClassificacoesExtras?: string[]
+) {
   const receitaValues = dreGrid.find((r) => r.label === "RECEITA")?.values ?? Array(12).fill(0);
   const cmvValues = dreGrid.find((r) => r.label === "(-) CMV")?.values ?? Array(12).fill(0);
-  const custosFixosValues = dreGrid.find((r) => r.label === "= Despesas totais")?.values ?? Array(12).fill(0);
+  const custosFixosValuesBase = dreGrid.find((r) => r.label === "= Despesas totais")?.values ?? Array(12).fill(0);
+  const extrasRows = (custosVariaveisDre ?? []).map((label) => dreGrid.find((r) => r.label === label)?.values ?? Array(12).fill(0));
+  const custosFixosExtraValues =
+    payables && custosFixosClassificacoesExtras
+      ? monthTotals(payables.filter((p) => custosFixosClassificacoesExtras.includes(p.classificacao)))
+      : Array(12).fill(0);
 
   return dreMonths.map((mes, i) => {
     const receita = receitaValues[i] ?? 0;
-    const cmv = cmvValues[i] ?? 0;
-    const custosFixos = custosFixosValues[i] ?? 0;
-    const margemContribuicao = round2(receita - cmv);
+    const extras = extrasRows.reduce((a, values) => a + (values[i] ?? 0), 0);
+    const custosVariaveisTotal = (cmvValues[i] ?? 0) + extras;
+    const custosFixos = (custosFixosValuesBase[i] ?? 0) + (custosFixosExtraValues[i] ?? 0);
+    const margemContribuicao = round2(receita - custosVariaveisTotal);
     const margemContribuicaoPct = receita > 0 ? round2((margemContribuicao / receita) * 100) : 0;
     const pontoEquilibrio = margemContribuicaoPct > 0 ? round2(custosFixos / (margemContribuicaoPct / 100)) : 0;
     const folga = round2(receita - pontoEquilibrio);

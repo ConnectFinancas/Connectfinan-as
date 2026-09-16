@@ -95,6 +95,26 @@ export const storePlussData: ClientFinanceData = {
     { rotulo: "Imposto", classificacoes: ["IMPOSTOS"] },
   ],
 
+  // Além do CMV, esses custos também variam venda a venda (comissão, frete, imposto,
+  // devoluções) — contam como custo variável na Margem de Contribuição/Ponto de Equilíbrio do
+  // Fluxo de Caixa, em vez de caírem no balde genérico de "custos fixos".
+  custosVariaveisDre: [
+    "(-) Comissões de Marketplace",
+    "Frete pago",
+    "Frete Descontado direto do Tiktok",
+    "Frete Descontado pelo Mercado Livre",
+    "Frete Descontado pela Shopee",
+    "Imposto",
+    "Devoluções e Reembolso",
+  ],
+
+  // NÃO soma COMPRA DE PRODUTOS aqui (mecanismo de custosFixosClassificacoesExtras existe em
+  // derive.ts pra outros clientes, mas foi testado e descartado pra essa) — o custo do produto já
+  // está representado no CMV (informado por marketplace, dentro de custosVariaveisDre acima).
+  // Somar Compra de Produtos (o pagamento real ao fornecedor) por cima conta o custo do produto
+  // DUAS vezes e infla o Ponto de Equilíbrio pra um valor impossível (~R$19,4 milhões/ano contra
+  // R$6,2 milhões de receita real) — confirmado com o Ewerton antes de reverter.
+
   // Saldo bancário real (todas as contas somadas) que o Ewerton informou pra agosto/2026 —
   // índice 7. Usado como saldo inicial de verdade do Fluxo de Caixa e pra conferir o saldo final
   // calculado contra o real (foi assim que achamos o DAS de abril que faltava no relatório).
