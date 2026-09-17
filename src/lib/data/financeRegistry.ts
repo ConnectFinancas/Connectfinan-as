@@ -6,6 +6,7 @@ import { everShoppingData } from "@/lib/data/ever-shopping";
 import { mjShoesData } from "@/lib/data/mj-shoes";
 import { storePlussData } from "@/lib/data/store-pluss";
 import { connectData } from "@/lib/data/connect";
+import { laModasData } from "@/lib/data/la-modas";
 
 export const financeRegistry: Record<string, ClientFinanceData> = {
   "m4-logistica": m4LogisticaData,
@@ -15,6 +16,7 @@ export const financeRegistry: Record<string, ClientFinanceData> = {
   "mj-shoes": mjShoesData,
   "store-pluss": storePlussData,
   connect: connectData,
+  "la-modas": laModasData,
 };
 
 export function getFinanceData(slug: string): ClientFinanceData | undefined {
