@@ -20,12 +20,15 @@ import { ClientFinanceData } from "@/lib/types";
 // - Comissão Vitor e André = 25% do Valor a Gastar; Comissão Sócios Connect = 25% do Valor a
 //   Gastar; Prestação de Serviços CONNECT (despesa administrativa) = 40% do Valor a Gastar.
 //
-// Observação: a soma dos honorários por cliente (linha a linha, como pedido) ficou um pouco
-// abaixo do total que já estava calculado na aba "Ano 2026" da planilha original pra
-// Jun/Jul/Ago (R$ 842,50 em junho, R$ 1.491,00 em julho e agosto) — provavelmente um total que
-// não foi recalculado na planilha depois de alguma mudança no cadastro de clientes daqueles
-// meses. Os valores aqui batem exatamente com a lista de clientes visível no detalhamento; vale
-// conferir com o Ewerton se algum cliente ficou de fora da planilha original.
+// Observação: a soma dos honorários por cliente (linha a linha) ficou um pouco abaixo do total
+// que já estava calculado na aba "Ano 2026" da planilha original pra Jun/Jul/Ago (R$ 842,50 em
+// junho, R$ 1.491,00 em julho e agosto — Jan a Mai batem exatos). A pedido do Ewerton, a receita
+// desses 3 meses foi ajustada pro valor oficial da planilha: cada mês ganhou um lançamento extra
+// em Contas a Receber, cliente "A identificar", descrição "Valor faltante" (ids r290-r292), pra
+// fechar a conta enquanto ele apura a origem da diferença — provavelmente um total que não foi
+// recalculado na planilha depois de alguma mudança no cadastro de clientes daqueles meses.
+// Imposto/Valor a Gastar/Comissões/Despesa Administrativa desses 3 meses já foram recalculados
+// com a receita corrigida.
 export const connectEcommerceData: ClientFinanceData = {
   ocultarCmv: true,
   // Imposto e Investimentos já entram no DRE como linha de destaque (linhasDestaqueDre abaixo) —
@@ -365,6 +368,13 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r287", cliente: "VITRA COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-08-01", valor: 1194.0, status: "recebido", recebimento: "2026-08-01", descricao: "Honorário mensal" },
   { id: "r288", cliente: "VITRA NEGOCIOS DIGITAIS", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-08-01", valor: 347.0, status: "recebido", recebimento: "2026-08-01", descricao: "Honorário mensal" },
   { id: "r289", cliente: "WALLU ECOMERCE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-08-01", valor: 397.0, status: "recebido", recebimento: "2026-08-01", descricao: "Honorário mensal" },
+  // Ajuste pra RECEITA de cada mês bater com o total que já estava calculado na aba "Ano 2026"
+  // da planilha original — a soma linha a linha dos clientes do detalhamento ficou um pouco
+  // abaixo desse total em Jun/Jul/Ago (ver nota no topo do arquivo). Marcado como recebido
+  // (mesmo critério dos demais honorários do período) até o Ewerton apurar a origem da diferença.
+  { id: "r290", cliente: "A identificar", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-06-01", valor: 842.5, status: "recebido", recebimento: "2026-06-01", descricao: "Valor faltante" },
+  { id: "r291", cliente: "A identificar", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-07-01", valor: 1491.0, status: "recebido", recebimento: "2026-07-01", descricao: "Valor faltante" },
+  { id: "r292", cliente: "A identificar", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-08-01", valor: 1491.0, status: "recebido", recebimento: "2026-08-01", descricao: "Valor faltante" },
   ],
 
   seedPayables: [
@@ -388,18 +398,18 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "p18", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-05-01", valor: 4263.51, status: "pago", pagamento: "2026-05-01", descricao: "Comissão Vitor e André (25%) — Maio/2026, calculado sobre o Valor a Gastar do mês" },
   { id: "p19", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-05-01", valor: 4263.51, status: "pago", pagamento: "2026-05-01", descricao: "Comissão Sócios Connect (25%) — Maio/2026, calculado sobre o Valor a Gastar do mês" },
   { id: "p20", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-05-01", valor: 6821.61, status: "pago", pagamento: "2026-05-01", descricao: "Prestação de Serviços CONNECT (40%) — Maio/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p21", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-06-01", valor: 1224.6, status: "pago", pagamento: "2026-06-01", descricao: "Imposto (6% da receita de honorários) — Junho/2026" },
-  { id: "p22", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-06-01", valor: 4796.35, status: "pago", pagamento: "2026-06-01", descricao: "Comissão Vitor e André (25%) — Junho/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p23", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-06-01", valor: 4796.35, status: "pago", pagamento: "2026-06-01", descricao: "Comissão Sócios Connect (25%) — Junho/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p24", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-06-01", valor: 7674.15, status: "pago", pagamento: "2026-06-01", descricao: "Prestação de Serviços CONNECT (40%) — Junho/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p25", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-07-01", valor: 1224.78, status: "pago", pagamento: "2026-07-01", descricao: "Imposto (6% da receita de honorários) — Julho/2026" },
-  { id: "p26", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-07-01", valor: 4152.3, status: "pago", pagamento: "2026-07-01", descricao: "Comissão Vitor e André (25%) — Julho/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p27", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-07-01", valor: 4152.3, status: "pago", pagamento: "2026-07-01", descricao: "Comissão Sócios Connect (25%) — Julho/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p28", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-07-01", valor: 6643.68, status: "pago", pagamento: "2026-07-01", descricao: "Prestação de Serviços CONNECT (40%) — Julho/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p29", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-08-01", valor: 1224.78, status: "pago", pagamento: "2026-08-01", descricao: "Imposto (6% da receita de honorários) — Agosto/2026" },
-  { id: "p30", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-08-01", valor: 4239.05, status: "pago", pagamento: "2026-08-01", descricao: "Comissão Vitor e André (25%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p31", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-08-01", valor: 4239.05, status: "pago", pagamento: "2026-08-01", descricao: "Comissão Sócios Connect (25%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
-  { id: "p32", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-08-01", valor: 6782.48, status: "pago", pagamento: "2026-08-01", descricao: "Prestação de Serviços CONNECT (40%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p21", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-06-01", valor: 1275.15, status: "pago", pagamento: "2026-06-01", descricao: "Imposto (6% da receita de honorários) — Junho/2026" },
+  { id: "p22", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-06-01", valor: 4994.33, status: "pago", pagamento: "2026-06-01", descricao: "Comissão Vitor e André (25%) — Junho/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p23", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-06-01", valor: 4994.33, status: "pago", pagamento: "2026-06-01", descricao: "Comissão Sócios Connect (25%) — Junho/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p24", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-06-01", valor: 7990.93, status: "pago", pagamento: "2026-06-01", descricao: "Prestação de Serviços CONNECT (40%) — Junho/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p25", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-07-01", valor: 1314.24, status: "pago", pagamento: "2026-07-01", descricao: "Imposto (6% da receita de honorários) — Julho/2026" },
+  { id: "p26", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-07-01", valor: 4502.69, status: "pago", pagamento: "2026-07-01", descricao: "Comissão Vitor e André (25%) — Julho/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p27", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-07-01", valor: 4502.69, status: "pago", pagamento: "2026-07-01", descricao: "Comissão Sócios Connect (25%) — Julho/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p28", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-07-01", valor: 7204.3, status: "pago", pagamento: "2026-07-01", descricao: "Prestação de Serviços CONNECT (40%) — Julho/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p29", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-08-01", valor: 1314.24, status: "pago", pagamento: "2026-08-01", descricao: "Imposto (6% da receita de honorários) — Agosto/2026" },
+  { id: "p30", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-08-01", valor: 4589.44, status: "pago", pagamento: "2026-08-01", descricao: "Comissão Vitor e André (25%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p31", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-08-01", valor: 4589.44, status: "pago", pagamento: "2026-08-01", descricao: "Comissão Sócios Connect (25%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p32", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-08-01", valor: 7343.1, status: "pago", pagamento: "2026-08-01", descricao: "Prestação de Serviços CONNECT (40%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
   ],
 
   seedCategoriasPagar: [
