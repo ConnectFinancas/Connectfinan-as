@@ -31,6 +31,9 @@ export type Client = {
   // Quando true, mostra a aba "Informações do DRE" — onde a receita/CMV/comissão por
   // marketplace são digitadas manualmente (ver ClientFinanceData.marketplaceManual).
   temInformacoesDre?: boolean;
+  // "sidebar" troca o menu de abas horizontal (padrão) por uma barra lateral vertical, com os
+  // itens empilhados um abaixo do outro à esquerda do conteúdo.
+  navLayout?: "sidebar";
 };
 
 export type MonthlyFinancials = {

@@ -8,6 +8,7 @@ import { LancamentoModal } from "@/components/client/LancamentoModal";
 import { BulkClassificacaoModal } from "@/components/client/BulkClassificacaoModal";
 import { useFinance } from "@/lib/store/FinanceContext";
 import { displayStatus } from "@/lib/derive";
+import { dreMonths } from "@/lib/constants";
 import { formatDateBR, HOJE, toISO } from "@/lib/today";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { Payable } from "@/lib/types";
@@ -32,8 +33,8 @@ export default function ContasAPagarPage() {
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [classificacaoFiltro, setClassificacaoFiltro] = useState("todas");
-  const [de, setDe] = useState("");
-  const [ate, setAte] = useState("");
+  // Abre já filtrado no mês de competência atual — null = todos os meses (limpar filtros cai aqui).
+  const [mesFiltro, setMesFiltro] = useState<number | null>(HOJE.getMonth());
 
   const rows = useMemo(() => {
     return [...finance.payables]
@@ -41,13 +42,12 @@ export default function ContasAPagarPage() {
         const status = displayStatus(p.status, p.vencimento);
         if (statusFiltro !== "todos" && status !== statusFiltro) return false;
         if (classificacaoFiltro !== "todas" && p.classificacao !== classificacaoFiltro) return false;
-        if (de && p.vencimento < de) return false;
-        if (ate && p.vencimento > ate) return false;
+        if (mesFiltro !== null && new Date(p.vencimento + "T00:00:00").getMonth() !== mesFiltro) return false;
         if (busca && !`${p.favorecido} ${p.descricao}`.toLowerCase().includes(busca.toLowerCase())) return false;
         return true;
       })
       .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
-  }, [finance.payables, busca, statusFiltro, classificacaoFiltro, de, ate]);
+  }, [finance.payables, busca, statusFiltro, classificacaoFiltro, mesFiltro]);
 
   const todosVisiveisSelecionados = rows.length > 0 && rows.every((p) => selecionados.includes(p.id));
 
@@ -55,8 +55,7 @@ export default function ContasAPagarPage() {
     setBusca("");
     setStatusFiltro("todos");
     setClassificacaoFiltro("todas");
-    setDe("");
-    setAte("");
+    setMesFiltro(null);
   }
 
   function toggleTodos() {
@@ -93,12 +92,19 @@ export default function ContasAPagarPage() {
             + Nova despesa
           </button>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Vencimento de</label>
-            <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Até</label>
-            <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900" />
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Mês de competência</label>
+            <select
+              value={mesFiltro === null ? "" : mesFiltro}
+              onChange={(e) => setMesFiltro(e.target.value === "" ? null : Number(e.target.value))}
+              className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900"
+            >
+              <option value="">Todos os meses</option>
+              {dreMonths.map((m, i) => (
+                <option key={m} value={i}>
+                  {m}/2026
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Classificação financeira</label>

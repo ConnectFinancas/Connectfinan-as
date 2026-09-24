@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bell, Building2 } from "lucide-react";
 import { Client } from "@/lib/types";
+import { LogoutButton } from "@/components/LogoutButton";
 
 // Header dedicado pros clientes do tipo "tarefas" (ex.: Ewerton) — sem as abas financeiras,
 // já que esse cliente não tem DRE/Contas a Pagar/etc., só o quadro de tarefas.
@@ -37,6 +38,7 @@ export function TarefasHeader({ client }: { client: Client }) {
               <p className="text-[10px] text-faint">BPO Financeiro</p>
             </div>
           </div>
+          <LogoutButton />
         </div>
       </div>
     </header>

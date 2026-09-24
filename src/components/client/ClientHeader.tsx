@@ -4,16 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Building2 } from "lucide-react";
 import { Client } from "@/lib/types";
-import { clientNavItems } from "@/lib/nav";
+import { visibleNavItems } from "@/lib/nav";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export function ClientHeader({ client }: { client: Client }) {
   const pathname = usePathname();
   const base = `/clientes/${client.slug}`;
-  const items = clientNavItems(base).filter((item) => {
-    if (client.conciliacaoExterna && item.href === `${base}/conciliacao-bancaria`) return false;
-    if (!client.temInformacoesDre && item.href === `${base}/informacoes-dre`) return false;
-    return true;
-  });
+  const items = visibleNavItems(client, base);
 
   const active = items.find((item) => (item.exact ? pathname === item.href : pathname.startsWith(item.href))) ?? items[0];
 
@@ -49,10 +46,13 @@ export function ClientHeader({ client }: { client: Client }) {
               <p className="text-[10px] text-faint">BPO Financeiro</p>
             </div>
           </div>
+          <LogoutButton />
         </div>
       </div>
 
-      <nav className="flex gap-5 overflow-x-auto px-5 lg:px-8 scrollbar-thin">
+      <nav
+        className={`flex gap-5 overflow-x-auto px-5 lg:px-8 scrollbar-thin ${client.navLayout === "sidebar" ? "lg:hidden" : ""}`}
+      >
         {items.map((item) => {
           const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           return (

@@ -113,6 +113,7 @@ export const clients: Client[] = [
     responsible: "Ewerton Lucas",
     regime: "Simples Nacional",
     theme: "light",
+    navLayout: "sidebar",
   },
   {
     slug: "grupo-vale-verde",

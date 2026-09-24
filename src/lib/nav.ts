@@ -9,6 +9,7 @@ import {
   Settings2,
   UploadCloud,
 } from "lucide-react";
+import { Client } from "@/lib/types";
 
 export type NavItem = {
   href: string;
@@ -96,4 +97,15 @@ export function clientNavItems(base: string): NavItem[] {
       icon: Landmark,
     },
   ];
+}
+
+// Mesmos itens de clientNavItems, já filtrados pelas abas que esse cliente não deve ver
+// (conciliação externa, sem Informações do DRE) — usado tanto pelo menu horizontal padrão
+// quanto pela barra lateral (navLayout: "sidebar").
+export function visibleNavItems(client: Pick<Client, "conciliacaoExterna" | "temInformacoesDre">, base: string): NavItem[] {
+  return clientNavItems(base).filter((item) => {
+    if (client.conciliacaoExterna && item.href === `${base}/conciliacao-bancaria`) return false;
+    if (!client.temInformacoesDre && item.href === `${base}/informacoes-dre`) return false;
+    return true;
+  });
 }
