@@ -10,7 +10,7 @@ import { ClientFinanceData } from "@/lib/types";
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
   // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 15,
+  dataVersion: 16,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -100,7 +100,8 @@ export const storePlussData: ClientFinanceData = {
     },
     { rotulo: "Frete Descontado direto do Tiktok", marketplaceCampo: { canal: "tiktok", campo: "freteDescontado" } },
     { rotulo: "Frete Descontado pelo Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "freteDescontado" } },
-    { rotulo: "Frete Descontado pela Shopee", marketplaceCampo: { canal: "shopee", campo: "freteDescontado" } },
+    // "Frete Descontado pela Shopee" removido do DRE a pedido do Ewerton (não deve mais ser
+    // considerado nessa análise).
     // Ads/afiliados digitados manualmente na aba Informações do DRE (sem relatório automático) —
     // agosto da Shopee fica de fora porque já está lançada em Contas a Pagar (ver marketplaceManual
     // acima); Mercado Livre ainda não tem valor, fica pendente do Ewerton.
@@ -117,7 +118,6 @@ export const storePlussData: ClientFinanceData = {
     "Frete pago",
     "Frete Descontado direto do Tiktok",
     "Frete Descontado pelo Mercado Livre",
-    "Frete Descontado pela Shopee",
     "Imposto",
     "Devoluções e Reembolso",
     "Afiliados Mercado Livre",
@@ -630,7 +630,8 @@ export const storePlussData: ClientFinanceData = {
     // direto do saldo do ML (por isso lançadas como pagas, com data igual ao fim do período). O
     // restante do relatório (tarifas de envios, tarifas de venda, impostos, cancelamentos etc.,
     // já contabilizados via marketplaceManual) foi desconsiderado a pedido do Ewerton.
-    { id: "p206", favorecido: "Mercado Livre", categoria: "Taxa de Parcelamento", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-08-31", valor: 9124.42, status: "pago", pagamento: "2026-08-31", descricao: "Taxa de parcelamento - Mercado Livre", conta: "Mercado Livre" },
+    // "p206" (Taxa de Parcelamento - Mercado Livre, R$ 9.124,42) removido do Contas a Pagar e do
+    // DRE a pedido do Ewerton.
     { id: "p207", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-08-31", valor: 7586.98, status: "pago", pagamento: "2026-08-31", descricao: "Tarifa por campanha de publicidade - Mercado Livre", conta: "Mercado Livre" },
     { id: "p208", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-08-31", valor: 5146.58, status: "pago", pagamento: "2026-08-31", descricao: "Tarifas de envios Full - Mercado Livre", conta: "Mercado Livre" },
     { id: "p209", favorecido: "Mercado Livre", categoria: "Tarifas da Minha Página", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-08-31", valor: 99.0, status: "pago", pagamento: "2026-08-31", descricao: "Tarifas da Minha Página - Mercado Livre", conta: "Mercado Livre" },
@@ -1547,7 +1548,6 @@ export const storePlussData: ClientFinanceData = {
       color: "#f97316",
       padrao: true,
       categorias: [
-        { nome: "Taxa de Parcelamento", padrao: false },
         { nome: "Tarifa de Campanha de Publicidade", padrao: false },
         { nome: "Afiliados", padrao: false },
         { nome: "Cupom", padrao: false },

@@ -505,7 +505,8 @@ export function computeFinanceSummary(
 export function computeFluxoCaixa(
   payables: Payable[],
   receivables: Receivable[],
-  saldoBancarioMensal?: ({ saldoInicial: number; saldoFinalInformado: number } | undefined)[]
+  saldoBancarioMensal?: ({ saldoInicial: number; saldoFinalInformado: number } | undefined)[],
+  dreGrid?: DreGridRow[]
 ) {
   const recebidos = receivables.filter((r) => r.status === "recebido" && r.recebimento);
   const pagos = payables.filter((p) => p.status === "pago" && p.pagamento);
@@ -536,8 +537,15 @@ export function computeFluxoCaixa(
   const diferencaSaldo = saldoFinalInformado !== undefined ? round2(saldoFinal - saldoFinalInformado) : undefined;
   const crescimentoCaixa = recebimentos > 0 || pagamentos > 0 ? geracaoLiquidaPct : 0;
 
+  // Faturamento do mês = a mesma linha RECEITA do DRE por competência (já contempla
+  // marketplaceManual quando o cliente tem Informações do DRE) — evita divergir do número que já
+  // aparece na aba Faturamento & DRE. Sem dreGrid disponível, cai pro cálculo direto de Contas a
+  // Receber (clientes sem RECEITA na config, ou chamadas antigas).
+  const receitaRow = dreGrid?.find((r) => r.label === "RECEITA");
   const faturamentoMes = round2(
-    receivables.filter((r) => monthIndex(r.vencimento) === mesReferencia).reduce((a, r) => a + r.valor, 0)
+    receitaRow
+      ? (receitaRow.values[mesReferencia] ?? 0)
+      : receivables.filter((r) => monthIndex(r.vencimento) === mesReferencia).reduce((a, r) => a + r.valor, 0)
   );
   const conversaoEmCaixa = faturamentoMes > 0 ? round2((recebimentos / faturamentoMes) * 100) : 0;
   const diferenca = round2(faturamentoMes - recebimentos);

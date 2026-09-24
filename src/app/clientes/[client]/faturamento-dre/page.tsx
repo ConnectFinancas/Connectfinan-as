@@ -10,7 +10,7 @@ import { useFinance } from "@/lib/store/FinanceContext";
 import { cmvMarketplacePorCanal, comissaoMarketplacePorCanal } from "@/lib/derive";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
-import { Payable } from "@/lib/types";
+import { DreGridRow, MarketplaceCanal, Payable } from "@/lib/types";
 
 const RevenueExpenseChart = dynamic(() => import("@/components/charts/RevenueExpenseChart").then((m) => m.RevenueExpenseChart), {
   ssr: false,
@@ -62,6 +62,11 @@ function categoriaRowsFor(payables: Payable[], classificacao: string) {
     .sort((a, b) => b.acumulado - a.acumulado);
 }
 
+// Formata percentual de representatividade — "—" quando a base é zero (nada pra comparar ainda).
+function formatPct(pct: number | null) {
+  return pct === null ? "—" : `${pct.toFixed(1)}%`;
+}
+
 export default function FaturamentoDrePage() {
   const { summary, payables, marketplaceManual, classificacoesNoCmv } = useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
@@ -69,6 +74,55 @@ export default function FaturamentoDrePage() {
   const [classAberta, setClassAberta] = useState<string | null>(null);
   const [categoriaAberta, setCategoriaAberta] = useState<string | null>(null);
   const [cmvSubAberta, setCmvSubAberta] = useState<string | null>(null);
+  // null = ano inteiro (12 colunas); um índice = mostra só aquele mês na tabela e nos
+  // detalhamentos (categoria/lançamento).
+  const [mesFiltro, setMesFiltro] = useState<number | null>(null);
+  const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
+
+  // Representatividade em %: da RECEITA até "Valor a Gastar"/Lucro Bruto (inclusive), a base é a
+  // receita total (100%). Dali pra baixo (despesas), a base vira o próprio Valor a Gastar — assim
+  // "gastei 20% com despesas de pessoas" é sempre em cima do que sobrou depois do CMV/comissão,
+  // não do faturamento bruto.
+  const receitaRow = dreGrid.find((r) => r.label === "RECEITA");
+  const valorAGastarRow = dreGrid.find((r) => r.label === "= Lucro Bruto ou Valor a Gastar" || r.label === "= Valor a gastar");
+  const valorAGastarIdx = valorAGastarRow ? dreGrid.indexOf(valorAGastarRow) : -1;
+
+  function refValor(row: { values: number[]; acumulado: number }) {
+    return mesFiltro !== null ? row.values[mesFiltro] : row.acumulado;
+  }
+  function pctLinha(row: DreGridRow, idx: number): number | null {
+    if (!receitaRow) return null;
+    const baseRow = valorAGastarRow && idx > valorAGastarIdx ? valorAGastarRow : receitaRow;
+    const base = refValor(baseRow);
+    if (!base) return null;
+    return (refValor(row) / base) * 100;
+  }
+  // Linhas dentro do "(-) CMV" (por canal ou por classificação tipo Insumos/Embalagens) ainda
+  // fazem parte do mesmo bloco da receita — usam a receita total como base, igual a linha-mãe.
+  function pctReceita(row: { values: number[]; acumulado: number }): number | null {
+    if (!receitaRow) return null;
+    const base = refValor(receitaRow);
+    if (!base) return null;
+    return (refValor(row) / base) * 100;
+  }
+  // Categorias dentro de uma despesa (abaixo do Valor a Gastar) usam o Valor a Gastar como base,
+  // igual a classificação-mãe.
+  function pctValorAGastar(row: { values: number[]; acumulado: number }): number | null {
+    if (!valorAGastarRow) return null;
+    const base = refValor(valorAGastarRow);
+    if (!base) return null;
+    return (refValor(row) / base) * 100;
+  }
+  // Comissão/CMV por canal de marketplace: aqui a comparação é com a receita DAQUELE canal, não
+  // com a receita total — "faturei 100 na Shopee e paguei 10 de CMV" = 10% da Shopee, não da loja toda.
+  function pctCanal(canal: MarketplaceCanal, row: { values: number[]; acumulado: number }): number | null {
+    const receitaCanal = marketplaceManual[canal]?.receita ?? [];
+    const base = mesFiltro !== null ? receitaCanal[mesFiltro] : receitaCanal.reduce((a, v) => a + v, 0);
+    if (!base) return null;
+    return (refValor(row) / base) * 100;
+  }
+
+  const colSpanTotal = mesesExibidos.length + 3; // rótulo + meses + acumulado + %
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,6 +132,26 @@ export default function FaturamentoDrePage() {
             <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Ano</label>
             <select className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900">
               <option>{anoCorrente}</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Mês</label>
+            <select
+              value={mesFiltro === null ? "" : mesFiltro}
+              onChange={(e) => {
+                setMesFiltro(e.target.value === "" ? null : Number(e.target.value));
+                setClassAberta(null);
+                setCategoriaAberta(null);
+                setCmvSubAberta(null);
+              }}
+              className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900"
+            >
+              <option value="">Ano inteiro</option>
+              {dreMonths.map((m, i) => (
+                <option key={m} value={i}>
+                  {m}/{anoCorrente}
+                </option>
+              ))}
             </select>
           </div>
           <button
@@ -132,17 +206,25 @@ export default function FaturamentoDrePage() {
       <div className="card overflow-hidden">
         <div className="p-5 pb-4">
           <h2 className="text-sm font-semibold text-brand-900">DRE</h2>
-          <p className="text-xs text-faint">Demonstrativo mês a mês · clique em ▸ para ver as categorias de cada grupo</p>
+          <p className="text-xs text-faint">
+            {mesFiltro !== null ? `Só ${dreMonths[mesFiltro]}/${anoCorrente}` : "Demonstrativo mês a mês"} · clique em ▸ para ver as categorias
+            de cada grupo · % é a representatividade sobre a receita (até o Valor a Gastar) ou sobre o Valor a Gastar (despesas)
+          </p>
         </div>
         <div className="overflow-x-auto pb-2">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border-subtle text-left text-[11px] text-faint">
                 <th className="py-2 pl-5 pr-3 font-medium sticky left-0 bg-surface">Conta</th>
-                {dreMonths.map((m) => (
-                  <th key={m} className="py-2 px-3 text-right font-medium whitespace-nowrap">{m.toUpperCase()}</th>
+                {mesesExibidos.map((i) => (
+                  <th key={dreMonths[i]} className="py-2 px-3 text-right font-medium whitespace-nowrap">
+                    {dreMonths[i].toUpperCase()}
+                  </th>
                 ))}
-                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">Acum. {anoCorrente}</th>
+                <th className="py-2 pl-3 pr-3 text-right font-medium whitespace-nowrap">
+                  {mesFiltro === null ? `Acum. ${anoCorrente}` : "Acum. ano"}
+                </th>
+                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">%</th>
               </tr>
             </thead>
             <tbody>
@@ -150,7 +232,7 @@ export default function FaturamentoDrePage() {
                 if (row.isSection) {
                   return (
                     <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
-                      <td colSpan={dreMonths.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                      <td colSpan={colSpanTotal} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
                         {row.label}
                       </td>
                     </tr>
@@ -167,6 +249,7 @@ export default function FaturamentoDrePage() {
                     ? "text-warn-500"
                     : "text-muted";
                 const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
+                const pct = pctLinha(row, idx);
                 return (
                   <Fragment key={idx}>
                     <tr
@@ -187,18 +270,21 @@ export default function FaturamentoDrePage() {
                           {row.label}
                         </span>
                       </td>
-                      {row.values.map((v, i) => (
+                      {mesesExibidos.map((i) => (
                         <td
                           key={i}
                           className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
-                            row.isTotal ? (v >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
+                            row.isTotal ? (row.values[i] >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
                           }`}
                         >
-                          {formatCurrencyPrecise(v)}
+                          {formatCurrencyPrecise(row.values[i])}
                         </td>
                       ))}
-                      <td className={`py-2.5 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                      <td className={`py-2.5 pl-3 pr-3 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
                         {formatCurrencyPrecise(row.acumulado)}
+                      </td>
+                      <td className="py-2.5 pl-3 pr-5 text-right text-xs tabular-nums whitespace-nowrap font-medium text-brand-700">
+                        {formatPct(pct)}
                       </td>
                     </tr>
                     {isOpen &&
@@ -206,11 +292,12 @@ export default function FaturamentoDrePage() {
                       categoriaRowsFor(payables, row.label).map((catRow) => {
                         const catKey = `${row.label}|${catRow.categoria}`;
                         const catOpen = categoriaAberta === catKey;
+                        const catPct = pctValorAGastar(catRow);
                         return (
                           <Fragment key={catKey}>
                             <tr
                               onClick={() => setCategoriaAberta(catOpen ? null : catKey)}
-                              className="cursor-pointer border-b border-border-subtle bg-surface/60 hover:bg-surface-muted/60"
+                              className="cursor-pointer border-b border-border-subtle bg-client-accent/[0.06] hover:bg-client-accent/[0.1]"
                             >
                               <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">
                                 <span className="inline-flex items-center gap-1">
@@ -218,29 +305,37 @@ export default function FaturamentoDrePage() {
                                   {catRow.categoria}
                                 </span>
                               </td>
-                              {catRow.values.map((v, i) => (
+                              {mesesExibidos.map((i) => (
                                 <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
-                                  {formatCurrencyPrecise(v)}
+                                  {formatCurrencyPrecise(catRow.values[i])}
                                 </td>
                               ))}
-                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                                 {formatCurrencyPrecise(catRow.acumulado)}
+                              </td>
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                {formatPct(catPct)}
                               </td>
                             </tr>
                             {catOpen && (
-                              <tr className="border-b border-border-subtle bg-surface/30">
-                                <td colSpan={dreMonths.length + 2} className="py-2 pl-14 pr-5">
+                              <tr className="border-b border-border-subtle bg-client-accent/[0.1]">
+                                <td colSpan={colSpanTotal} className="py-2 pl-14 pr-5">
                                   <div className="flex max-w-2xl flex-col gap-1">
-                                    {catRow.lancamentos.map((l) => (
-                                      <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
-                                        <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
-                                        <span className="flex-1 truncate">
-                                          {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
-                                          {l.descricao}
-                                        </span>
-                                        <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
-                                      </div>
-                                    ))}
+                                    {catRow.lancamentos
+                                      .filter((l) => mesFiltro === null || new Date(l.vencimento + "T00:00:00").getMonth() === mesFiltro)
+                                      .map((l) => (
+                                        <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
+                                          <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
+                                          <span className="flex-1 truncate">
+                                            {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
+                                            {l.descricao}
+                                          </span>
+                                          <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                        </div>
+                                      ))}
+                                    {catRow.lancamentos.filter(
+                                      (l) => mesFiltro === null || new Date(l.vencimento + "T00:00:00").getMonth() === mesFiltro
+                                    ).length === 0 && <p className="text-[11px] text-faint">Sem lançamentos</p>}
                                   </div>
                                 </td>
                               </tr>
@@ -251,30 +346,36 @@ export default function FaturamentoDrePage() {
                     {isOpen &&
                       isComissaoRow &&
                       comissaoMarketplacePorCanal(marketplaceManual).map((canalRow) => (
-                        <tr key={canalRow.canal} className="border-b border-border-subtle bg-surface/60">
+                        <tr key={canalRow.canal} className="border-b border-border-subtle bg-client-accent/[0.06]">
                           <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
-                          {canalRow.values.map((v, i) => (
+                          {mesesExibidos.map((i) => (
                             <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
-                              {formatCurrencyPrecise(v)}
+                              {formatCurrencyPrecise(canalRow.values[i])}
                             </td>
                           ))}
-                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                          <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                             {formatCurrencyPrecise(canalRow.acumulado)}
+                          </td>
+                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                            {formatPct(pctCanal(canalRow.canal, canalRow))}
                           </td>
                         </tr>
                       ))}
                     {isOpen &&
                       isCmvRow &&
                       cmvMarketplacePorCanal(marketplaceManual).map((canalRow) => (
-                        <tr key={canalRow.canal} className="border-b border-border-subtle bg-surface/60">
+                        <tr key={canalRow.canal} className="border-b border-border-subtle bg-client-accent/[0.06]">
                           <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
-                          {canalRow.values.map((v, i) => (
+                          {mesesExibidos.map((i) => (
                             <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
-                              {formatCurrencyPrecise(v)}
+                              {formatCurrencyPrecise(canalRow.values[i])}
                             </td>
                           ))}
-                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                          <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                             {formatCurrencyPrecise(canalRow.acumulado)}
+                          </td>
+                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                            {formatPct(pctCanal(canalRow.canal, canalRow))}
                           </td>
                         </tr>
                       ))}
@@ -284,11 +385,12 @@ export default function FaturamentoDrePage() {
                         const { values, acumulado } = classTotals(payables, classificacao);
                         if (acumulado <= 0) return null;
                         const subOpen = cmvSubAberta === classificacao;
+                        const subPct = pctReceita({ values, acumulado });
                         return (
                           <Fragment key={classificacao}>
                             <tr
                               onClick={() => setCmvSubAberta(subOpen ? null : classificacao)}
-                              className="cursor-pointer border-b border-border-subtle bg-surface/60 hover:bg-surface-muted/60"
+                              className="cursor-pointer border-b border-border-subtle bg-client-accent/[0.06] hover:bg-client-accent/[0.1]"
                             >
                               <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">
                                 <span className="inline-flex items-center gap-1">
@@ -296,24 +398,31 @@ export default function FaturamentoDrePage() {
                                   {classificacao}
                                 </span>
                               </td>
-                              {values.map((v, i) => (
+                              {mesesExibidos.map((i) => (
                                 <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
-                                  {formatCurrencyPrecise(v)}
+                                  {formatCurrencyPrecise(values[i])}
                                 </td>
                               ))}
-                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                                 {formatCurrencyPrecise(acumulado)}
+                              </td>
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                {formatPct(subPct)}
                               </td>
                             </tr>
                             {subOpen &&
                               categoriaRowsFor(payables, classificacao).map((catRow) => {
                                 const catKey = `${classificacao}|${catRow.categoria}`;
                                 const catOpen = categoriaAberta === catKey;
+                                const catPct = pctReceita(catRow);
+                                const catLancamentos = catRow.lancamentos.filter(
+                                  (l) => mesFiltro === null || new Date(l.vencimento + "T00:00:00").getMonth() === mesFiltro
+                                );
                                 return (
                                   <Fragment key={catKey}>
                                     <tr
                                       onClick={() => setCategoriaAberta(catOpen ? null : catKey)}
-                                      className="cursor-pointer border-b border-border-subtle bg-surface/30 hover:bg-surface-muted/60"
+                                      className="cursor-pointer border-b border-border-subtle bg-client-accent/[0.1] hover:bg-client-accent/[0.14]"
                                     >
                                       <td className="py-2 pl-14 pr-3 whitespace-nowrap sticky left-0 bg-surface text-[11px] text-faint">
                                         <span className="inline-flex items-center gap-1">
@@ -321,20 +430,23 @@ export default function FaturamentoDrePage() {
                                           {catRow.categoria}
                                         </span>
                                       </td>
-                                      {catRow.values.map((v, i) => (
+                                      {mesesExibidos.map((i) => (
                                         <td key={i} className="py-2 px-3 text-right text-[11px] tabular-nums text-faint whitespace-nowrap">
-                                          {formatCurrencyPrecise(v)}
+                                          {formatCurrencyPrecise(catRow.values[i])}
                                         </td>
                                       ))}
-                                      <td className="py-2 pl-3 pr-5 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
+                                      <td className="py-2 pl-3 pr-3 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
                                         {formatCurrencyPrecise(catRow.acumulado)}
+                                      </td>
+                                      <td className="py-2 pl-3 pr-5 text-right text-[11px] font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                        {formatPct(catPct)}
                                       </td>
                                     </tr>
                                     {catOpen && (
-                                      <tr className="border-b border-border-subtle bg-surface/20">
-                                        <td colSpan={dreMonths.length + 2} className="py-2 pl-20 pr-5">
+                                      <tr className="border-b border-border-subtle bg-client-accent/[0.14]">
+                                        <td colSpan={colSpanTotal} className="py-2 pl-20 pr-5">
                                           <div className="flex max-w-2xl flex-col gap-1">
-                                            {catRow.lancamentos.map((l) => (
+                                            {catLancamentos.map((l) => (
                                               <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
                                                 <span className="w-16 shrink-0">{formatDateBR(l.vencimento)}</span>
                                                 <span className="flex-1 truncate">
@@ -344,6 +456,7 @@ export default function FaturamentoDrePage() {
                                                 <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
                                               </div>
                                             ))}
+                                            {catLancamentos.length === 0 && <p className="text-[11px] text-faint">Sem lançamentos</p>}
                                           </div>
                                         </td>
                                       </tr>

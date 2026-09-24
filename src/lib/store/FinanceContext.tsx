@@ -305,8 +305,8 @@ export function FinanceProvider({ client, children }: { client: Client; children
   // Fluxo de Caixa é por regime de caixa (recebimento/pagamento efetivo) — recalculado a partir
   // dos lançamentos reais (inclusive os que a conciliação bancária cria), não do seed estático.
   const fluxoCaixa = useMemo(
-    () => computeFluxoCaixa(state.payables, state.receivables, seed.saldoBancarioMensal),
-    [state.payables, state.receivables, seed.saldoBancarioMensal]
+    () => computeFluxoCaixa(state.payables, state.receivables, seed.saldoBancarioMensal, summary.dreGrid),
+    [state.payables, state.receivables, seed.saldoBancarioMensal, summary.dreGrid]
   );
 
   const fluxoDiario = useMemo(() => {
