@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { IconRail } from "@/components/client/IconRail";
 import { ClientHeader } from "@/components/client/ClientHeader";
-import { ClientSidebarNav } from "@/components/client/ClientSidebarNav";
 import { TarefasHeader } from "@/components/client/TarefasHeader";
 import { ClientFooter } from "@/components/client/ClientFooter";
 import { clients, getClient } from "@/lib/data/clients";
@@ -59,12 +58,9 @@ export default async function ClientLayout({ children, params }: LayoutProps<"/c
       }
     >
       <IconRail client={client} />
-      <div className="sm:pl-14 flex min-h-screen flex-col">
+      <div className={`flex min-h-screen flex-col ${client.navLayout === "sidebar" ? "sm:pl-56" : "sm:pl-14"}`}>
         {ehTarefas ? <TarefasHeader client={client} /> : <ClientHeader client={client} />}
-        <div className="flex flex-1">
-          {!ehTarefas && client.navLayout === "sidebar" && <ClientSidebarNav client={client} />}
-          <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
-        </div>
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
         <ClientFooter clientName={client.name} />
       </div>
     </div>
