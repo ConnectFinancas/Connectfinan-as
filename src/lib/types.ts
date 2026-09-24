@@ -34,6 +34,9 @@ export type Client = {
   // "sidebar" troca o menu de abas horizontal (padrão) por uma barra lateral vertical, com os
   // itens empilhados um abaixo do outro à esquerda do conteúdo.
   navLayout?: "sidebar";
+  // Quando true, mostra a aba "Precificação" — calculadora de margem/preço por produto e
+  // plataforma de venda, com ponto de equilíbrio a partir dos custos fixos cadastrados.
+  temPrecificacao?: boolean;
 };
 
 export type MonthlyFinancials = {

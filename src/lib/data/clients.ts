@@ -128,6 +128,7 @@ export const clients: Client[] = [
     regime: "Simples Nacional",
     theme: "light",
     navLayout: "sidebar",
+    temPrecificacao: true,
   },
   {
     slug: "grupo-vale-verde",

@@ -1,7 +1,9 @@
 import {
   ArrowLeftRight,
+  Calculator,
   ClipboardEdit,
   FileSpreadsheet,
+  FlaskConical,
   Landmark,
   LayoutDashboard,
   LucideIcon,
@@ -73,6 +75,22 @@ export function clientNavItems(base: string): NavItem[] {
       icon: ArrowLeftRight,
     },
     {
+      href: `${base}/precificacao`,
+      label: "Precificação",
+      shortLabel: "Precificação",
+      pageTitle: "Precificação",
+      subtitle: "Calculadora de margem, preço e ponto de equilíbrio por produto",
+      icon: Calculator,
+    },
+    {
+      href: `${base}/simulador`,
+      label: "Simulador",
+      shortLabel: "Simulador",
+      pageTitle: "Simulador",
+      subtitle: "Teste cenários antes de mexer nos dados reais da operação",
+      icon: FlaskConical,
+    },
+    {
       href: `${base}/conciliacao-bancaria`,
       label: "Conciliação Bancária",
       shortLabel: "Conciliação Bancária",
@@ -102,10 +120,15 @@ export function clientNavItems(base: string): NavItem[] {
 // Mesmos itens de clientNavItems, já filtrados pelas abas que esse cliente não deve ver
 // (conciliação externa, sem Informações do DRE) — usado tanto pelo menu horizontal padrão
 // quanto pela barra lateral (navLayout: "sidebar").
-export function visibleNavItems(client: Pick<Client, "conciliacaoExterna" | "temInformacoesDre">, base: string): NavItem[] {
+export function visibleNavItems(
+  client: Pick<Client, "conciliacaoExterna" | "temInformacoesDre" | "temPrecificacao">,
+  base: string
+): NavItem[] {
   return clientNavItems(base).filter((item) => {
     if (client.conciliacaoExterna && item.href === `${base}/conciliacao-bancaria`) return false;
     if (!client.temInformacoesDre && item.href === `${base}/informacoes-dre`) return false;
+    if (!client.temPrecificacao && item.href === `${base}/precificacao`) return false;
+    if (!client.temPrecificacao && item.href === `${base}/simulador`) return false;
     return true;
   });
 }
