@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { ClientCard } from "@/components/ClientCard";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -40,6 +41,12 @@ export default async function ClientPortfolioPage() {
       .eq("colaborador_id", profile.id);
     const liberados = new Set((permissoes ?? []).map((p) => p.client_slug));
     clientesVisiveis = clients.filter((c) => liberados.has(c.slug));
+
+    // Colaborador com acesso a um único cliente não precisa ver o hub — vai direto pro painel
+    // desse cliente (no login e em qualquer navegação de volta pra "/").
+    if (clientesVisiveis.length === 1) {
+      redirect(`/clientes/${clientesVisiveis[0].slug}`);
+    }
   }
 
   const activeClients = clientesVisiveis.filter((c) => c.status === "ativo").length;
