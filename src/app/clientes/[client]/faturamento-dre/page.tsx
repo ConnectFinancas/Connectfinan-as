@@ -122,7 +122,8 @@ export default function FaturamentoDrePage() {
     return (refValor(row) / base) * 100;
   }
 
-  const colSpanTotal = mesesExibidos.length + 3; // rótulo + meses + acumulado + %
+  // rótulo + meses + (acumulado do ano, só quando "ano inteiro" está selecionado) + %
+  const colSpanTotal = mesesExibidos.length + (mesFiltro === null ? 3 : 2);
 
   return (
     <div className="flex flex-col gap-6">
@@ -208,7 +209,8 @@ export default function FaturamentoDrePage() {
           <h2 className="text-sm font-semibold text-brand-900">DRE</h2>
           <p className="text-xs text-faint">
             {mesFiltro !== null ? `Só ${dreMonths[mesFiltro]}/${anoCorrente}` : "Demonstrativo mês a mês"} · clique em ▸ para ver as categorias
-            de cada grupo · % é a representatividade sobre a receita (até o Valor a Gastar) ou sobre o Valor a Gastar (despesas)
+            de cada grupo · % é a representatividade sobre a receita (até o Valor a Gastar) ou sobre o Valor a Gastar (despesas){" "}
+            {mesFiltro !== null ? `— sempre do mês selecionado` : "— do ano inteiro"}
           </p>
         </div>
         <div className="overflow-x-auto pb-2">
@@ -221,9 +223,9 @@ export default function FaturamentoDrePage() {
                     {dreMonths[i].toUpperCase()}
                   </th>
                 ))}
-                <th className="py-2 pl-3 pr-3 text-right font-medium whitespace-nowrap">
-                  {mesFiltro === null ? `Acum. ${anoCorrente}` : "Acum. ano"}
-                </th>
+                {mesFiltro === null && (
+                  <th className="py-2 pl-3 pr-3 text-right font-medium whitespace-nowrap">Acum. {anoCorrente}</th>
+                )}
                 <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">%</th>
               </tr>
             </thead>
@@ -280,9 +282,11 @@ export default function FaturamentoDrePage() {
                           {formatCurrencyPrecise(row.values[i])}
                         </td>
                       ))}
-                      <td className={`py-2.5 pl-3 pr-3 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
-                        {formatCurrencyPrecise(row.acumulado)}
-                      </td>
+                      {mesFiltro === null && (
+                        <td className={`py-2.5 pl-3 pr-3 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                          {formatCurrencyPrecise(row.acumulado)}
+                        </td>
+                      )}
                       <td className="py-2.5 pl-3 pr-5 text-right text-xs tabular-nums whitespace-nowrap font-medium text-brand-700">
                         {formatPct(pct)}
                       </td>
@@ -310,9 +314,11 @@ export default function FaturamentoDrePage() {
                                   {formatCurrencyPrecise(catRow.values[i])}
                                 </td>
                               ))}
-                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
-                                {formatCurrencyPrecise(catRow.acumulado)}
-                              </td>
+                              {mesFiltro === null && (
+                                <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(catRow.acumulado)}
+                                </td>
+                              )}
                               <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
                                 {formatPct(catPct)}
                               </td>
@@ -353,9 +359,11 @@ export default function FaturamentoDrePage() {
                               {formatCurrencyPrecise(canalRow.values[i])}
                             </td>
                           ))}
-                          <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
-                            {formatCurrencyPrecise(canalRow.acumulado)}
-                          </td>
+                          {mesFiltro === null && (
+                            <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(canalRow.acumulado)}
+                            </td>
+                          )}
                           <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
                             {formatPct(pctCanal(canalRow.canal, canalRow))}
                           </td>
@@ -371,9 +379,11 @@ export default function FaturamentoDrePage() {
                               {formatCurrencyPrecise(canalRow.values[i])}
                             </td>
                           ))}
-                          <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
-                            {formatCurrencyPrecise(canalRow.acumulado)}
-                          </td>
+                          {mesFiltro === null && (
+                            <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(canalRow.acumulado)}
+                            </td>
+                          )}
                           <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
                             {formatPct(pctCanal(canalRow.canal, canalRow))}
                           </td>
@@ -403,9 +413,11 @@ export default function FaturamentoDrePage() {
                                   {formatCurrencyPrecise(values[i])}
                                 </td>
                               ))}
-                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
-                                {formatCurrencyPrecise(acumulado)}
-                              </td>
+                              {mesFiltro === null && (
+                                <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(acumulado)}
+                                </td>
+                              )}
                               <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
                                 {formatPct(subPct)}
                               </td>
@@ -435,9 +447,11 @@ export default function FaturamentoDrePage() {
                                           {formatCurrencyPrecise(catRow.values[i])}
                                         </td>
                                       ))}
-                                      <td className="py-2 pl-3 pr-3 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
-                                        {formatCurrencyPrecise(catRow.acumulado)}
-                                      </td>
+                                      {mesFiltro === null && (
+                                        <td className="py-2 pl-3 pr-3 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
+                                          {formatCurrencyPrecise(catRow.acumulado)}
+                                        </td>
+                                      )}
                                       <td className="py-2 pl-3 pr-5 text-right text-[11px] font-medium tabular-nums text-brand-700 whitespace-nowrap">
                                         {formatPct(catPct)}
                                       </td>
