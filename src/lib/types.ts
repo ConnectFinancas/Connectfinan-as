@@ -172,6 +172,10 @@ export type LinhaDestaqueDre = {
   classificacoes?: string[];
   categorias?: { classificacao: string; categoria: string }[];
   marketplaceCampo?: { canal: MarketplaceCanal; campo: keyof MarketplaceMensal };
+  // Soma, por mês (pela data de vencimento), os Recebíveis com status "pendente" — usado pra uma
+  // linha de "Inadimplência" no DRE baseada no que foi lançado em Contas a Receber mas não
+  // recebido, em vez de vir de Contas a Pagar. Sem lista, soma todas as classificações.
+  receivablesPendentesClassificacoes?: string[];
 };
 
 export type ClientFinanceData = {
@@ -198,6 +202,9 @@ export type ClientFinanceData = {
   // Classificações de Contas a Pagar que entram no DRE dentro do detalhamento do CMV, em vez de
   // como linha de despesa própria — ex.: insumos/embalagens que compõem o custo do produto.
   classificacoesNoCmv?: string[];
+  // Quando true, a linha "(-) CMV" some do DRE inteiramente — pra clientes de serviço/honorário
+  // que não têm custo de mercadoria vendida (ex.: Connect Ecommerce).
+  ocultarCmv?: boolean;
   // Receita/CMV/comissão por marketplace, digitados manualmente (ver MarketplaceMensal acima).
   // Quando presente, soma automaticamente na RECEITA e no CMV do DRE, e a Comissão vira uma
   // linha própria de dedução.

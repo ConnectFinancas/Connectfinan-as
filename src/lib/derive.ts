@@ -77,14 +77,17 @@ export function emptyMarketplaceManual(): Record<MarketplaceCanal, MarketplaceMe
 type DreConfig = {
   classificacoesForaDoDre?: string[];
   classificacoesNoCmv?: string[];
+  ocultarCmv?: boolean;
   marketplaceManual?: Record<MarketplaceCanal, MarketplaceMensal>;
   linhasDestaqueDre?: LinhaDestaqueDre[];
 };
 
 // Total mensal de uma linha de destaque do DRE — soma classificações inteiras, categorias
-// específicas, ou um campo digitado manualmente por marketplace (ver LinhaDestaqueDre).
+// específicas, um campo digitado manualmente por marketplace, ou recebíveis pendentes (ver
+// LinhaDestaqueDre).
 function valoresDestaque(
   payables: Payable[],
+  receivables: Receivable[],
   marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal> | undefined,
   linha: LinhaDestaqueDre
 ): number[] {
@@ -97,6 +100,12 @@ function valoresDestaque(
   }
   if (linha.marketplaceCampo && marketplaceManual) {
     return marketplaceManual[linha.marketplaceCampo.canal][linha.marketplaceCampo.campo];
+  }
+  if (linha.receivablesPendentesClassificacoes) {
+    const filtro = linha.receivablesPendentesClassificacoes;
+    return monthTotals(
+      receivables.filter((r) => r.status === "pendente" && (filtro.length === 0 || filtro.includes(r.classificacao)))
+    );
   }
   return Array(12).fill(0);
 }
@@ -247,6 +256,7 @@ export function computeReceitaPorServico(
 
 export function computeDreGrid(
   payables: Payable[],
+  receivables: Receivable[],
   categorias: CategoryGroup[],
   receitaBrutaBase: number[],
   acumReceitaBase: number,
@@ -294,7 +304,7 @@ export function computeDreGrid(
   // deduções manuais, indo direto pro "Lucro Bruto ou Valor a Gastar".
   const linhasDestaque = dreConfig.linhasDestaqueDre ?? [];
   const destaqueRows = linhasDestaque.map((linha) => {
-    const values = valoresDestaque(payables, dreConfig.marketplaceManual, linha).map(round2);
+    const values = valoresDestaque(payables, receivables, dreConfig.marketplaceManual, linha).map(round2);
     const acumulado = round2(values.reduce((a, v) => a + v, 0));
     return { label: linha.rotulo, values, acumulado, negative: true };
   });
@@ -344,7 +354,9 @@ export function computeDreGrid(
     ...(temMarketplace
       ? [{ label: "(-) Comissões de Marketplace", values: comissaoValues, acumulado: acumComissao, negative: true, expandable: true }]
       : []),
-    { label: "(-) CMV", values: cmvValues.map(round2), acumulado: acumCmv, negative: true, expandable: true },
+    ...(dreConfig.ocultarCmv
+      ? []
+      : [{ label: "(-) CMV", values: cmvValues.map(round2), acumulado: acumCmv, negative: true, expandable: true }]),
     ...(usaDestaque
       ? [...destaqueRows, { label: "= Lucro Bruto ou Valor a Gastar", values: valorAGastar.map(round2), acumulado: acumValorAGastar, isSubtotal: true }]
       : [
@@ -439,7 +451,16 @@ export function computeFinanceSummary(
   const receitaBrutaPorMesBase = monthTotals(receivables);
   const acumReceitaBase = round2(receitaBrutaPorMesBase.reduce((a, v) => a + v, 0));
 
-  const dreGrid = computeDreGrid(payables, categoriasPagar, receitaBrutaPorMesBase, acumReceitaBase, deducoesManuais, cmvManual, dreConfig);
+  const dreGrid = computeDreGrid(
+    payables,
+    receivables,
+    categoriasPagar,
+    receitaBrutaPorMesBase,
+    acumReceitaBase,
+    deducoesManuais,
+    cmvManual,
+    dreConfig
+  );
   // Receita "oficial" pro resto do Resumo (inclui a receita extra de marketplace, se houver) —
   // lida direto da linha RECEITA do próprio grid pra não duplicar a soma aqui.
   const receitaBrutaPorMes = dreGrid.find((r) => r.label === "RECEITA")?.values ?? receitaBrutaPorMesBase;

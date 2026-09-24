@@ -282,10 +282,18 @@ export function FinanceProvider({ client, children }: { client: Client; children
     () => ({
       classificacoesForaDoDre: seed.classificacoesForaDoDre,
       classificacoesNoCmv: seed.classificacoesNoCmv,
+      ocultarCmv: seed.ocultarCmv,
       marketplaceManual: client.temInformacoesDre ? state.marketplaceManual : undefined,
       linhasDestaqueDre: seed.linhasDestaqueDre,
     }),
-    [seed.classificacoesForaDoDre, seed.classificacoesNoCmv, seed.linhasDestaqueDre, client.temInformacoesDre, state.marketplaceManual]
+    [
+      seed.classificacoesForaDoDre,
+      seed.classificacoesNoCmv,
+      seed.ocultarCmv,
+      seed.linhasDestaqueDre,
+      client.temInformacoesDre,
+      state.marketplaceManual,
+    ]
   );
 
   const summary = useMemo(
