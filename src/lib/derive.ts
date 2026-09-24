@@ -23,6 +23,19 @@ export const MARKETPLACE_LABELS: Record<MarketplaceCanal, string> = {
   tiktok: "TikTok Shop",
 };
 
+// Drill-down da linha "RECEITA" do DRE, pra clientes com marketplaceManual: abre a receita
+// bruta de cada canal, mês a mês, em vez de ir direto pra lançamentos.
+export function receitaMarketplacePorCanal(marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>) {
+  return (Object.keys(marketplaceManual) as MarketplaceCanal[])
+    .map((canal) => {
+      const values = marketplaceManual[canal].receita.map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { canal, label: MARKETPLACE_LABELS[canal], values, acumulado };
+    })
+    .filter((row) => row.acumulado > 0)
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 // Drill-down da linha "(-) Comissões de Marketplace" do DRE: abre em vez de lançamentos (essa
 // linha não vem de Contas a Pagar) o valor de comissão de cada canal, mês a mês.
 export function comissaoMarketplacePorCanal(marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>) {
