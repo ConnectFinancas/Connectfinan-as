@@ -9,8 +9,10 @@ import { ClientFinanceData } from "@/lib/types";
 // da aba "Informações do DRE" (ver marketplaceManual/linhasDestaqueDre e computeDreGrid).
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
-  // este número — ver o comentário de dataVersion em types.ts.
-  dataVersion: 16,
+  // este número — ver o comentário de dataVersion em types.ts. Bump 16 → 17: sem alteração nos
+  // dados em si, só forçando a reconciliação — corrige exclusões acidentais de lançamentos de
+  // Contas a Pagar de agosto/2026 feitas pela tela (a base aqui sempre esteve intacta).
+  dataVersion: 17,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
