@@ -14,10 +14,15 @@ import { ClientFinanceData } from "@/lib/types";
 //   derive.ts) pra não duplicar o CMV oficial (abaixo, em cmvManual); ficam visíveis em Contas a
 //   Pagar e no Fluxo de Caixa normalmente. 5 lançamentos desse mesmo bloco (FIDC Multissetorial,
 //   Master Giro Fomento x2, Mille-FIDC, Solus Fundo de Investimento) são fomento/factoring, não
-//   compra de produto — fui para "DESPESAS FINANCEIRAS / Empréstimos e Antecipações". Alguns
-//   favorecidos desse bloco (Miranda Cavalcanti de Andrade, Wolney Cavalcanti Silva, Valéria
-//   Correia Carneiro Mello — mesmo nome de uma colaboradora da folha) têm valores altos ou
-//   repetidos; classifiquei como CMV por padrão, mas vale confirmar com o Ewerton.
+//   compra de produto — fui para "DESPESAS FINANCEIRAS / Empréstimos e Antecipações".
+// - Confirmado com o Ewerton: o pagamento a "Valéria Correia Carneiro Mello" (R$1.932,50) é
+//   salário dela, não fornecedor — reclassificado pra DESPESAS C/PESSOAS/Salário. Os 5
+//   lançamentos pra "Miranda Cavalcanti de Andrade"/"Miranda C de Andrade Artigos do Vestuário"
+//   (R$48.000 no total) são transferência entre contas próprias/de sócio, não despesa — removidos
+//   daqui (o sistema ainda não tem um jeito de pré-cadastrar transferência histórica via seed;
+//   só dá pra lançar pela tela de Contas, se quiser esse histórico visível lá).
+//   "Wolney Cavalcanti Silva" (2 lançamentos, R$2.000 + R$2.123,00, mesmo nome em datas
+//   diferentes) continua como CMV, ainda sem confirmação.
 // - cmvManual (abaixo) usa o "CMV PRODUTOS" oficial da aba Ano 2026 (R$93.465,51) — não é a soma
 //   dos pagamentos a fornecedor de maio (R$88.995,54 no Detalhamento), porque CMV é regime de
 //   competência (o que foi vendido), não o que foi pago no mês; a diferença é normal.
@@ -28,11 +33,12 @@ import { ClientFinanceData } from "@/lib/types";
 //   original o "VALOR A GASTAR"/"GERAÇÃO DE CAIXA" da aba Ano 2026 não desconta Impostos (parece
 //   lacuna na fórmula da planilha deles), então o resultado final aqui fica menor que o de lá.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 2 → 6: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
+  // Bump 2 → 7: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
   // lançamentos futuros da Reylane (demitida), valor de Salário fixado em R$1.500,00 para
-  // Lucas/July/Valéria/Thamires, remoção de todos os lançamentos de Complemento Salarial, e
-  // construção do Contas a Pagar/Receber de maio/2026 a partir do Detalhamento da planilha DRE.
-  dataVersion: 6,
+  // Lucas/July/Valéria/Thamires, remoção de todos os lançamentos de Complemento Salarial,
+  // construção do Contas a Pagar/Receber de maio/2026 a partir do Detalhamento da planilha DRE, e
+  // correção dos lançamentos de Valéria (salário) e Miranda Cavalcanti (transferência, removidos).
+  dataVersion: 7,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -275,11 +281,9 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p205", favorecido: "SOLUS FUNDO DE INVESTIMENTO EM", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-04", valor: 2720.0, status: "pago", pagamento: "2026-05-04", descricao: "SOLUS FUNDO DE INVESTIMENTO EM (maio/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
   { id: "p206", favorecido: "SPIKES INJETADOS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-04", valor: 561.0, status: "pago", pagamento: "2026-05-04", descricao: "SPIKES INJETADOS (maio/2026)" },
   { id: "p207", favorecido: "SUZANE APARECIDA BEZERRA DA SILVA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-01", valor: 1000.0, status: "pago", pagamento: "2026-05-01", descricao: "SUZANE APARECIDA BEZERRA DA SILVA (maio/2026)" },
-  { id: "p208", favorecido: "VALERIA CORRERIA CARNEIRO MELLO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-04", valor: 1932.5, status: "pago", pagamento: "2026-05-04", descricao: "VALERIA CORRERIA CARNEIRO MELLO (maio/2026)" },  // Mesmo nome de uma colaboradora da folha (Valéria Correia Carneiro Mello) — confirmar se é mesmo fornecedora ou se é outra retirada/adiantamento.
+  { id: "p208", favorecido: "VALÉRIA CORREIA CARNEIRO MELLO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-05-04", valor: 1932.5, status: "pago", pagamento: "2026-05-04", descricao: "VALERIA CORRERIA CARNEIRO MELLO (maio/2026) — confirmado como salário" },
   { id: "p209", favorecido: "JOSE CARLOS DA SILVA JUNIOR", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-06", valor: 410.0, status: "pago", pagamento: "2026-05-06", descricao: "JOSE CARLOS DA SILVA JUNIOR (maio/2026)" },
-  { id: "p210", favorecido: "MIRANDA CAVALCANTI DE ANDRADE", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-07", valor: 10000.0, status: "pago", pagamento: "2026-05-07", descricao: "MIRANDA CAVALCANTI DE ANDRADE (maio/2026)" },  // Valor alto (R$10.000) para pessoa física — confirmar se é fornecedor/fornecedora de verdade ou sócio/mutuante.
   { id: "p211", favorecido: "WOLNEY CAVALCANTI SILVA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-08", valor: 2000.0, status: "pago", pagamento: "2026-05-08", descricao: "WOLNEY CAVALCANTI SILVA (maio/2026)" },  // Repetido com a linha de 28/05 (mesmo nome) — confirmar se são dois fornecedores diferentes ou lançamento duplicado.
-  { id: "p212", favorecido: "MIRANDA CAVALCANTI DE ANDRADE", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-09", valor: 20000.0, status: "pago", pagamento: "2026-05-09", descricao: "MIRANDA CAVALCANTI DE ANDRADE (maio/2026)" },  // Valor alto (R$20.000) para pessoa física — confirmar se é fornecedor/fornecedora de verdade ou sócio/mutuante.
   { id: "p213", favorecido: "MA BAROSSO COMERCIO DE ROUPAS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-11", valor: 500.0, status: "pago", pagamento: "2026-05-11", descricao: "MA BAROSSO COMERCIO DE ROUPAS (maio/2026)" },
   { id: "p214", favorecido: "JUSTA MODA ATACADO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-11", valor: 320.0, status: "pago", pagamento: "2026-05-11", descricao: "JUSTA MODA ATACADO (maio/2026)" },
   { id: "p215", favorecido: "FASHION LUZ", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-11", valor: 785.0, status: "pago", pagamento: "2026-05-11", descricao: "FASHION LUZ (maio/2026)" },
@@ -291,10 +295,7 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p221", favorecido: "CHIQUE MODAS FASHION", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-11", valor: 2690.0, status: "pago", pagamento: "2026-05-11", descricao: "CHIQUE MODAS FASHION (maio/2026)" },
   { id: "p222", favorecido: "VERONICA CRISTINA DA SILVA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-13", valor: 240.0, status: "pago", pagamento: "2026-05-13", descricao: "VERONICA CRISTINA DA SILVA (maio/2026)" },
   { id: "p223", favorecido: "ANA KALINA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-25", valor: 10000.0, status: "pago", pagamento: "2026-05-25", descricao: "ANA KALINA (maio/2026)" },
-  { id: "p224", favorecido: "MIRANDA CAVALCANTI DE ANDRADE", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-27", valor: 10000.0, status: "pago", pagamento: "2026-05-27", descricao: "MIRANDA CAVALCANTI DE ANDRADE (maio/2026)" },  // Repetido com as linhas de 07/05 e 09/05 (mesmo nome) — confirmar se são compras diferentes.
-  { id: "p225", favorecido: "MIRANDA CAVALCANTI DE ANDRADE", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-27", valor: 3000.0, status: "pago", pagamento: "2026-05-27", descricao: "MIRANDA CAVALCANTI DE ANDRADE (maio/2026)" },  // Repetido com as linhas de 07/05, 09/05 e 27/05 (mesmo nome) — confirmar se são compras diferentes.
   { id: "p226", favorecido: "BEMOBI PAYTECH", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 5485.04, status: "pago", pagamento: "2026-05-28", descricao: "BEMOBI PAYTECH (maio/2026)" },  // 'BEMOBI PAYTECH' soa a serviço de pagamento/assinatura, não confecção — confirmar se é mesmo compra de produto.
-  { id: "p227", favorecido: "MIRANDA C DE ANDRADE ARTIGOS DO VESTUARIO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 5000.0, status: "pago", pagamento: "2026-05-28", descricao: "MIRANDA C DE ANDRADE ARTIGOS DO VESTUARIO (maio/2026)" },
   { id: "p228", favorecido: "ADRIANO PEREIRA CINTRA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 1000.0, status: "pago", pagamento: "2026-05-28", descricao: "ADRIANO PEREIRA CINTRA (maio/2026)" },
   { id: "p229", favorecido: "ANA KALINA E FILHAS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 5000.0, status: "pago", pagamento: "2026-05-28", descricao: "ANA KALINA E FILHAS (maio/2026)" },
   { id: "p230", favorecido: "WOLNEY CAVALCANTI SILVA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 2123.0, status: "pago", pagamento: "2026-05-28", descricao: "WOLNEY CAVALCANTI SILVA (maio/2026)" },  // Repetido com a linha de 08/05 (mesmo nome) — confirmar se são dois fornecedores diferentes.
