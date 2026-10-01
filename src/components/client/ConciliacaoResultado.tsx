@@ -19,7 +19,7 @@ import {
 import { ResultadoConciliacao } from "@/lib/reconciliation/match";
 import { ResultadoSalvo } from "@/lib/reconciliation/historicoStore";
 import { LancamentoModal } from "@/components/client/LancamentoModal";
-import { formatCurrencyPrecise } from "@/lib/format";
+import { formatCurrencyPrecise, parseValorBR } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 
 // ---------- Modelo de dados: cada seção tem uma lista de linhas pareadas (sistema x banco) ----------
@@ -159,7 +159,7 @@ function LinhaConciliacao({
 
   function salvarPagamento() {
     if (!linha.correcaoPagamento || !onEditarPagamentoBanco) return;
-    const valorNum = Number(rascunhoValor.replace(",", "."));
+    const valorNum = parseValorBR(rascunhoValor);
     onEditarPagamentoBanco(linha.correcaoPagamento.index, {
       historico: rascunhoDescricao.trim() || undefined,
       valor: valorNum > 0 ? valorNum : undefined,
@@ -608,7 +608,7 @@ export function ConciliacaoResultado({
     return [...presentes, ...faltando];
   }
 
-  const buscaNum = busca.trim() ? Number(busca.trim().replace(",", ".")) : null;
+  const buscaNum = busca.trim() ? parseValorBR(busca) : null;
   function combina(linha: Linha) {
     if (!busca.trim()) return true;
     const termo = busca.trim().toLowerCase();

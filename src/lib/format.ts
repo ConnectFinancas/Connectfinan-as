@@ -25,3 +25,11 @@ export function formatCompact(value: number): string {
     maximumFractionDigits: 1,
   });
 }
+
+// Inverso de formatCurrencyPrecise: lê um texto de valor digitado no formato brasileiro (ponto de
+// milhar, vírgula decimal — ex.: "1.234,56") e devolve o número que ele representa. Trocar só a
+// vírgula por ponto (sem remover o ponto de milhar primeiro) quebra qualquer valor acima de 999 —
+// "1.500,00" viraria "1.500.00" (NaN) — por isso os dois passos, nessa ordem.
+export function parseValorBR(raw: string): number {
+  return Number(raw.trim().replace(/\./g, "").replace(",", "."));
+}

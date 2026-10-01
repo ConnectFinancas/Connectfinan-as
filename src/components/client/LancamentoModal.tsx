@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { useFinance, genId } from "@/lib/store/FinanceContext";
+import { parseValorBR } from "@/lib/format";
 import { addMonths, HOJE, toISO } from "@/lib/today";
 import { Payable, Receivable, Status } from "@/lib/types";
 
@@ -70,15 +71,28 @@ export function LancamentoModal({
   );
   const [dataPagamento, setDataPagamento] = useState(entryDataPagamento || prefill?.dataPagamento || "");
   const [erro, setErro] = useState("");
+  // Quando o Valor está em branco/R$0,00, em vez de bloquear direto, avisa e exige um segundo
+  // clique em Salvar pra confirmar — cobre o caso raro de ser mesmo intencional, sem deixar
+  // passar batido um esquecimento (que é o caso comum).
+  const [confirmarValorZero, setConfirmarValorZero] = useState(false);
 
   const grupoAtual = categorias.find((c) => c.classificacao === classificacao);
   const categoriaFinal = categoria === NOVA_CATEGORIA ? novaCategoriaNome.trim() : categoria;
 
   function handleSalvar() {
-    const valorNum = Number(valor.replace(",", "."));
-    if (!descricao.trim() || !classificacao || !categoriaFinal || !vencimento || !valorNum) {
-      setErro("Preencha descrição, classificação, categoria, vencimento e valor.");
+    const valorNum = parseValorBR(valor);
+    if (!descricao.trim() || !classificacao || !categoriaFinal || !vencimento) {
+      setErro("Preencha descrição, classificação, categoria e vencimento.");
       return;
+    }
+    if (!valorNum) {
+      if (!confirmarValorZero) {
+        setErro("Valor está em branco ou R$ 0,00 — clique em Salvar de novo pra confirmar assim mesmo.");
+        setConfirmarValorZero(true);
+        return;
+      }
+    } else if (confirmarValorZero) {
+      setConfirmarValorZero(false);
     }
     if (status === "pago" && !dataPagamento) {
       setErro("Informe a data de pagamento/recebimento ou deixe o status como Em aberto.");
@@ -288,7 +302,11 @@ export function LancamentoModal({
               <input
                 inputMode="decimal"
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                onChange={(e) => {
+                  setValor(e.target.value);
+                  setConfirmarValorZero(false);
+                  setErro("");
+                }}
                 placeholder="0,00"
                 className="w-full rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm text-brand-900 placeholder:text-faint"
               />
@@ -359,7 +377,7 @@ export function LancamentoModal({
             </div>
           </div>
 
-          {erro && <p className="text-xs text-danger-500">{erro}</p>}
+          {erro && <p className={`text-xs ${confirmarValorZero ? "text-warn-500" : "text-danger-500"}`}>{erro}</p>}
 
           <div className="mt-1 flex gap-3">
             {isEdit && (

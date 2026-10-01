@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { FormaPagamento, MovimentoBradesco, MovimentoPagBank, VendaExtraida } from "@/lib/reconciliation/types";
-import { formatCurrencyPrecise } from "@/lib/format";
+import { formatCurrencyPrecise, parseValorBR } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 
 const FORMAS: { valor: FormaPagamento; rotulo: string }[] = [
@@ -36,7 +36,7 @@ function FormularioVenda({
   const [forma, setForma] = useState<FormaPagamento>(inicial?.forma ?? "CARTAO DE CREDITO");
 
   function salvar() {
-    const valorNum = Number(valor.replace(",", "."));
+    const valorNum = parseValorBR(valor);
     if (!data || !valorNum) return;
     onSalvar({ data, hora: hora.trim(), vendedor: inicial?.vendedor ?? "—", valor: valorNum, forma });
   }
@@ -167,7 +167,7 @@ function FormularioPagBank({
   const [descricao, setDescricao] = useState(inicial ? inicial.descricao.replace(/^Valor dispon[íi]vel\s*-?\s*/i, "") : "");
 
   function salvar() {
-    const valorNum = Number(valor.replace(",", "."));
+    const valorNum = parseValorBR(valor);
     if (!data || !valorNum) return;
     if (tipo === "saida") {
       onSalvar({ data, descricao: descricao.trim() || "—", valor: -valorNum });
@@ -298,7 +298,7 @@ function FormularioBradesco({
   const [fornecedor, setFornecedor] = useState(inicial ? inicial.historico.replace(/^PIX RECEBIDO\s*-?\s*/i, "") : "");
 
   function salvar() {
-    const valorNum = Number(valor.replace(",", "."));
+    const valorNum = parseValorBR(valor);
     if (!data || !valorNum || !fornecedor.trim()) return;
     if (tipo === "saida") {
       onSalvar({ data, historico: fornecedor.trim(), valor: -valorNum });
@@ -378,12 +378,12 @@ function FormularioStone({
   const [descricao, setDescricao] = useState(inicial?.descricao ?? "");
 
   function salvar() {
-    const valorNum = Number(valor.replace(",", "."));
+    const valorNum = parseValorBR(valor);
     if (!data || !valorNum) return;
     if (tipo === "saida") {
       onSalvar({ data, descricao: descricao.trim() || "—", valor: -valorNum });
     } else {
-      const taxaNum = Number(taxa.replace(",", "."));
+      const taxaNum = parseValorBR(taxa);
       onSalvar({ data, descricao: descricao.trim() || "Recebimento cartão", valor: valorNum, taxa: taxaNum > 0 ? taxaNum : 0 });
     }
   }

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Landmark, Pencil, Wallet } from "lucide-react";
 import { useFinance } from "@/lib/store/FinanceContext";
-import { formatCurrencyPrecise } from "@/lib/format";
+import { formatCurrencyPrecise, parseValorBR } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 
 const CONTAS = [
@@ -42,7 +42,7 @@ function SaldoInicialInput({ contaNome }: { contaNome: string }) {
   }
 
   function salvar() {
-    const valor = Number(rascunho.replace(",", "."));
+    const valor = parseValorBR(rascunho);
     finance.setSaldoInicial(contaNome, Number.isFinite(valor) ? valor : 0);
     setEditando(false);
   }

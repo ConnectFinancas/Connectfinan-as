@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { MovimentoCaixaFisico } from "@/lib/reconciliation/types";
 import { useFinance } from "@/lib/store/FinanceContext";
-import { formatCurrencyPrecise } from "@/lib/format";
+import { formatCurrencyPrecise, parseValorBR } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 
 function FormularioLinha({
@@ -29,7 +29,7 @@ function FormularioLinha({
   const grupoAtual = finance.categoriasPagar.find((c) => c.classificacao === classificacao);
 
   function salvar() {
-    const valorNum = Number(valor.replace(",", "."));
+    const valorNum = parseValorBR(valor);
     if (!data || !historico.trim() || !valorNum) return;
     if (tipo === "saida" && (!classificacao || !categoria)) return;
     onSalvar({
