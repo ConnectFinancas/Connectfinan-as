@@ -12,9 +12,10 @@ import { ClientFinanceData } from "@/lib/types";
 //   livre) entram em CMV / "Custo sobre Mercadorias Vendidas" — essa categoria é
 //   intencionalmente excluída do DRE por competência (ver CUSTO_MERCADORIA_CATEGORIA em
 //   derive.ts) pra não duplicar o CMV oficial (abaixo, em cmvManual); ficam visíveis em Contas a
-//   Pagar e no Fluxo de Caixa normalmente. 5 lançamentos desse mesmo bloco (FIDC Multissetorial,
-//   Master Giro Fomento x2, Mille-FIDC, Solus Fundo de Investimento) são fomento/factoring, não
-//   compra de produto — fui para "DESPESAS FINANCEIRAS / Empréstimos e Antecipações".
+//   Pagar e no Fluxo de Caixa normalmente. Inclui os nomes de fomento/factoring (FIDC
+//   Multissetorial, Master Giro Fomento, Mille-FIDC, Solus/Seja Fundo de Investimento) —
+//   confirmado com o Ewerton que é o canal de pagamento usado pra quitar fornecedor mesmo, não
+//   empréstimo/antecipação.
 // - Confirmado com o Ewerton: o pagamento a "Valéria Correia Carneiro Mello" (R$1.932,50) é
 //   salário dela, não fornecedor — reclassificado pra DESPESAS C/PESSOAS/Salário. Os 5
 //   lançamentos pra "Miranda Cavalcanti de Andrade"/"Miranda C de Andrade Artigos do Vestuário"
@@ -43,38 +44,38 @@ import { ClientFinanceData } from "@/lib/types";
 // - "Pagamentos Diversos" tem a mesma lista da Banco do Brasil duplicada em duas posições da
 //   planilha (colunas H-K ao lado da Stone, e de novo embaixo em A-D) — usei só uma vez.
 // - Mesmo padrão de maio: fornecedor (classificação "FORNECEDOR") vira CMV/"Custo sobre
-//   Mercadorias Vendidas" (fora do DRE por competência, visível em Contas a Pagar); nomes de
-//   fomento/factoring (Master Giro Fomento, FIDC Multissetorial, Mille-FIDC, Solus/Seja Fundo de
-//   Investimento) viram Despesas Financeiras/Empréstimos e Antecipações. O pagamento da fatura do
-//   cartão de crédito empresarial Visa (R$6.137,83) também foi pra Despesas Financeiras, mas pode
-//   ter compra de produto misturada — vale conferir a fatura.
+//   Mercadorias Vendidas" (fora do DRE por competência, visível em Contas a Pagar) — inclui os
+//   nomes de fomento/factoring (Master Giro Fomento, FIDC Multissetorial, Mille-FIDC, Solus/Seja
+//   Fundo de Investimento), confirmados como canal de pagamento de fornecedor, não empréstimo. O
+//   pagamento da fatura do cartão de crédito empresarial Visa (R$6.137,83) ficou em Despesas
+//   Financeiras — pode ter compra de produto misturada, vale conferir a fatura.
 // - "Miranda C de Andrade Artigos" e "Ana Kalina e Filhas" já vêm na própria planilha marcados
 //   como "TRANSFERENCIA ENTRE CONTAS" — excluídos daqui (mesmo tratamento que maio). Duas
 //   transferências bancárias também na aba Caixa Físico (R$20.000 + R$9.050, 15/06) igualmente
 //   excluídas.
-// - 5 lançamentos da Stone vieram marcados "IDENTIFICAR" na planilha (conta de origem ainda não
-//   confirmada pelo cliente) — lancei normalmente, só sinalizados no comentário de cada linha.
-// - Sem uma aba "Ano 2026"/DRE oficial pra junho (diferente de maio), cmvManual de junho usa a
-//   própria soma dos pagamentos a fornecedor do mês (R$205.565,97) — é a melhor estimativa
-//   disponível até o cliente mandar um CMV oficial separado, se tiver.
+// - A marca "IDENTIFICAR" em alguns lançamentos da Stone era de uma etapa anterior do controle do
+//   cliente, sem significado hoje — lancei normalmente, sem flag.
+// - cmvManual de junho fica em branco (0) por enquanto — o cliente vai mandar uma planilha própria
+//   pra essa análise depois, igual fizemos com o CMV oficial de maio.
 // - Um lançamento de "Despesas Caixa Físico" (Stephanie MJK, 27/06, R$82,45) estava com a data
 //   digitada errada na planilha (maio) — corrigi pra 27/06, mesma data das linhas vizinhas.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 2 → 8: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
+  // Bump 2 → 9: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
   // lançamentos futuros da Reylane (demitida), valor de Salário fixado em R$1.500,00 para
   // Lucas/July/Valéria/Thamires, remoção de todos os lançamentos de Complemento Salarial,
-  // construção do Contas a Pagar/Receber de maio e junho/2026 a partir das planilhas do cliente, e
-  // correção dos lançamentos de Valéria (salário) e Miranda Cavalcanti (transferência, removidos).
-  dataVersion: 8,
+  // construção do Contas a Pagar/Receber de maio e junho/2026 a partir das planilhas do cliente,
+  // correção dos lançamentos de Valéria (salário) e Miranda Cavalcanti (transferência, removidos),
+  // reclassificação dos nomes de fomento/factoring pra CMV (são fornecedor, confirmado), e CMV de
+  // junho deixado em branco até o cliente mandar a planilha pra essa análise.
+  dataVersion: 9,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
     investimentos: 0,
   },
-  // CMV oficial/estimado por mês — ver notas acima (maio vem da aba Ano 2026 da planilha DRE;
-  // junho é a soma dos pagamentos a fornecedor do mês, sem uma fonte oficial separada ainda).
-  // Índice 0 = Jan, 4 = Maio, 5 = Junho, 11 = Dez.
-  cmvManual: [0, 0, 0, 0, 93465.51, 205565.97, 0, 0, 0, 0, 0, 0],
+  // CMV oficial por mês — maio vem da aba Ano 2026 da planilha DRE; junho fica em branco (ver
+  // nota acima, análise à parte). Índice 0 = Jan, 4 = Maio, 11 = Dez.
+  cmvManual: [0, 0, 0, 0, 93465.51, 0, 0, 0, 0, 0, 0, 0],
 
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
@@ -384,12 +385,12 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p197", favorecido: "BANCO DO BRASIL", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-11", valor: 285.6, status: "pago", pagamento: "2026-05-11", descricao: "TARIFA BANCARIA (maio/2026)" },
   { id: "p198", favorecido: "PREFEITURA DE CARPINA", categoria: "Multas / Taxas", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-04", valor: 681.0, status: "pago", pagamento: "2026-05-04", descricao: "MUNICIPIO DE CARPINA - TAXA IMAGEM FAXADAS (maio/2026)" },
   { id: "p199", favorecido: "SÓCIOS", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-05-02", valor: 150.0, status: "pago", pagamento: "2026-05-02", descricao: "RETIRADA - Dr KALINA (maio/2026)" },  // Descrição original 'RETIRADA - Dr KALINA' — classifiquei como retirada de sócio, mesmo padrão das demais retiradas.
-  { id: "p200", favorecido: "FIDC MULTISSETORIAL", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-25", valor: 2541.66, status: "pago", pagamento: "2026-05-25", descricao: "FIDC MULTISSETORIAL (maio/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
-  { id: "p201", favorecido: "MASTER GIRO FOMENTO", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-25", valor: 3261.39, status: "pago", pagamento: "2026-05-25", descricao: "MASTER GIRO FOMENTO (maio/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
-  { id: "p202", favorecido: "MASTER GIRO FOMENTO", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-25", valor: 1419.14, status: "pago", pagamento: "2026-05-25", descricao: "MASTER GIRO FOMENTO (maio/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
-  { id: "p203", favorecido: "MILLE -FIDC MULTISSETORIAL LP", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-07", valor: 2410.33, status: "pago", pagamento: "2026-05-07", descricao: "MILLE -FIDC MULTISSETORIAL LP (maio/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p200", favorecido: "FIDC MULTISSETORIAL", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-25", valor: 2541.66, status: "pago", pagamento: "2026-05-25", descricao: "FIDC MULTISSETORIAL (maio/2026)" },
+  { id: "p201", favorecido: "MASTER GIRO FOMENTO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-25", valor: 3261.39, status: "pago", pagamento: "2026-05-25", descricao: "MASTER GIRO FOMENTO (maio/2026)" },
+  { id: "p202", favorecido: "MASTER GIRO FOMENTO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-25", valor: 1419.14, status: "pago", pagamento: "2026-05-25", descricao: "MASTER GIRO FOMENTO (maio/2026)" },
+  { id: "p203", favorecido: "MILLE -FIDC MULTISSETORIAL LP", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-07", valor: 2410.33, status: "pago", pagamento: "2026-05-07", descricao: "MILLE -FIDC MULTISSETORIAL LP (maio/2026)" },
   { id: "p204", favorecido: "ROGERIO LUIZ BATISTA LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-04", valor: 1534.0, status: "pago", pagamento: "2026-05-04", descricao: "ROGERIO LUIZ BATISTA LTDA (maio/2026)" },
-  { id: "p205", favorecido: "SOLUS FUNDO DE INVESTIMENTO EM", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-05-04", valor: 2720.0, status: "pago", pagamento: "2026-05-04", descricao: "SOLUS FUNDO DE INVESTIMENTO EM (maio/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p205", favorecido: "SOLUS FUNDO DE INVESTIMENTO EM", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-04", valor: 2720.0, status: "pago", pagamento: "2026-05-04", descricao: "SOLUS FUNDO DE INVESTIMENTO EM (maio/2026)" },
   { id: "p206", favorecido: "SPIKES INJETADOS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-04", valor: 561.0, status: "pago", pagamento: "2026-05-04", descricao: "SPIKES INJETADOS (maio/2026)" },
   { id: "p207", favorecido: "SUZANE APARECIDA BEZERRA DA SILVA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-01", valor: 1000.0, status: "pago", pagamento: "2026-05-01", descricao: "SUZANE APARECIDA BEZERRA DA SILVA (maio/2026)" },
   { id: "p208", favorecido: "VALÉRIA CORREIA CARNEIRO MELLO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-05-04", valor: 1932.5, status: "pago", pagamento: "2026-05-04", descricao: "VALERIA CORRERIA CARNEIRO MELLO (maio/2026) — confirmado como salário" },
@@ -484,9 +485,9 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p298", favorecido: "COPOS", categoria: "Uso e Consumo", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-27", valor: 6.0, status: "pago", pagamento: "2026-06-27", descricao: "COPOS (Caixa Físico, junho/2026)" },
   { id: "p299", favorecido: "MOTO", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-06-27", valor: 6.0, status: "pago", pagamento: "2026-06-27", descricao: "MOTO (Caixa Físico, junho/2026)" },
   { id: "p300", favorecido: "COLA E VIAGEM ROBSON (BRENDA)", categoria: "Uso e Consumo", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-27", valor: 13.0, status: "pago", pagamento: "2026-06-27", descricao: "COLA E VIAGEM ROBSON (BRENDA) (Caixa Físico, junho/2026)" },
-  { id: "p301", favorecido: "METALMAD ARTEFATOS DE FERROS E MADEIRAS", categoria: "Manutenção Predial", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-06-01", valor: 1600.0, status: "pago", pagamento: "2026-06-01", descricao: "METALMAD ARTEFATOS DE FERROS E MADEIRAS (Stone, junho/2026)" },  // Marcado como 'IDENTIFICAR' na planilha (conta de origem ainda não confirmada pelo cliente).
-  { id: "p302", favorecido: "NAYARA DOS SANTOS GALDENCIO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-01", valor: 4663.6, status: "pago", pagamento: "2026-06-01", descricao: "NAYARA DOS SANTOS GALDENCIO (Stone, junho/2026)" },  // Marcado como 'IDENTIFICAR' na planilha (conta de origem ainda não confirmada pelo cliente).
-  { id: "p303", favorecido: "JULY ADILA GOMES DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-01", valor: 2911.0, status: "pago", pagamento: "2026-06-01", descricao: "JULY ADILA GOMES DA SILVA (Stone, junho/2026)" },  // Marcado como 'IDENTIFICAR' na planilha (conta de origem ainda não confirmada pelo cliente).
+  { id: "p301", favorecido: "METALMAD ARTEFATOS DE FERROS E MADEIRAS", categoria: "Manutenção Predial", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-06-01", valor: 1600.0, status: "pago", pagamento: "2026-06-01", descricao: "METALMAD ARTEFATOS DE FERROS E MADEIRAS (Stone, junho/2026)" },
+  { id: "p302", favorecido: "NAYARA DOS SANTOS GALDENCIO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-01", valor: 4663.6, status: "pago", pagamento: "2026-06-01", descricao: "NAYARA DOS SANTOS GALDENCIO (Stone, junho/2026)" },
+  { id: "p303", favorecido: "JULY ADILA GOMES DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-01", valor: 2911.0, status: "pago", pagamento: "2026-06-01", descricao: "JULY ADILA GOMES DA SILVA (Stone, junho/2026)" },
   { id: "p304", favorecido: "FGTS ARRECADACAO GRF 0179", categoria: "FGTS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-17", valor: 129.68, status: "pago", pagamento: "2026-06-17", descricao: "FGTS ARRECADACAO GRF 0179 (Stone, junho/2026)" },
   { id: "p305", favorecido: "FGTS ARRECADACAO GRF 0179", categoria: "FGTS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-17", valor: 168.05, status: "pago", pagamento: "2026-06-17", descricao: "FGTS ARRECADACAO GRF 0179 (Stone, junho/2026)" },
   { id: "p306", favorecido: "FGTS ARRECADACAO GRF 0179", categoria: "FGTS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-17", valor: 130.54, status: "pago", pagamento: "2026-06-17", descricao: "FGTS ARRECADACAO GRF 0179 (Stone, junho/2026)" },
@@ -513,9 +514,9 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p327", favorecido: "CAIXA ECONOMICA FEDERAL", categoria: "INSS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-17", valor: 1397.1, status: "pago", pagamento: "2026-06-17", descricao: "CAIXA ECONOMICA FEDERAL (Stone, junho/2026)" },
   { id: "p328", favorecido: "BRENDA MIRANDA CAVALCANTI DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-06-19", valor: 3000.0, status: "pago", pagamento: "2026-06-19", descricao: "BRENDA MIRANDA CAVALCANTI DE ANDRADE (Stone, junho/2026)" },
   { id: "p329", favorecido: "PLANALTO NET LTDA", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-06-23", valor: 81.81, status: "pago", pagamento: "2026-06-23", descricao: "PLANALTO NET LTDA (Stone, junho/2026)" },
-  { id: "p330", favorecido: "DARF/DARF-SIMPLES 0385", categoria: "PIS/COFINS", classificacao: "IMPOSTOS", vencimento: "2026-06-25", valor: 8862.38, status: "pago", pagamento: "2026-06-25", descricao: "DARF/DARF-SIMPLES 0385 (Stone, junho/2026)" },  // Marcado como 'IDENTIFICAR' na planilha (conta de origem ainda não confirmada pelo cliente).
+  { id: "p330", favorecido: "DARF/DARF-SIMPLES 0385", categoria: "PIS/COFINS", classificacao: "IMPOSTOS", vencimento: "2026-06-25", valor: 8862.38, status: "pago", pagamento: "2026-06-25", descricao: "DARF/DARF-SIMPLES 0385 (Stone, junho/2026)" },
   { id: "p331", favorecido: "DARF/DARF-SIMPLES 0385", categoria: "PIS/COFINS", classificacao: "IMPOSTOS", vencimento: "2026-06-25", valor: 1920.18, status: "pago", pagamento: "2026-06-25", descricao: "DARF/DARF-SIMPLES 0385 (Stone, junho/2026)" },
-  { id: "p332", favorecido: "SHOP MIDIA COMUNICACAO VISUAL LTDA", categoria: "Marketing", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-29", valor: 8000.0, status: "pago", pagamento: "2026-06-29", descricao: "SHOP MIDIA COMUNICACAO VISUAL LTDA (Stone, junho/2026)" },  // Marcado como 'IDENTIFICAR' na planilha (conta de origem ainda não confirmada pelo cliente).
+  { id: "p332", favorecido: "SHOP MIDIA COMUNICACAO VISUAL LTDA", categoria: "Marketing", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-29", valor: 8000.0, status: "pago", pagamento: "2026-06-29", descricao: "SHOP MIDIA COMUNICACAO VISUAL LTDA (Stone, junho/2026)" },
   { id: "p333", favorecido: "CONNECT SOLUCOES CONTABEIS LTD", categoria: "BPO Financeiro", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-06-23", valor: 1017.93, status: "pago", pagamento: "2026-06-23", descricao: "CONNECT SOLUCOES CONTABEIS LTD (Banco do Brasil, junho/2026)" },
   { id: "p334", favorecido: "CONNECT SOLUCOES CONTABEIS LTD", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-06-23", valor: 1531.49, status: "pago", pagamento: "2026-06-23", descricao: "CONNECT SOLUCOES CONTABEIS LTD (Banco do Brasil, junho/2026)" },
   { id: "p335", favorecido: "EMPRESA BRASILEIRA DE CORREIOS", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-06-23", valor: 58.02, status: "pago", pagamento: "2026-06-23", descricao: "EMPRESA BRASILEIRA DE CORREIOS (Banco do Brasil, junho/2026)" },
@@ -534,12 +535,12 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p348", favorecido: "AREZZO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-05", valor: 3138.27, status: "pago", pagamento: "2026-06-05", descricao: "AREZZO (Banco do Brasil, junho/2026)" },
   { id: "p349", favorecido: "CROCS BRASIL COMERCIO DE CALCA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-05", valor: 517.0, status: "pago", pagamento: "2026-06-05", descricao: "CROCS BRASIL COMERCIO DE CALCA (Banco do Brasil, junho/2026)" },
   { id: "p350", favorecido: "CALCADOS KARYBY LTDA ME", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-05", valor: 688.09, status: "pago", pagamento: "2026-06-05", descricao: "CALCADOS KARYBY LTDA ME (Banco do Brasil, junho/2026)" },
-  { id: "p351", favorecido: "SOLUS FUNDO DE INVESTIMENTO EM", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-05", valor: 2720.0, status: "pago", pagamento: "2026-06-05", descricao: "SOLUS FUNDO DE INVESTIMENTO EM (Banco do Brasil, junho/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p351", favorecido: "SOLUS FUNDO DE INVESTIMENTO EM", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-05", valor: 2720.0, status: "pago", pagamento: "2026-06-05", descricao: "SOLUS FUNDO DE INVESTIMENTO EM (Banco do Brasil, junho/2026)" },
   { id: "p352", favorecido: "INDUSTRIA DE CALCADOS GONCALVE", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-05", valor: 1185.68, status: "pago", pagamento: "2026-06-05", descricao: "INDUSTRIA DE CALCADOS GONCALVE (Banco do Brasil, junho/2026)" },
   { id: "p353", favorecido: "MONTEGO BAY COMERCIO E IMPORTA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-08", valor: 3060.72, status: "pago", pagamento: "2026-06-08", descricao: "MONTEGO BAY COMERCIO E IMPORTA (Banco do Brasil, junho/2026)" },
   { id: "p354", favorecido: "PETERSON DE CASTRO GONCALVES", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-08", valor: 568.2, status: "pago", pagamento: "2026-06-08", descricao: "PETERSON DE CASTRO GONCALVES (Banco do Brasil, junho/2026)" },
   { id: "p355", favorecido: "AREZZO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-08", valor: 14751.0, status: "pago", pagamento: "2026-06-08", descricao: "AREZZO (Banco do Brasil, junho/2026)" },
-  { id: "p356", favorecido: "MILLE -FIDC MULTISSETORIAL LP", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-08", valor: 2410.33, status: "pago", pagamento: "2026-06-08", descricao: "MILLE -FIDC MULTISSETORIAL LP (Banco do Brasil, junho/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p356", favorecido: "MILLE -FIDC MULTISSETORIAL LP", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-08", valor: 2410.33, status: "pago", pagamento: "2026-06-08", descricao: "MILLE -FIDC MULTISSETORIAL LP (Banco do Brasil, junho/2026)" },
   { id: "p357", favorecido: "SKO COMERCIO IMPORTACAO E EXP", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-09", valor: 785.0, status: "pago", pagamento: "2026-06-09", descricao: "SKO COMERCIO IMPORTACAO E EXP (Banco do Brasil, junho/2026)" },
   { id: "p358", favorecido: "CALCADOS BEBECE LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-09", valor: 1477.79, status: "pago", pagamento: "2026-06-09", descricao: "CALCADOS BEBECE LTDA (Banco do Brasil, junho/2026)" },
   { id: "p359", favorecido: "PAGTO CARTÃO CRÉDITO EMPRESARIAL VISA", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-10", valor: 6137.83, status: "pago", pagamento: "2026-06-10", descricao: "PAGTO CARTÃO CRÉDITO EMPRESARIAL VISA (Banco do Brasil, junho/2026)" },  // Pagamento de fatura de cartão de crédito empresarial — pode incluir compras de produto misturadas com outras despesas; classifiquei como despesa financeira, mas vale conferir a fatura.
@@ -549,7 +550,7 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p363", favorecido: "AREZZO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-11", valor: 9508.69, status: "pago", pagamento: "2026-06-11", descricao: "AREZZO (Banco do Brasil, junho/2026)" },
   { id: "p364", favorecido: "INDUSTRIA DE CALCADOS GONCALV", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-15", valor: 3246.39, status: "pago", pagamento: "2026-06-15", descricao: "INDUSTRIA DE CALCADOS GONCALV (Banco do Brasil, junho/2026)" },
   { id: "p365", favorecido: "AREZZO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-15", valor: 11828.87, status: "pago", pagamento: "2026-06-15", descricao: "AREZZO (Banco do Brasil, junho/2026)" },
-  { id: "p366", favorecido: "SEJA FUNDO DE INVESTIMENTO EM", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-15", valor: 3262.68, status: "pago", pagamento: "2026-06-15", descricao: "SEJA FUNDO DE INVESTIMENTO EM (Banco do Brasil, junho/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p366", favorecido: "SEJA FUNDO DE INVESTIMENTO EM", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-15", valor: 3262.68, status: "pago", pagamento: "2026-06-15", descricao: "SEJA FUNDO DE INVESTIMENTO EM (Banco do Brasil, junho/2026)" },
   { id: "p367", favorecido: "PETERSON GONCALVES INDUSTRIA D", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-15", valor: 648.41, status: "pago", pagamento: "2026-06-15", descricao: "PETERSON GONCALVES INDUSTRIA D (Banco do Brasil, junho/2026)" },
   { id: "p368", favorecido: "SKO COM IMP EXP CALC B AC LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-15", valor: 1717.0, status: "pago", pagamento: "2026-06-15", descricao: "SKO COM IMP EXP CALC B AC LTDA (Banco do Brasil, junho/2026)" },
   { id: "p369", favorecido: "BANCO ITAU S/A", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-15", valor: 887.98, status: "pago", pagamento: "2026-06-15", descricao: "BANCO ITAU S/A (Banco do Brasil, junho/2026)" },
@@ -566,7 +567,7 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p380", favorecido: "CROCS BRASIL COMERCIO DE CALCA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 93.0, status: "pago", pagamento: "2026-06-23", descricao: "CROCS BRASIL COMERCIO DE CALCA (Banco do Brasil, junho/2026)" },
   { id: "p381", favorecido: "CROCS BRASIL COMERCIO DE CALCA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 376.1, status: "pago", pagamento: "2026-06-23", descricao: "CROCS BRASIL COMERCIO DE CALCA (Banco do Brasil, junho/2026)" },
   { id: "p382", favorecido: "D'PAULA INDUSTRIA E COMERCIO D", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 1153.68, status: "pago", pagamento: "2026-06-23", descricao: "D'PAULA INDUSTRIA E COMERCIO D (Banco do Brasil, junho/2026)" },
-  { id: "p383", favorecido: "MASTER GIRO FOMENTO MERCANTIL", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-23", valor: 3272.26, status: "pago", pagamento: "2026-06-23", descricao: "MASTER GIRO FOMENTO MERCANTIL (Banco do Brasil, junho/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p383", favorecido: "MASTER GIRO FOMENTO MERCANTIL", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 3272.26, status: "pago", pagamento: "2026-06-23", descricao: "MASTER GIRO FOMENTO MERCANTIL (Banco do Brasil, junho/2026)" },
   { id: "p384", favorecido: "MONTEGO BAY COMERCIO E IMPORTA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 3058.58, status: "pago", pagamento: "2026-06-23", descricao: "MONTEGO BAY COMERCIO E IMPORTA (Banco do Brasil, junho/2026)" },
   { id: "p385", favorecido: "IND CALCADOS GONCALVES LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 749.76, status: "pago", pagamento: "2026-06-23", descricao: "IND CALCADOS GONCALVES LTDA (Banco do Brasil, junho/2026)" },
   { id: "p386", favorecido: "PETERSON DE CASTRO GONCALVES E", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 610.0, status: "pago", pagamento: "2026-06-23", descricao: "PETERSON DE CASTRO GONCALVES E (Banco do Brasil, junho/2026)" },
@@ -579,10 +580,10 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p393", favorecido: "MONTEGO BAY COMERCIO E IMPOR", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-24", valor: 419.59, status: "pago", pagamento: "2026-06-24", descricao: "MONTEGO BAY COMERCIO E IMPOR (Banco do Brasil, junho/2026)" },
   { id: "p394", favorecido: "PETERSON GONCALVES", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-24", valor: 749.0, status: "pago", pagamento: "2026-06-24", descricao: "PETERSON GONCALVES (Banco do Brasil, junho/2026)" },
   { id: "p395", favorecido: "TROPIMAX INDUSTRIA E COMERCIO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-24", valor: 1347.75, status: "pago", pagamento: "2026-06-24", descricao: "TROPIMAX INDUSTRIA E COMERCIO (Banco do Brasil, junho/2026)" },
-  { id: "p396", favorecido: "MASTER GIRO FOMENTO MERCANTIL", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-24", valor: 1419.12, status: "pago", pagamento: "2026-06-24", descricao: "MASTER GIRO FOMENTO MERCANTIL (Banco do Brasil, junho/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
-  { id: "p397", favorecido: "FIDC MULTISSETORIAL PREVIA", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-24", valor: 2541.66, status: "pago", pagamento: "2026-06-24", descricao: "FIDC MULTISSETORIAL PREVIA (Banco do Brasil, junho/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p396", favorecido: "MASTER GIRO FOMENTO MERCANTIL", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-24", valor: 1419.12, status: "pago", pagamento: "2026-06-24", descricao: "MASTER GIRO FOMENTO MERCANTIL (Banco do Brasil, junho/2026)" },
+  { id: "p397", favorecido: "FIDC MULTISSETORIAL PREVIA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-24", valor: 2541.66, status: "pago", pagamento: "2026-06-24", descricao: "FIDC MULTISSETORIAL PREVIA (Banco do Brasil, junho/2026)" },
   { id: "p398", favorecido: "BANCO ITAU S/A", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-24", valor: 1344.05, status: "pago", pagamento: "2026-06-24", descricao: "BANCO ITAU S/A (Banco do Brasil, junho/2026)" },
-  { id: "p399", favorecido: "MILLE -FIDC MULTISSETORIAL LP", categoria: "Empréstimos e Antecipações", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-25", valor: 3050.06, status: "pago", pagamento: "2026-06-25", descricao: "MILLE -FIDC MULTISSETORIAL LP (Banco do Brasil, junho/2026)" },  // Nome de empresa de fomento/factoring — classifiquei como antecipação de recebíveis/empréstimo, não como compra de produto.
+  { id: "p399", favorecido: "MILLE -FIDC MULTISSETORIAL LP", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-25", valor: 3050.06, status: "pago", pagamento: "2026-06-25", descricao: "MILLE -FIDC MULTISSETORIAL LP (Banco do Brasil, junho/2026)" },
   { id: "p400", favorecido: "MONTEGO BAY COMERCIO E IMPORTA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-25", valor: 1473.33, status: "pago", pagamento: "2026-06-25", descricao: "MONTEGO BAY COMERCIO E IMPORTA (Banco do Brasil, junho/2026)" },
   { id: "p401", favorecido: "PETERSON DE CASTRO GONCALVES E", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-25", valor: 4187.0, status: "pago", pagamento: "2026-06-25", descricao: "PETERSON DE CASTRO GONCALVES E (Banco do Brasil, junho/2026)" },
   { id: "p402", favorecido: "CALCADOS BEBECE LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-25", valor: 899.55, status: "pago", pagamento: "2026-06-25", descricao: "CALCADOS BEBECE LTDA (Banco do Brasil, junho/2026)" },
