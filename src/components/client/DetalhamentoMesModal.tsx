@@ -29,7 +29,7 @@ export function DetalhamentoMesModal({ onClose }: { onClose: () => void }) {
   const fornecedores = useMemo(() => computePagamentosFornecedores(finance.payables, mesIndex), [finance.payables, mesIndex]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-10 sm:pt-16" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-10 sm:pt-16">
       <div className="card w-full max-w-2xl p-6" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <div>

@@ -195,7 +195,7 @@ export function LancamentoModal({
   const pessoaLabel = tipo === "pagar" ? "Fornecedor" : "Cliente";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-10 sm:pt-16" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-10 sm:pt-16">
       <div className="card w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-brand-900">{isEdit ? `Editar ${label}` : `Nova ${label}`}</h2>
