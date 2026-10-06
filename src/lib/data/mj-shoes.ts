@@ -61,10 +61,14 @@ import { ClientFinanceData } from "@/lib/types";
 //   digitada errada na planilha (maio) — corrigi pra 27/06, mesma data das linhas vizinhas.
 // - Confirmado com o Ewerton (depois de montar julho): "Veronica Cristina da Silva" (maio,
 //   R$240) é frete, não fornecedor — reclassificada pra DESPESAS LOGISTICAS/Frete. "Ana Kalina e
-//   Filhas" (maio, R$5.000) é transferência entre contas — removida, mesmo tratamento da Miranda
-//   Cavalcanti. "Shop Mídia Comunicação Visual" (junho, R$8.000) era a fachada da loja, não
-//   marketing — reclassificada pra DESPESAS ADMINISTRATIVAS/Manutenção Predial. A "Ana Kalina"
-//   isolada (maio, R$10.000, sem "e Filhas") continua como CMV — não foi confirmada junto.
+//   Filhas" (maio, R$5.000) e a "Ana Kalina" isolada (maio, R$10.000, sem "e Filhas") são
+//   transferência entre contas — removidas, mesmo tratamento da Miranda Cavalcanti. "Shop Mídia
+//   Comunicação Visual" (junho, R$8.000) era a fachada da loja, não marketing — reclassificada
+//   pra DESPESAS ADMINISTRATIVAS/Manutenção Predial.
+// - Sephora (fornecedor), Marielle Machado/gráfica (materiais de marketing), Planalto Net
+//   (internet, já estava certo) e Maga Lu/notebook (entra em INVESTIMENTO, não despesa) são
+//   regras que o Ewerton passou adiantado — não aparecem em nenhuma aba de maio/junho/julho,
+//   devem vir num mês futuro (ago. em diante). Aplicar quando aparecerem.
 //
 // Julho/2026 (seedPayables ids p459+ e seedReceivables ids r84+): mesmo processo de junho, com a
 // aba "Movimentações Sócias" desta vez preenchida (4 retiradas de sócios via Stone, R$7.000 no
@@ -92,14 +96,14 @@ import { ClientFinanceData } from "@/lib/types";
 //   DESPESAS C/PESSOAS, mesmo padrão de meses anteriores.
 // - cmvManual de julho também fica em branco, mesmo critério de junho.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 2 → 10: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
+  // Bump 2 → 11: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
   // lançamentos futuros da Reylane (demitida), valor de Salário fixado em R$1.500,00 para
   // Lucas/July/Valéria/Thamires, remoção de todos os lançamentos de Complemento Salarial,
   // construção do Contas a Pagar/Receber de maio, junho e julho/2026 a partir das planilhas do
   // cliente, reclassificação dos nomes de fomento/factoring pra CMV, e correção pontual de
-  // Veronica Cristina (frete), Ana Kalina e Filhas (transferência) e Shop Mídia (manutenção
-  // predial).
-  dataVersion: 10,
+  // Veronica Cristina (frete), Ana Kalina + Ana Kalina e Filhas (transferência) e Shop Mídia
+  // (manutenção predial).
+  dataVersion: 11,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -522,7 +526,6 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p220", favorecido: "FERNANDA ZANCHETTA FERNANDES", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-11", valor: 490.0, status: "pago", pagamento: "2026-05-11", descricao: "FERNANDA ZANCHETTA FERNANDES (maio/2026)" },
   { id: "p221", favorecido: "CHIQUE MODAS FASHION", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-11", valor: 2690.0, status: "pago", pagamento: "2026-05-11", descricao: "CHIQUE MODAS FASHION (maio/2026)" },
   { id: "p222", favorecido: "VERONICA CRISTINA DA SILVA", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-05-13", valor: 240.0, status: "pago", pagamento: "2026-05-13", descricao: "VERONICA CRISTINA DA SILVA (maio/2026) — confirmado como frete" },
-  { id: "p223", favorecido: "ANA KALINA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-25", valor: 10000.0, status: "pago", pagamento: "2026-05-25", descricao: "ANA KALINA (maio/2026)" },
   { id: "p226", favorecido: "BEMOBI PAYTECH", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 5485.04, status: "pago", pagamento: "2026-05-28", descricao: "BEMOBI PAYTECH (maio/2026)" },  // 'BEMOBI PAYTECH' soa a serviço de pagamento/assinatura, não confecção — confirmar se é mesmo compra de produto.
   { id: "p228", favorecido: "ADRIANO PEREIRA CINTRA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 1000.0, status: "pago", pagamento: "2026-05-28", descricao: "ADRIANO PEREIRA CINTRA (maio/2026)" },
   { id: "p230", favorecido: "WOLNEY CAVALCANTI SILVA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-05-28", valor: 2123.0, status: "pago", pagamento: "2026-05-28", descricao: "WOLNEY CAVALCANTI SILVA (maio/2026)" },  // Repetido com a linha de 08/05 (mesmo nome) — confirmar se são dois fornecedores diferentes.
