@@ -66,6 +66,10 @@ export function LancamentoModal({
   );
   const [parcelas, setParcelas] = useState(1);
   const [modoParcelas, setModoParcelas] = useState<"dividir" | "cheio">("dividir");
+  // Vencimento de cada parcela, pré-preenchido com o mesmo dia do mês (addMonths) mas editável —
+  // cobre o caso comum de fornecedor com vencimento em dia variável mês a mês (ex.: dia 22 num
+  // mês, 23 no outro). Só guarda o que foi editado manualmente; o resto segue a data base.
+  const [vencimentosOverride, setVencimentosOverride] = useState<Record<number, string>>({});
   const [status, setStatus] = useState<"pendente" | "pago">(
     entryEraPago ? "pago" : prefill?.status === "pago" ? "pago" : "pendente"
   );
@@ -78,6 +82,12 @@ export function LancamentoModal({
 
   const grupoAtual = categorias.find((c) => c.classificacao === classificacao);
   const categoriaFinal = categoria === NOVA_CATEGORIA ? novaCategoriaNome.trim() : categoria;
+
+  const numParcelas = Math.max(1, parcelas);
+  const vencimentosParcelas = Array.from(
+    { length: numParcelas },
+    (_, i) => vencimentosOverride[i] ?? addMonths(vencimento, i)
+  );
 
   function handleSalvar() {
     const valorNum = parseValorBR(valor);
@@ -137,7 +147,7 @@ export function LancamentoModal({
       return;
     }
 
-    const n = Math.max(1, parcelas);
+    const n = numParcelas;
     const valorParcela = modoParcelas === "dividir" ? Math.round((valorNum / n) * 100) / 100 : valorNum;
 
     if (tipo === "pagar") {
@@ -146,7 +156,7 @@ export function LancamentoModal({
         favorecido: pessoaFinal,
         categoria: categoriaFinal,
         classificacao,
-        vencimento: addMonths(vencimento, i),
+        vencimento: vencimentosParcelas[i],
         valor: valorParcela,
         status: statusFinal,
         pagamento: status === "pago" ? dataPagamento : undefined,
@@ -160,7 +170,7 @@ export function LancamentoModal({
         cliente: pessoaFinal,
         categoria: categoriaFinal,
         classificacao,
-        vencimento: addMonths(vencimento, i),
+        vencimento: vencimentosParcelas[i],
         valor: valorParcela,
         status: statusFinal,
         recebimento: status === "pago" ? dataPagamento : undefined,
@@ -340,9 +350,43 @@ export function LancamentoModal({
                 </div>
               </div>
               {parcelas > 1 && (
-                <p className="-mt-2 text-[11px] text-faint">
-                  Gera {parcelas} lançamentos, sempre no dia {new Date(vencimento + "T00:00:00").getDate()}, um por mês.
-                </p>
+                <div className="rounded-lg border border-border-subtle p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-faint">
+                      Vencimento de cada parcela
+                    </p>
+                    {Object.keys(vencimentosOverride).length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setVencimentosOverride({})}
+                        className="text-[11px] font-medium text-client-accent hover:underline"
+                      >
+                        Restaurar datas padrão
+                      </button>
+                    )}
+                  </div>
+                  <p className="mb-2 text-[11px] text-faint">
+                    Pré-preenchido no dia {new Date(vencimento + "T00:00:00").getDate()} de cada mês — ajuste abaixo se
+                    algum vencimento for diferente (ex.: fornecedor que varia o dia mês a mês).
+                  </p>
+                  <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto pr-1">
+                    {vencimentosParcelas.map((data, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="w-9 shrink-0 text-xs text-faint">
+                          {i + 1}/{numParcelas}
+                        </span>
+                        <input
+                          type="date"
+                          value={data}
+                          onChange={(e) =>
+                            setVencimentosOverride((s) => ({ ...s, [i]: e.target.value }))
+                          }
+                          className="w-full rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-1.5 text-xs text-brand-900"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </>
           )}
