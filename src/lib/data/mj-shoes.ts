@@ -161,9 +161,9 @@ import { ClientFinanceData } from "@/lib/types";
 // (pagos), essas projeções ficaram duplicadas e foram excluídas. As projeções de outubro,
 // novembro e dezembro continuam em aberto, pois esses meses ainda não foram enviados.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 17 → 18: CMV de agosto preenchido — Ewerton informou 42,75% sobre a receita do mês
-  // (R$ 375.871,35), resultando em R$ 160.685,00.
-  dataVersion: 18,
+  // Bump 18 → 19: CMV de setembro preenchido — Ewerton informou 41,60% sobre a receita do mês
+  // (R$ 291.339,11), resultando em R$ 121.197,07.
+  dataVersion: 19,
   // Impostos e Investimentos já entram no DRE como linha de destaque (linhasDestaqueDre abaixo) —
   // sem isso, o mesmo lançamento apareceria de novo dentro de DESPESAS, contando duas vezes.
   classificacoesForaDoDre: ["IMPOSTOS", "INVESTIMENTO"],
@@ -178,9 +178,10 @@ export const mjShoesData: ClientFinanceData = {
     investimentos: 0,
   },
   // CMV oficial por mês — maio vem da aba Ano 2026 da planilha DRE; agosto é 42,75% da receita do
-  // mês (informado pelo Ewerton, R$ 375.871,35 × 42,75% = R$ 160.685,00); junho, julho e setembro
-  // ainda ficam em branco. Índice 0 = Jan, 4 = Maio, 7 = Agosto, 11 = Dez.
-  cmvManual: [0, 0, 0, 0, 93465.51, 0, 0, 160685.0, 0, 0, 0, 0],
+  // mês (R$ 375.871,35 × 42,75% = R$ 160.685,00); setembro é 41,60% (R$ 291.339,11 × 41,60% =
+  // R$ 121.197,07), ambos informados pelo Ewerton; junho e julho ainda ficam em branco. Índice 0 =
+  // Jan, 4 = Maio, 7 = Agosto, 8 = Setembro, 11 = Dez.
+  cmvManual: [0, 0, 0, 0, 93465.51, 0, 0, 160685.0, 121197.07, 0, 0, 0],
 
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
