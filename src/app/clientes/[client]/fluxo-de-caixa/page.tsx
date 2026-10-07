@@ -18,7 +18,7 @@ import {
 import { dreMonths } from "@/lib/constants";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
-import { Payable } from "@/lib/types";
+import { DreGridRow, MarketplaceCanal, Payable } from "@/lib/types";
 
 const DailyBalanceChart = dynamic(() => import("@/components/charts/DailyBalanceChart").then((m) => m.DailyBalanceChart), {
   ssr: false,
@@ -76,6 +76,11 @@ function categoriaRowsFor(payables: Payable[], classificacao: string) {
     .sort((a, b) => b.acumulado - a.acumulado);
 }
 
+// Formata percentual de representatividade — "—" quando a base é zero (nada pra comparar ainda).
+function formatPct(pct: number | null) {
+  return pct === null ? "—" : `${pct.toFixed(1)}%`;
+}
+
 export default function FluxoDeCaixaPage() {
   const {
     fluxoCaixaPeriodo,
@@ -109,6 +114,54 @@ export default function FluxoDeCaixaPage() {
   const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
+
+  // % de representatividade da DRE de Caixa: tudo (entradas e saídas) sobre o Total de entradas
+  // do período selecionado — mesma ideia do "% dos recebimentos" já usado nos KPIs acima.
+  const totalEntradasCaixaRow = dreCaixaGrid.find((r) => r.label === "= Total de entradas");
+  function refValorCaixa(row: { values: number[]; acumulado: number }) {
+    return mesFiltro !== null ? row.values[mesFiltro] : row.acumulado;
+  }
+  function pctCaixa(row: { values: number[]; acumulado: number }): number | null {
+    if (!totalEntradasCaixaRow) return null;
+    const base = refValorCaixa(totalEntradasCaixaRow);
+    if (!base) return null;
+    return (refValorCaixa(row) / base) * 100;
+  }
+
+  // % de representatividade do Demonstrativo por Competência: mesma lógica da aba Faturamento &
+  // DRE — da Receita até o Valor a Gastar a base é a receita; dali pra baixo (despesas) a base
+  // vira o próprio Valor a Gastar.
+  const receitaCompRow = summary.dreGrid.find((r) => r.label === "RECEITA");
+  const valorAGastarCompRow = summary.dreGrid.find((r) => r.label === "= Lucro Bruto ou Valor a Gastar" || r.label === "= Valor a gastar");
+  const valorAGastarCompIdx = valorAGastarCompRow ? summary.dreGrid.indexOf(valorAGastarCompRow) : -1;
+  function refValorComp(row: { values: number[]; acumulado: number }) {
+    return mesFiltro !== null ? row.values[mesFiltro] : row.acumulado;
+  }
+  function pctLinhaComp(row: DreGridRow, idx: number): number | null {
+    if (!receitaCompRow) return null;
+    const baseRow = valorAGastarCompRow && idx > valorAGastarCompIdx ? valorAGastarCompRow : receitaCompRow;
+    const base = refValorComp(baseRow);
+    if (!base) return null;
+    return (refValorComp(row) / base) * 100;
+  }
+  function pctReceitaComp(row: { values: number[]; acumulado: number }): number | null {
+    if (!receitaCompRow) return null;
+    const base = refValorComp(receitaCompRow);
+    if (!base) return null;
+    return (refValorComp(row) / base) * 100;
+  }
+  function pctValorAGastarComp(row: { values: number[]; acumulado: number }): number | null {
+    if (!valorAGastarCompRow) return null;
+    const base = refValorComp(valorAGastarCompRow);
+    if (!base) return null;
+    return (refValorComp(row) / base) * 100;
+  }
+  function pctCanalComp(canal: MarketplaceCanal, row: { values: number[]; acumulado: number }): number | null {
+    const receitaCanal = marketplaceManual[canal]?.receita ?? [];
+    const base = mesFiltro !== null ? receitaCanal[mesFiltro] : receitaCanal.reduce((a, v) => a + v, 0);
+    if (!base) return null;
+    return (refValorComp(row) / base) * 100;
+  }
   const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(
     summary.dreGrid,
     custosVariaveisDre,
@@ -428,7 +481,8 @@ export default function FluxoDeCaixaPage() {
                 {mesesExibidos.map((i) => (
                   <th key={dreMonths[i]} className="py-2 px-3 text-right font-medium whitespace-nowrap">{dreMonths[i].toUpperCase()}</th>
                 ))}
-                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">{mesFiltro === null ? "Acumulado" : "Acum. ano"}</th>
+                <th className="py-2 pl-3 pr-3 text-right font-medium whitespace-nowrap">{mesFiltro === null ? "Acumulado" : "Acum. ano"}</th>
+                <th className="py-2 pl-3 pr-5 text-right font-medium whitespace-nowrap">%</th>
               </tr>
             </thead>
             <tbody>
@@ -436,7 +490,7 @@ export default function FluxoDeCaixaPage() {
                 if (row.isSection) {
                   return (
                     <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
-                      <td colSpan={mesesExibidos.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                      <td colSpan={mesesExibidos.length + 3} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
                         {row.label}
                       </td>
                     </tr>
@@ -482,13 +536,16 @@ export default function FluxoDeCaixaPage() {
                           {formatCurrencyPrecise(row.values[i])}
                         </td>
                       ))}
-                      <td className={`py-2.5 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                      <td className={`py-2.5 pl-3 pr-3 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
                         {formatCurrencyPrecise(row.acumulado)}
+                      </td>
+                      <td className="py-2.5 pl-3 pr-5 text-right text-xs tabular-nums whitespace-nowrap font-medium text-brand-700">
+                        {formatPct(pctCaixa(row))}
                       </td>
                     </tr>
                     {isOpen && (
                       <tr className="border-b border-border-subtle bg-surface/60">
-                        <td colSpan={mesesExibidos.length + 2} className="py-2 pl-9 pr-5">
+                        <td colSpan={mesesExibidos.length + 3} className="py-2 pl-9 pr-5">
                           <div className="flex max-w-2xl flex-col gap-1">
                             {lancamentos.map((l) => (
                               <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
@@ -684,7 +741,8 @@ export default function FluxoDeCaixaPage() {
                         {dreMonths[i].toUpperCase()}/26
                       </th>
                     ))}
-                    <th className="py-2.5 pl-3 pr-5 text-right font-medium whitespace-nowrap">{mesFiltro === null ? "Total" : "Total ano"}</th>
+                    <th className="py-2.5 pl-3 pr-3 text-right font-medium whitespace-nowrap">{mesFiltro === null ? "Total" : "Total ano"}</th>
+                    <th className="py-2.5 pl-3 pr-5 text-right font-medium whitespace-nowrap">%</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -692,7 +750,7 @@ export default function FluxoDeCaixaPage() {
                     if (row.isSection) {
                       return (
                         <tr key={idx} className="border-b border-border-subtle bg-surface-muted">
-                          <td colSpan={mesesExibidos.length + 2} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                          <td colSpan={mesesExibidos.length + 3} className="py-2 pl-5 text-[11px] font-semibold uppercase tracking-wide text-faint">
                             {row.label}
                           </td>
                         </tr>
@@ -730,8 +788,11 @@ export default function FluxoDeCaixaPage() {
                               {formatCurrencyPrecise(row.values[i])}
                             </td>
                           ))}
-                          <td className={`py-2 pl-3 pr-5 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
+                          <td className={`py-2 pl-3 pr-3 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
                             {formatCurrencyPrecise(row.acumulado)}
+                          </td>
+                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                            {formatPct(pctLinhaComp(row, idx))}
                           </td>
                         </tr>
                         {isOpen &&
@@ -759,13 +820,16 @@ export default function FluxoDeCaixaPage() {
                                       {formatCurrencyPrecise(catRow.values[i])}
                                     </td>
                                   ))}
-                                  <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                  <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                                     {formatCurrencyPrecise(catRow.acumulado)}
+                                  </td>
+                                  <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                    {formatPct(pctValorAGastarComp(catRow))}
                                   </td>
                                 </tr>
                                 {catOpen && (
                                   <tr className="border-b border-border-subtle bg-surface/30">
-                                    <td colSpan={mesesExibidos.length + 2} className="py-2 pl-14 pr-5">
+                                    <td colSpan={mesesExibidos.length + 3} className="py-2 pl-14 pr-5">
                                       <div className="flex max-w-2xl flex-col gap-1">
                                         {catLancamentos.map((l) => (
                                           <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
@@ -795,8 +859,11 @@ export default function FluxoDeCaixaPage() {
                                   {formatCurrencyPrecise(canalRow.values[i])}
                                 </td>
                               ))}
-                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                                 {formatCurrencyPrecise(canalRow.acumulado)}
+                              </td>
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                {formatPct(pctCanalComp(canalRow.canal, canalRow))}
                               </td>
                             </tr>
                           ))}
@@ -810,8 +877,11 @@ export default function FluxoDeCaixaPage() {
                                   {formatCurrencyPrecise(canalRow.values[i])}
                                 </td>
                               ))}
-                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                                 {formatCurrencyPrecise(canalRow.acumulado)}
+                              </td>
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                {formatPct(pctCanalComp(canalRow.canal, canalRow))}
                               </td>
                             </tr>
                           ))}
@@ -838,8 +908,11 @@ export default function FluxoDeCaixaPage() {
                                       {formatCurrencyPrecise(values[i])}
                                     </td>
                                   ))}
-                                  <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                  <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                                     {formatCurrencyPrecise(acumulado)}
+                                  </td>
+                                  <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                    {formatPct(pctReceitaComp({ values, acumulado }))}
                                   </td>
                                 </tr>
                                 {subOpen &&
@@ -866,13 +939,16 @@ export default function FluxoDeCaixaPage() {
                                               {formatCurrencyPrecise(catRow.values[i])}
                                             </td>
                                           ))}
-                                          <td className="py-2 pl-3 pr-5 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
+                                          <td className="py-2 pl-3 pr-3 text-right text-[11px] font-medium tabular-nums text-faint whitespace-nowrap">
                                             {formatCurrencyPrecise(catRow.acumulado)}
+                                          </td>
+                                          <td className="py-2 pl-3 pr-5 text-right text-[11px] font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                            {formatPct(pctReceitaComp(catRow))}
                                           </td>
                                         </tr>
                                         {catOpen && (
                                           <tr className="border-b border-border-subtle bg-surface/20">
-                                            <td colSpan={mesesExibidos.length + 2} className="py-2 pl-20 pr-5">
+                                            <td colSpan={mesesExibidos.length + 3} className="py-2 pl-20 pr-5">
                                               <div className="flex max-w-2xl flex-col gap-1">
                                                 {catLancamentos.map((l) => (
                                                   <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
