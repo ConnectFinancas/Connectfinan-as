@@ -154,10 +154,16 @@ import { ClientFinanceData } from "@/lib/types";
 // - "CONNECT SOLUCOES CONTABEIS LTD" (21/09, R$1.500,00) veio rotulada "CONTABILIDADE", mas o
 //   valor bate com o BPO Financeiro cobrado nos outros meses — reclassifiquei por consistência.
 // - cmvManual de setembro também fica em branco, mesmo critério de junho/julho/agosto.
+//
+// Remoção das projeções "em aberto" de setembro (ids p1, p2, p4, p5, p7, p9-p22): eram parte da
+// projeção original de Contas a Pagar Set-Dez/2026 (baseada no detalhamento de maio), feita antes
+// de receber a planilha real de setembro. Agora que setembro foi importado com os dados reais
+// (pagos), essas projeções ficaram duplicadas e foram excluídas. As projeções de outubro,
+// novembro e dezembro continuam em aberto, pois esses meses ainda não foram enviados.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 14 → 15: construção do Contas a Pagar/Receber de setembro/2026 a partir da planilha do
-  // cliente, nova categoria "Materiais de Marketing" (DESPESAS COMERCIAIS / MARKETING).
-  dataVersion: 15,
+  // Bump 15 → 16: remoção das projeções "em aberto" de setembro, já substituídas pelos
+  // lançamentos reais importados da planilha.
+  dataVersion: 16,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -518,25 +524,6 @@ export const mjShoesData: ClientFinanceData = {
   ],
 
   seedPayables: [
-  { id: "p1", favorecido: "JOSENILDO LUCAS DA CRUZ SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-02", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
-  { id: "p2", favorecido: "JULY ADILA GOMES DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-04", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
-  { id: "p4", favorecido: "THAMIRES LUANA MACEDO VIANA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-04", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
-  { id: "p5", favorecido: "VALÉRIA CORREIA CARNEIRO MELLO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-04", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
-  { id: "p7", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-05", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
-  { id: "p9", favorecido: "SISTEMAS", categoria: "Sistemas", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-10", valor: 250.0, status: "pendente", descricao: "Projeção Set-Dez/2026" },
-  { id: "p10", favorecido: "BANCO DO BRASIL", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-09-11", valor: 285.6, status: "pendente", descricao: "Projeção Set-Dez/2026" },
-  { id: "p11", favorecido: "ALUGUEL", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-12", valor: 3500.0, status: "pendente", descricao: "Pago em espécie" },
-  { id: "p12", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-12", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
-  { id: "p13", favorecido: "TIM", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-19", valor: 240.0, status: "pendente", descricao: "Projeção Set-Dez/2026" },
-  { id: "p14", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-19", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
-  { id: "p15", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "BPO Financeiro", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-20", valor: 1500.0, status: "pendente", descricao: "Projeção Set-Dez/2026" },
-  { id: "p16", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-20", valor: 997.0, status: "pendente", descricao: "Projeção Set-Dez/2026" },
-  { id: "p17", favorecido: "CAIXA ECONÔMICA FEDERAL", categoria: "FGTS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-20", valor: 259.36, status: "pendente", descricao: "Valor de maio" },
-  { id: "p18", favorecido: "RECEITA FEDERAL", categoria: "INSS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-20", valor: 421.45, status: "pendente", descricao: "Valor de maio" },
-  { id: "p19", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-09-20", valor: 28902.42, status: "pendente", descricao: "Valor de maio" },
-  { id: "p20", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-26", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
-  { id: "p21", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-09-28", valor: 28886.71, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
-  { id: "p22", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-09-29", valor: 15220.35, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
   { id: "p23", favorecido: "JOSENILDO LUCAS DA CRUZ SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-02", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
   { id: "p24", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-03", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
   { id: "p25", favorecido: "JULY ADILA GOMES DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-04", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
