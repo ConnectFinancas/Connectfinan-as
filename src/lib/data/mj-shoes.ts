@@ -123,14 +123,14 @@ import { ClientFinanceData } from "@/lib/types";
 //   padrão de meses anteriores.
 // - cmvManual de agosto também fica em branco, mesmo critério de junho/julho.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 2 → 12: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
+  // Bump 2 → 13: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
   // lançamentos futuros da Reylane (demitida), valor de Salário fixado em R$1.500,00 para
   // Lucas/July/Valéria/Thamires, remoção de todos os lançamentos de Complemento Salarial,
   // construção do Contas a Pagar/Receber de maio, junho, julho e agosto/2026 a partir das
-  // planilhas do cliente, reclassificação dos nomes de fomento/factoring pra CMV, e correção
+  // planilhas do cliente, reclassificação dos nomes de fomento/factoring pra CMV, correção
   // pontual de Veronica Cristina (frete), Ana Kalina + Ana Kalina e Filhas (transferência) e Shop
-  // Mídia (manutenção predial).
-  dataVersion: 12,
+  // Mídia (manutenção predial), e lançamento avulso de Energia Elétrica (NEOENERGIA, 08/10).
+  dataVersion: 13,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -1242,6 +1242,9 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p822", favorecido: "STONE", categoria: "Tarifas de Maquininhas", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-08-29", valor: 7.09, status: "pago", pagamento: "2026-08-29", descricao: "Taxa maquineta de 29/08/2026" },
   { id: "p823", favorecido: "STONE", categoria: "Tarifas de Maquininhas", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-08-31", valor: 7.71, status: "pago", pagamento: "2026-08-31", descricao: "Taxa maquineta de 31/08/2026" },
   { id: "p824", favorecido: "BANCO DO BRASIL", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-08-31", valor: 3.29, status: "pago", pagamento: "2026-08-31", descricao: "Taxa bancária de 31/08/2026" },
+
+  // --- Lançamento avulso adicionado manualmente (fora da importação por planilha) ---
+  { id: "p825", favorecido: "NEOENERGIA", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 2600.0, status: "pendente", descricao: "Energia elétrica" },
   ],
 
   seedCategoriasPagar: [
