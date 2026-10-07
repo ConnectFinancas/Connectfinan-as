@@ -161,9 +161,19 @@ import { ClientFinanceData } from "@/lib/types";
 // (pagos), essas projeções ficaram duplicadas e foram excluídas. As projeções de outubro,
 // novembro e dezembro continuam em aberto, pois esses meses ainda não foram enviados.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 15 → 16: remoção das projeções "em aberto" de setembro, já substituídas pelos
-  // lançamentos reais importados da planilha.
-  dataVersion: 16,
+  // Bump 16 → 17: Impostos e Investimentos passam a vir como linha de destaque (valor real dos
+  // lançamentos de Contas a Pagar) entre a Receita e o Valor a Gastar, em vez de aparecer
+  // zerados ali e duplicados mais abaixo dentro de DESPESAS — ver linhasDestaqueDre/
+  // classificacoesForaDoDre abaixo.
+  dataVersion: 17,
+  // Impostos e Investimentos já entram no DRE como linha de destaque (linhasDestaqueDre abaixo) —
+  // sem isso, o mesmo lançamento apareceria de novo dentro de DESPESAS, contando duas vezes.
+  classificacoesForaDoDre: ["IMPOSTOS", "INVESTIMENTO"],
+  linhasDestaqueDre: [
+    { rotulo: "(-) Impostos", classificacoes: ["IMPOSTOS"] },
+    { rotulo: "(-) Inadimplência", classificacoes: [] },
+    { rotulo: "(-) Investimentos", classificacoes: ["INVESTIMENTO"] },
+  ],
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
