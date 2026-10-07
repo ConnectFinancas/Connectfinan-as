@@ -123,14 +123,15 @@ import { ClientFinanceData } from "@/lib/types";
 //   padrão de meses anteriores.
 // - cmvManual de agosto também fica em branco, mesmo critério de junho/julho.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 2 → 13: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
+  // Bump 2 → 14: nome completo no favorecido da folha (Lucas/July/Valéria/Thamy), remoção dos
   // lançamentos futuros da Reylane (demitida), valor de Salário fixado em R$1.500,00 para
   // Lucas/July/Valéria/Thamires, remoção de todos os lançamentos de Complemento Salarial,
   // construção do Contas a Pagar/Receber de maio, junho, julho e agosto/2026 a partir das
   // planilhas do cliente, reclassificação dos nomes de fomento/factoring pra CMV, correção
   // pontual de Veronica Cristina (frete), Ana Kalina + Ana Kalina e Filhas (transferência) e Shop
-  // Mídia (manutenção predial), e lançamento avulso de Energia Elétrica (NEOENERGIA, 08/10).
-  dataVersion: 13,
+  // Mídia (manutenção predial), e lançamento avulso de Energia Elétrica (NEOENERGIA, dia 08 de
+  // out/nov/dez).
+  dataVersion: 14,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -1245,6 +1246,8 @@ export const mjShoesData: ClientFinanceData = {
 
   // --- Lançamento avulso adicionado manualmente (fora da importação por planilha) ---
   { id: "p825", favorecido: "NEOENERGIA", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 2600.0, status: "pendente", descricao: "Energia elétrica" },
+  { id: "p826", favorecido: "NEOENERGIA", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 2600.0, status: "pendente", descricao: "Energia elétrica" },
+  { id: "p827", favorecido: "NEOENERGIA", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 2600.0, status: "pendente", descricao: "Energia elétrica" },
   ],
 
   seedCategoriasPagar: [
