@@ -161,10 +161,11 @@ import { ClientFinanceData } from "@/lib/types";
 // (pagos), essas projeções ficaram duplicadas e foram excluídas. As projeções de outubro,
 // novembro e dezembro continuam em aberto, pois esses meses ainda não foram enviados.
 export const mjShoesData: ClientFinanceData = {
-  // Bump 20 → 21: CMV de junho e setembro corrigidos e CMV de julho preenchido — Ewerton enviou
-  // tabela com os percentuais oficiais: junho 40,72% (era 41,26%), julho 41,27% (novo), setembro
-  // 41,00% (era 41,60%).
-  dataVersion: 21,
+  // Bump 21 → 22: remove a duplicidade de "Material de Escritório" (aparecia como categoria tanto
+  // em DESPESAS ADMINISTRATIVAS quanto em DESPESAS EVENTUAIS). Os 6 lançamentos de maio
+  // (embalagens/decoração, ids p147-p152) que estavam em DESPESAS EVENTUAIS foram reclassificados
+  // pra DESPESAS ADMINISTRATIVAS, e a categoria duplicada foi removida do grupo DESPESAS EVENTUAIS.
+  dataVersion: 22,
   // Impostos e Investimentos já entram no DRE como linha de destaque (linhasDestaqueDre abaixo) —
   // sem isso, o mesmo lançamento apareceria de novo dentro de DESPESAS, contando duas vezes.
   classificacoesForaDoDre: ["IMPOSTOS", "INVESTIMENTO"],
@@ -654,12 +655,12 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p144", favorecido: "MATERIAL DE ESCRITÓRIO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-19", valor: 42.0, status: "pago", pagamento: "2026-05-19", descricao: "9. VASSOURA E PASTAS - MATERIAL DE ESCRITORIO (maio/2026)" },
   { id: "p145", favorecido: "MATERIAL DE ESCRITÓRIO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-28", valor: 20.0, status: "pago", pagamento: "2026-05-28", descricao: "9. PILHA - MATERIAL DE ESCRITÓRIO (maio/2026)" },
   { id: "p146", favorecido: "MATERIAL DE ESCRITÓRIO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-23", valor: 50.8, status: "pago", pagamento: "2026-05-23", descricao: "9.  CALCULADORAS - MATERIAIS DE ESCRIT (maio/2026)" },
-  { id: "p147", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-05-13", valor: 53.7, status: "pago", pagamento: "2026-05-13", descricao: "BALÃO - DESPESAS EVENTUAIS (maio/2026)" },
-  { id: "p148", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-05-08", valor: 94.8, status: "pago", pagamento: "2026-05-08", descricao: "FITA - DESPESAS EVENTUAIS (maio/2026)" },
-  { id: "p149", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-05-13", valor: 112.0, status: "pago", pagamento: "2026-05-13", descricao: "FITA - DESPESAS EVENTUAIS (maio/2026)" },
-  { id: "p150", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-05-28", valor: 28.96, status: "pago", pagamento: "2026-05-28", descricao: "PAPEL TOALHA - DESPESAS EVENTUAIS (maio/2026)" },
-  { id: "p151", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-05-13", valor: 30.0, status: "pago", pagamento: "2026-05-13", descricao: "SACO - DESPESAS EVENTUAIS (maio/2026)" },
-  { id: "p152", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-05-12", valor: 46.0, status: "pago", pagamento: "2026-05-12", descricao: "TECIDO - DESPESAS EVENTUAIS (maio/2026)" },
+  { id: "p147", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-13", valor: 53.7, status: "pago", pagamento: "2026-05-13", descricao: "BALÃO - DESPESAS EVENTUAIS (maio/2026)" },
+  { id: "p148", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-08", valor: 94.8, status: "pago", pagamento: "2026-05-08", descricao: "FITA - DESPESAS EVENTUAIS (maio/2026)" },
+  { id: "p149", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-13", valor: 112.0, status: "pago", pagamento: "2026-05-13", descricao: "FITA - DESPESAS EVENTUAIS (maio/2026)" },
+  { id: "p150", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-28", valor: 28.96, status: "pago", pagamento: "2026-05-28", descricao: "PAPEL TOALHA - DESPESAS EVENTUAIS (maio/2026)" },
+  { id: "p151", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-13", valor: 30.0, status: "pago", pagamento: "2026-05-13", descricao: "SACO - DESPESAS EVENTUAIS (maio/2026)" },
+  { id: "p152", favorecido: "EMBALAGENS/DECORAÇÃO", categoria: "Material de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-12", valor: 46.0, status: "pago", pagamento: "2026-05-12", descricao: "TECIDO - DESPESAS EVENTUAIS (maio/2026)" },
   { id: "p153", favorecido: "RVF FRANQUIAS", categoria: "Royalties Franquia", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-25", valor: 1958.0, status: "pago", pagamento: "2026-05-25", descricao: "RVF FRANQUIAS (maio/2026)" },
   { id: "p154", favorecido: "RVF FRANQUIAS", categoria: "Royalties Franquia", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-25", valor: 419.0, status: "pago", pagamento: "2026-05-25", descricao: "RVF FRANQUIAS (maio/2026)" },
   { id: "p155", favorecido: "RVF FRANQUIAS", categoria: "Royalties Franquia", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-05-25", valor: 481.0, status: "pago", pagamento: "2026-05-25", descricao: "RVF FRANQUIAS (maio/2026)" },
@@ -1645,7 +1646,6 @@ export const mjShoesData: ClientFinanceData = {
       color: "#94a3b8",
       padrao: true,
       categorias: [
-        { nome: "Material de Escritório", padrao: true },
         { nome: "Uso e Consumo", padrao: true },
         { nome: "Manutenção de Equipamentos", padrao: true },
       ],
