@@ -7,7 +7,7 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { DetalhamentoMesModal } from "@/components/client/DetalhamentoMesModal";
 import { dreMonths } from "@/lib/constants";
 import { useFinance } from "@/lib/store/FinanceContext";
-import { cmvMarketplacePorCanal, comissaoMarketplacePorCanal, receitaMarketplacePorCanal } from "@/lib/derive";
+import { cmvMarketplacePorCanal, comissaoMarketplacePorCanal, receitaMarketplacePorCanal, receitaPorFormaRecebimento } from "@/lib/derive";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 import { DreGridRow, MarketplaceCanal, Payable } from "@/lib/types";
@@ -68,7 +68,7 @@ function formatPct(pct: number | null) {
 }
 
 export default function FaturamentoDrePage() {
-  const { summary, payables, marketplaceManual, classificacoesNoCmv, client } = useFinance();
+  const { summary, payables, receivables, marketplaceManual, classificacoesNoCmv, client } = useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
   const [detalhamentoAberto, setDetalhamentoAberto] = useState(false);
   const [classAberta, setClassAberta] = useState<string | null>(null);
@@ -78,6 +78,14 @@ export default function FaturamentoDrePage() {
   // detalhamentos (categoria/lançamento).
   const [mesFiltro, setMesFiltro] = useState<number | null>(null);
   const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
+
+  // Drill-down da RECEITA: clientes com marketplaceManual abrem por canal; os demais (ex.: MJ
+  // Shoes) abrem por forma de recebimento (Cartão/Dinheiro/Pix), quando os lançamentos de Contas
+  // a Receber tiverem esse campo preenchido.
+  const receitaDrillRows = client.temInformacoesDre
+    ? receitaMarketplacePorCanal(marketplaceManual).map((r) => ({ key: r.canal, label: r.label, values: r.values, acumulado: r.acumulado }))
+    : receitaPorFormaRecebimento(receivables).map((r) => ({ key: r.forma, label: r.forma, values: r.values, acumulado: r.acumulado }));
+  const temReceitaExpandivel = receitaDrillRows.length > 0;
 
   // Representatividade em %: da RECEITA até "Valor a Gastar"/Lucro Bruto (inclusive), a base é a
   // receita total (100%). Dali pra baixo (despesas), a base vira o próprio Valor a Gastar — assim
@@ -240,7 +248,7 @@ export default function FaturamentoDrePage() {
                     </tr>
                   );
                 }
-                const isReceitaRow = row.label === "RECEITA" && !!client.temInformacoesDre;
+                const isReceitaRow = row.label === "RECEITA" && temReceitaExpandivel;
                 const isComissaoRow = row.label === "(-) Comissões de Marketplace";
                 const isCmvRow = row.label === "(-) CMV";
                 const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow;
@@ -294,8 +302,8 @@ export default function FaturamentoDrePage() {
                     </tr>
                     {isOpen &&
                       isReceitaRow &&
-                      receitaMarketplacePorCanal(marketplaceManual).map((canalRow) => (
-                        <tr key={canalRow.canal} className="border-b border-border-subtle bg-client-accent/[0.06]">
+                      receitaDrillRows.map((canalRow) => (
+                        <tr key={canalRow.key} className="border-b border-border-subtle bg-client-accent/[0.06]">
                           <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
                           {mesesExibidos.map((i) => (
                             <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">

@@ -75,6 +75,7 @@ type FinanceContextValue = FinanceState &
     | "resumoExecutivo"
     | "pontoDeAtencao"
     | "classificacoesNoCmv"
+    | "saldoBancarioMensal"
     | "custosVariaveisDre"
     | "custosFixosClassificacoesExtras"
     | "excecoesPontoEquilibrio"
@@ -339,6 +340,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     resumoExecutivo: seed.resumoExecutivo,
     pontoDeAtencao: seed.pontoDeAtencao,
     classificacoesNoCmv: seed.classificacoesNoCmv,
+    saldoBancarioMensal: seed.saldoBancarioMensal,
     custosVariaveisDre: seed.custosVariaveisDre,
     custosFixosClassificacoesExtras: seed.custosFixosClassificacoesExtras,
     excecoesPontoEquilibrio: seed.excecoesPontoEquilibrio,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { AlertTriangle, CheckCircle2, ChevronRight, Download, Gauge, Landmark, Pin, Target, TrendingUp } from "lucide-react";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
@@ -10,6 +10,7 @@ import {
   cmvMarketplacePorCanal,
   comissaoMarketplacePorCanal,
   computeCapitalDeGiroRecomendado,
+  computeFluxoCaixa,
   computeFluxoCaixaDreGrid,
   computeMargemEPontoEquilibrio,
   computeMargemEPontoEquilibrioPorMes,
@@ -83,13 +84,7 @@ function formatPct(pct: number | null) {
 
 export default function FluxoDeCaixaPage() {
   const {
-    fluxoCaixaPeriodo,
-    fluxoCaixaKpis,
     fluxoDiario,
-    faturamentoXRecebimentos,
-    maioresRecebimentos,
-    maioresPagamentos,
-    indicesFinanceiros,
     destaquesPeriodo,
     resumoExecutivo,
     pontoDeAtencao,
@@ -102,6 +97,7 @@ export default function FluxoDeCaixaPage() {
     excecoesPontoEquilibrio,
     marketplaceManual,
     classificacoesNoCmv,
+    saldoBancarioMensal,
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
@@ -112,6 +108,17 @@ export default function FluxoDeCaixaPage() {
   // Caixa e Demonstrativo por Competência) pra mostrar só aquele mês.
   const [mesFiltro, setMesFiltro] = useState<number | null>(null);
   const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
+
+  // KPIs/cards do topo em regime de caixa, recalculados pro mês selecionado no filtro acima —
+  // "Recebimentos"/"Pagamentos" (e tudo que deriva deles) sempre mostram o que de fato entrou/saiu
+  // naquele mês, não um mês fixo escolhido automaticamente. Sem filtro (ano inteiro), cai no
+  // comportamento padrão de mostrar o mês mais recente com movimento.
+  const fluxoCaixaCalc = useMemo(
+    () => computeFluxoCaixa(payables, receivables, saldoBancarioMensal, summary.dreGrid, mesFiltro),
+    [payables, receivables, saldoBancarioMensal, summary.dreGrid, mesFiltro]
+  );
+  const { fluxoCaixaPeriodo, fluxoCaixaKpis, faturamentoXRecebimentos, maioresRecebimentos, maioresPagamentos, indicesFinanceiros } =
+    fluxoCaixaCalc;
 
   const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
 

@@ -36,6 +36,27 @@ export function receitaMarketplacePorCanal(marketplaceManual: Record<Marketplace
     .sort((a, b) => b.acumulado - a.acumulado);
 }
 
+// Drill-down da linha "RECEITA" por forma de recebimento (Cartão/Dinheiro/Pix) — pra clientes sem
+// marketplaceManual que usam esse campo nos lançamentos de Contas a Receber (ex.: MJ Shoes).
+// Agrupa por vencimento (mesma base de competência da própria linha RECEITA), pra bater com o
+// total exibido ali.
+export function receitaPorFormaRecebimento(receivables: Receivable[]) {
+  const porForma = new Map<string, Receivable[]>();
+  for (const r of receivables) {
+    const forma = r.formaRecebimento?.trim() || "Não informado";
+    if (!porForma.has(forma)) porForma.set(forma, []);
+    porForma.get(forma)!.push(r);
+  }
+  return [...porForma.entries()]
+    .map(([forma, items]) => {
+      const values = monthTotals(items).map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { forma, values, acumulado };
+    })
+    .filter((row) => row.acumulado > 0)
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 // Drill-down da linha "(-) Comissões de Marketplace" do DRE: abre em vez de lançamentos (essa
 // linha não vem de Contas a Pagar) o valor de comissão de cada canal, mês a mês.
 export function comissaoMarketplacePorCanal(marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>) {
@@ -540,19 +561,30 @@ export function computeFluxoCaixa(
   payables: Payable[],
   receivables: Receivable[],
   saldoBancarioMensal?: ({ saldoInicial: number; saldoFinalInformado: number } | undefined)[],
-  dreGrid?: DreGridRow[]
+  dreGrid?: DreGridRow[],
+  // Mês escolhido no filtro da página (0-11). Quando informado, os KPIs passam a refletir
+  // exatamente o recebido/pago NAQUELE mês (regime de caixa), em vez do último mês com
+  // movimento — é assim que o cliente consegue conferir "quanto entrou e saiu" mês a mês.
+  // Sem filtro (undefined/null, "ano inteiro"), mantém o comportamento padrão de mostrar o mês
+  // mais recente com lançamento.
+  mesSelecionado?: number | null
 ) {
   const recebidos = receivables.filter((r) => r.status === "recebido" && r.recebimento);
   const pagos = payables.filter((p) => p.status === "pago" && p.pagamento);
 
-  const mesesComMovimento = new Set<number>();
-  recebidos.forEach((r) => mesesComMovimento.add(monthIndex(r.recebimento!)));
-  pagos.forEach((p) => mesesComMovimento.add(monthIndex(p.pagamento!)));
-  let mesReferencia = HOJE.getMonth();
-  for (let i = Math.min(HOJE.getMonth(), 11); i >= 0; i--) {
-    if (mesesComMovimento.has(i)) {
-      mesReferencia = i;
-      break;
+  let mesReferencia: number;
+  if (mesSelecionado !== undefined && mesSelecionado !== null) {
+    mesReferencia = mesSelecionado;
+  } else {
+    const mesesComMovimento = new Set<number>();
+    recebidos.forEach((r) => mesesComMovimento.add(monthIndex(r.recebimento!)));
+    pagos.forEach((p) => mesesComMovimento.add(monthIndex(p.pagamento!)));
+    mesReferencia = HOJE.getMonth();
+    for (let i = Math.min(HOJE.getMonth(), 11); i >= 0; i--) {
+      if (mesesComMovimento.has(i)) {
+        mesReferencia = i;
+        break;
+      }
     }
   }
   const fluxoCaixaPeriodo = `${fullMonthNames[mesReferencia]}/2026`;
