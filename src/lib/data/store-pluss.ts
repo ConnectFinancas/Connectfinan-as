@@ -9,10 +9,12 @@ import { ClientFinanceData } from "@/lib/types";
 // da aba "Informações do DRE" (ver marketplaceManual/linhasDestaqueDre e computeDreGrid).
 export const storePlussData: ClientFinanceData = {
   // Sempre que EDITAR os lançamentos/categorias abaixo (nova importação, correção), incremente
-  // este número — ver o comentário de dataVersion em types.ts. Bump 16 → 17: sem alteração nos
-  // dados em si, só forçando a reconciliação — corrige exclusões acidentais de lançamentos de
-  // Contas a Pagar de agosto/2026 feitas pela tela (a base aqui sempre esteve intacta).
-  dataVersion: 17,
+  // este número — ver o comentário de dataVersion em types.ts. Bump 17 → 18: ajuste de vencimento
+  // das provisões recorrentes (set-dez/2026) a pedido do Ewerton — Claro dia 01 → 06, Vivo dia
+  // 03 → 08, Aluguel (Elari) dia 04 → 10 (Plano de Saúde já estava certo, dia 06). Não havia
+  // nenhuma provisão de "Compra de Produtos" nessa lista recorrente — só lançamentos reais já
+  // pagos (histórico de compras a fornecedor), que continuam intactos.
+  dataVersion: 18,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto.
@@ -1297,8 +1299,8 @@ export const storePlussData: ClientFinanceData = {
     // (vencimento futuro em relação a HOJE). Fora dessa previsão: CMV, compras, fretes,
     // comissões/ads, retiradas avulsas, premiações e pagamentos avulsos (continuam entrando à
     // parte, conforme forem lançados).
-    { id: "p846", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-01", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
-    { id: "p847", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-01", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
+    { id: "p846", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-06", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
+    { id: "p847", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-06", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
     { id: "p848", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-01", valor: 94.61, status: "pendente", descricao: "Unidade 2. Valor de julho (entre 24 e 95). Pago de 01 a 14" },
     { id: "p849", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Salários", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-01", valor: 1200.0, status: "pendente", descricao: "Saldo do salário. Valor de julho (varia de 1.200 a 2.030). Pago de 01 a 02" },
     { id: "p850", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Vale-Transporte", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-01", valor: 257.53, status: "pendente", descricao: "Pago de 01 a 02" },
@@ -1319,9 +1321,9 @@ export const storePlussData: ClientFinanceData = {
     { id: "p865", favorecido: "CONTROLID", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 52.2, status: "pendente", descricao: "Relógio de ponto. Pago de 03 a 06" },
     { id: "p866", favorecido: "DLOCAL BRASIL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 45.0, status: "pendente", descricao: "Assinatura 2. Pago de 03 a 09" },
     { id: "p867", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 178.73, status: "pendente", descricao: "Unidade 1. Valor de julho (jun: 467,95). Pago de 03 a 13" },
-    { id: "p868", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
-    { id: "p869", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
-    { id: "p870", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-04", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10 (normalmente dia 10)" },
+    { id: "p868", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-08", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
+    { id: "p869", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-08", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
+    { id: "p870", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
     { id: "p871", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-04", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
     { id: "p872", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p873", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
@@ -1338,8 +1340,8 @@ export const storePlussData: ClientFinanceData = {
     { id: "p884", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "BPO FINANCEIRO", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-20", valor: 1655.03, status: "pendente", descricao: "Valor de julho. Pago de 20 a 23" },
     { id: "p885", favorecido: "ONE GESTÃO DE NEGÓCIOS", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-20", valor: 140.0, status: "pendente", descricao: "Mensal" },
     { id: "p886", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-25", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
-    { id: "p887", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-01", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
-    { id: "p888", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-01", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
+    { id: "p887", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-06", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
+    { id: "p888", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-06", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
     { id: "p889", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-01", valor: 94.61, status: "pendente", descricao: "Unidade 2. Valor de julho (entre 24 e 95). Pago de 01 a 14" },
     { id: "p890", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Salários", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-01", valor: 1200.0, status: "pendente", descricao: "Saldo do salário. Valor de julho (varia de 1.200 a 2.030). Pago de 01 a 02" },
     { id: "p891", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Vale-Transporte", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-01", valor: 257.53, status: "pendente", descricao: "Pago de 01 a 02" },
@@ -1361,9 +1363,9 @@ export const storePlussData: ClientFinanceData = {
     { id: "p907", favorecido: "CONTROLID", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-03", valor: 52.2, status: "pendente", descricao: "Relógio de ponto. Pago de 03 a 06" },
     { id: "p908", favorecido: "DLOCAL BRASIL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-03", valor: 45.0, status: "pendente", descricao: "Assinatura 2. Pago de 03 a 09" },
     { id: "p909", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-03", valor: 178.73, status: "pendente", descricao: "Unidade 1. Valor de julho (jun: 467,95). Pago de 03 a 13" },
-    { id: "p910", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-03", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
-    { id: "p911", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-03", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
-    { id: "p912", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-04", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10 (normalmente dia 10)" },
+    { id: "p910", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
+    { id: "p911", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
+    { id: "p912", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
     { id: "p913", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p914", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
     { id: "p915", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
@@ -1380,8 +1382,8 @@ export const storePlussData: ClientFinanceData = {
     { id: "p926", favorecido: "ONE GESTÃO DE NEGÓCIOS", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 140.0, status: "pendente", descricao: "Mensal" },
     { id: "p927", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-23", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
     { id: "p928", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-30", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
-    { id: "p929", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-01", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
-    { id: "p930", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-01", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
+    { id: "p929", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-06", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
+    { id: "p930", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-06", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
     { id: "p931", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-01", valor: 94.61, status: "pendente", descricao: "Unidade 2. Valor de julho (entre 24 e 95). Pago de 01 a 14" },
     { id: "p932", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Salários", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-01", valor: 1200.0, status: "pendente", descricao: "Saldo do salário. Valor de julho (varia de 1.200 a 2.030). Pago de 01 a 02" },
     { id: "p933", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Vale-Transporte", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-01", valor: 257.53, status: "pendente", descricao: "Pago de 01 a 02" },
@@ -1402,9 +1404,9 @@ export const storePlussData: ClientFinanceData = {
     { id: "p948", favorecido: "CONTROLID", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-03", valor: 52.2, status: "pendente", descricao: "Relógio de ponto. Pago de 03 a 06" },
     { id: "p949", favorecido: "DLOCAL BRASIL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-03", valor: 45.0, status: "pendente", descricao: "Assinatura 2. Pago de 03 a 09" },
     { id: "p950", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-03", valor: 178.73, status: "pendente", descricao: "Unidade 1. Valor de julho (jun: 467,95). Pago de 03 a 13" },
-    { id: "p951", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-03", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
-    { id: "p952", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-03", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
-    { id: "p953", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-04", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10 (normalmente dia 10)" },
+    { id: "p951", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
+    { id: "p952", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
+    { id: "p953", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
     { id: "p954", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p955", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-06", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
     { id: "p956", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
@@ -1421,8 +1423,8 @@ export const storePlussData: ClientFinanceData = {
     { id: "p967", favorecido: "ONE GESTÃO DE NEGÓCIOS", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-20", valor: 140.0, status: "pendente", descricao: "Mensal" },
     { id: "p968", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-20", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
     { id: "p969", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-27", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
-    { id: "p970", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-01", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
-    { id: "p971", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-01", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
+    { id: "p970", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-06", valor: 42.99, status: "pendente", descricao: "Pago de 01 a 04" },
+    { id: "p971", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-06", valor: 99.9, status: "pendente", descricao: "Pago de 01 a 04 (mai: 119,88)" },
     { id: "p972", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-01", valor: 94.61, status: "pendente", descricao: "Unidade 2. Valor de julho (entre 24 e 95). Pago de 01 a 14" },
     { id: "p973", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Salários", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-12-01", valor: 1200.0, status: "pendente", descricao: "Saldo do salário. Valor de julho (varia de 1.200 a 2.030). Pago de 01 a 02" },
     { id: "p974", favorecido: "CAMILA MENEZES DE ARAUJO", categoria: "Vale-Transporte", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-12-01", valor: 257.53, status: "pendente", descricao: "Pago de 01 a 02" },
@@ -1443,9 +1445,9 @@ export const storePlussData: ClientFinanceData = {
     { id: "p989", favorecido: "CONTROLID", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-03", valor: 52.2, status: "pendente", descricao: "Relógio de ponto. Pago de 03 a 06" },
     { id: "p990", favorecido: "DLOCAL BRASIL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-03", valor: 45.0, status: "pendente", descricao: "Assinatura 2. Pago de 03 a 09" },
     { id: "p991", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-03", valor: 178.73, status: "pendente", descricao: "Unidade 1. Valor de julho (jun: 467,95). Pago de 03 a 13" },
-    { id: "p992", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-03", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
-    { id: "p993", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-03", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
-    { id: "p994", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-04", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10 (normalmente dia 10)" },
+    { id: "p992", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
+    { id: "p993", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
+    { id: "p994", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
     { id: "p995", favorecido: "ELAINE CRISTINA MENEZES RAMOS", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-12-04", valor: 250.0, status: "pendente", descricao: "Diária semanal, paga toda sexta-feira" },
     { id: "p996", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p997", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-12-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
