@@ -34,6 +34,8 @@ export default function ContasAReceberPage() {
   const [classificacaoFiltro, setClassificacaoFiltro] = useState("todas");
   const [de, setDe] = useState("");
   const [ate, setAte] = useState("");
+  const [valorMin, setValorMin] = useState("");
+  const [valorMax, setValorMax] = useState("");
 
   const rows = useMemo(() => {
     return [...finance.receivables]
@@ -43,11 +45,13 @@ export default function ContasAReceberPage() {
         if (classificacaoFiltro !== "todas" && r.classificacao !== classificacaoFiltro) return false;
         if (de && r.vencimento < de) return false;
         if (ate && r.vencimento > ate) return false;
+        if (valorMin && r.valor < Number(valorMin)) return false;
+        if (valorMax && r.valor > Number(valorMax)) return false;
         if (busca && !`${r.cliente} ${r.descricao}`.toLowerCase().includes(busca.toLowerCase())) return false;
         return true;
       })
       .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
-  }, [finance.receivables, busca, statusFiltro, classificacaoFiltro, de, ate]);
+  }, [finance.receivables, busca, statusFiltro, classificacaoFiltro, de, ate, valorMin, valorMax]);
 
   const todosVisiveisSelecionados = rows.length > 0 && rows.every((r) => selecionados.includes(r.id));
 
@@ -57,6 +61,8 @@ export default function ContasAReceberPage() {
     setClassificacaoFiltro("todas");
     setDe("");
     setAte("");
+    setValorMin("");
+    setValorMax("");
   }
 
   function toggleTodos() {
@@ -99,6 +105,28 @@ export default function ContasAReceberPage() {
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Até</label>
             <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Valor de</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="R$ 0,00"
+              value={valorMin}
+              onChange={(e) => setValorMin(e.target.value)}
+              className="w-24 rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900 placeholder:text-faint"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Valor até</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="R$ 0,00"
+              value={valorMax}
+              onChange={(e) => setValorMax(e.target.value)}
+              className="w-24 rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900 placeholder:text-faint"
+            />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Classificação financeira</label>

@@ -35,6 +35,10 @@ export default function ContasAPagarPage() {
   const [classificacaoFiltro, setClassificacaoFiltro] = useState("todas");
   // Abre já filtrado no mês de competência atual — null = todos os meses (limpar filtros cai aqui).
   const [mesFiltro, setMesFiltro] = useState<number | null>(HOJE.getMonth());
+  const [de, setDe] = useState("");
+  const [ate, setAte] = useState("");
+  const [valorMin, setValorMin] = useState("");
+  const [valorMax, setValorMax] = useState("");
 
   const rows = useMemo(() => {
     return [...finance.payables]
@@ -43,11 +47,15 @@ export default function ContasAPagarPage() {
         if (statusFiltro !== "todos" && status !== statusFiltro) return false;
         if (classificacaoFiltro !== "todas" && p.classificacao !== classificacaoFiltro) return false;
         if (mesFiltro !== null && new Date(p.vencimento + "T00:00:00").getMonth() !== mesFiltro) return false;
+        if (de && p.vencimento < de) return false;
+        if (ate && p.vencimento > ate) return false;
+        if (valorMin && p.valor < Number(valorMin)) return false;
+        if (valorMax && p.valor > Number(valorMax)) return false;
         if (busca && !`${p.favorecido} ${p.descricao}`.toLowerCase().includes(busca.toLowerCase())) return false;
         return true;
       })
       .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
-  }, [finance.payables, busca, statusFiltro, classificacaoFiltro, mesFiltro]);
+  }, [finance.payables, busca, statusFiltro, classificacaoFiltro, mesFiltro, de, ate, valorMin, valorMax]);
 
   const todosVisiveisSelecionados = rows.length > 0 && rows.every((p) => selecionados.includes(p.id));
 
@@ -56,6 +64,10 @@ export default function ContasAPagarPage() {
     setStatusFiltro("todos");
     setClassificacaoFiltro("todas");
     setMesFiltro(null);
+    setDe("");
+    setAte("");
+    setValorMin("");
+    setValorMax("");
   }
 
   function toggleTodos() {
@@ -105,6 +117,36 @@ export default function ContasAPagarPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Vencimento de</label>
+            <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Até</label>
+            <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Valor de</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="R$ 0,00"
+              value={valorMin}
+              onChange={(e) => setValorMin(e.target.value)}
+              className="w-24 rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900 placeholder:text-faint"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Valor até</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="R$ 0,00"
+              value={valorMax}
+              onChange={(e) => setValorMax(e.target.value)}
+              className="w-24 rounded-lg border border-border-subtle bg-surface-muted px-2.5 py-2 text-xs text-brand-900 placeholder:text-faint"
+            />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium uppercase tracking-wide text-faint">Classificação financeira</label>
