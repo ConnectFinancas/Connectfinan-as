@@ -10,6 +10,7 @@ import { useFinance } from "@/lib/store/FinanceContext";
 import { displayStatus } from "@/lib/derive";
 import { formatDateBR, HOJE, toISO } from "@/lib/today";
 import { formatCurrencyPrecise } from "@/lib/format";
+import { exportCsv } from "@/lib/exportCsv";
 import { Receivable } from "@/lib/types";
 
 function Kpi({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "positive" | "negative" | "warn" }) {
@@ -86,6 +87,22 @@ export default function ContasAReceberPage() {
   function handleDuplicarSelecionados() {
     finance.duplicateReceivables(selecionados);
     setSelecionados([]);
+  }
+
+  function handleExportar() {
+    const headers = ["Cliente", "Categoria", "Classificação financeira", "Vencimento", "Valor", "Status", "Recebimento", "Forma de Recebimento", "Descrição"];
+    const linhas = rows.map((r) => [
+      r.cliente,
+      r.categoria,
+      r.classificacao,
+      formatDateBR(r.vencimento),
+      formatCurrencyPrecise(r.valor),
+      displayStatus(r.status, r.vencimento),
+      r.recebimento ? formatDateBR(r.recebimento) : "—",
+      r.formaRecebimento ?? "—",
+      r.descricao,
+    ]);
+    exportCsv(`contas-a-receber-${finance.client.slug}-${toISO(HOJE)}.csv`, headers, linhas);
   }
 
   return (
@@ -165,7 +182,10 @@ export default function ContasAReceberPage() {
               <option value="atrasado">Atrasado</option>
             </select>
           </div>
-          <button className="flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors whitespace-nowrap">
+          <button
+            onClick={handleExportar}
+            className="flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors whitespace-nowrap"
+          >
             <Download size={13} />
             Exportar CSV
           </button>
