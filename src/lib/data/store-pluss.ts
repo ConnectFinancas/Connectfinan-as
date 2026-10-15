@@ -80,7 +80,11 @@ export const storePlussData: ClientFinanceData = {
   // - p1199 (Connect Soluções Contábeis, R$ 3.242,00 em 29/09) dividido em 2 lançamentos de
   //   R$ 1.621,00 — um CONTABILIDADE, outro BPO FINANCEIRO (p1210) — mesmo padrão já usado em
   //   junho/julho (p647/648, p776/777) e nas projeções de out-dez.
-  dataVersion: 25,
+  //
+  // Bump 25 → 26: rótulo da linha de destaque "Frete pago" alterado pra "Frete pago (Transporte
+  // de Mercadorias compradas)", a pedido do Ewerton — deixa explícito que é frete sobre a compra
+  // de mercadoria, não sobre a venda (que já é o "Frete Descontado" de cada marketplace).
+  dataVersion: 26,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -165,7 +169,11 @@ export const storePlussData: ClientFinanceData = {
   // colapsável "Deduções de Receita Ligadas à Venda" (grupo, a pedido do Ewerton) — só Imposto
   // fica fora do grupo, como linha solta.
   linhasDestaqueDre: [
-    { rotulo: "Frete pago", classificacoes: ["DESPESAS LOGISTICAS"], grupo: "Deduções de Receita Ligadas à Venda" },
+    {
+      rotulo: "Frete pago (Transporte de Mercadorias compradas)",
+      classificacoes: ["DESPESAS LOGISTICAS"],
+      grupo: "Deduções de Receita Ligadas à Venda",
+    },
     {
       rotulo: "Devoluções e Reembolso",
       categorias: [
@@ -199,7 +207,7 @@ export const storePlussData: ClientFinanceData = {
   // Fluxo de Caixa, em vez de caírem no balde genérico de "custos fixos".
   custosVariaveisDre: [
     "(-) Comissões de Marketplace",
-    "Frete pago",
+    "Frete pago (Transporte de Mercadorias compradas)",
     "Frete Descontado direto do Tiktok",
     "Frete Descontado pelo Mercado Livre",
     "Imposto",
