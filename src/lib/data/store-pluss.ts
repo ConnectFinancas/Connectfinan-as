@@ -72,7 +72,15 @@ export const storePlussData: ClientFinanceData = {
   //   usada no Demonstrativo por Competência — assim "Compra de Produtos" e "Confecção" aparecem
   //   organizadas por categoria em vez de uma lista solta de lançamentos. Entradas continuam
   //   abrindo direto nos lançamentos (já é o nível mais fino ali, por forma de recebimento).
-  dataVersion: 24,
+  //
+  // Bump 24 → 25, a pedido do Ewerton:
+  // - "Honorários Contábeis" (Grass Contabilidade, 4 lançamentos) mesclada em "CONTABILIDADE" —
+  //   são a mesma coisa, e CONTABILIDADE já é a categoria padrão usada pra Connect Soluções
+  //   Contábeis. Categoria "Honorários Contábeis" removida do cadastro (não é mais usada).
+  // - p1199 (Connect Soluções Contábeis, R$ 3.242,00 em 29/09) dividido em 2 lançamentos de
+  //   R$ 1.621,00 — um CONTABILIDADE, outro BPO FINANCEIRO (p1210) — mesmo padrão já usado em
+  //   junho/julho (p647/648, p776/777) e nas projeções de out-dez.
+  dataVersion: 25,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -1053,7 +1061,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p502", favorecido: "ALINE BIZELLI DE OLIVEIRA", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-05-21", valor: 18.0, status: "pago", pagamento: "2026-05-21", descricao: "Transferência enviada|ALINE BIZELLI DE OLIVEIRA", conta: "Nubank St" },
     { id: "p503", favorecido: "EMBALA MAXX LTDA", categoria: "Embalagens", classificacao: "INSUMOS", vencimento: "2026-05-22", valor: 366.0, status: "pago", pagamento: "2026-05-22", descricao: "Transferência enviada|EMBALA MAXX LTDA", conta: "Nubank St" },
     { id: "p504", favorecido: "J & J MINIMERCADO LTDA", categoria: "Uso e Consumo / Colaboradores - Socios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-05-22", valor: 14.24, status: "pago", pagamento: "2026-05-22", descricao: "Transferência enviada|J & J MINIMERCADO LTDA", conta: "Nubank St" },
-    { id: "p505", favorecido: "Grass Contabilidade", categoria: "Honorários Contábeis", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-22", valor: 358.4, status: "pago", pagamento: "2026-05-22", descricao: "Pagamento efetuado|Grass Contabilidade", conta: "Nubank St" },
+    { id: "p505", favorecido: "Grass Contabilidade", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-05-22", valor: 358.4, status: "pago", pagamento: "2026-05-22", descricao: "Pagamento efetuado|Grass Contabilidade", conta: "Nubank St" },
     { id: "p506", favorecido: "Elaine Cristina Menezes Ramos", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-05-22", valor: 250.0, status: "pago", pagamento: "2026-05-22", descricao: "Transferência enviada|Elaine Cristina Menezes Ramos", conta: "Nubank St" },
     { id: "p507", favorecido: "24.704.972 ANA PAULA ROGIERO", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-05-22", valor: 29.7, status: "pago", pagamento: "2026-05-22", descricao: "Transferência enviada|24.704.972 ANA PAULA ROGIERO", conta: "Nubank St" },
     { id: "p508", favorecido: "Cauan Yasmin de Barros Pantarine", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-05-23", valor: 1313.2, status: "pago", pagamento: "2026-05-23", descricao: "Transferência enviada|Cauan Yasmin de Barros Pantarine", conta: "Nubank St" },
@@ -1429,7 +1437,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p913", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p914", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
     { id: "p915", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
-    { id: "p916", favorecido: "GRASS CONTABILIDADE", categoria: "Honorários Contábeis", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
+    { id: "p916", favorecido: "GRASS CONTABILIDADE", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
     { id: "p917", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 351.36, status: "pendente", descricao: "Valor de julho (mai: 147,12). Pago de 08 a 11" },
     { id: "p919", favorecido: "CONTA AZUL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-10", valor: 279.93, status: "pendente", descricao: "Pago de 10 a 16 (cartão)" },
     { id: "p920", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-14", valor: 245.2, status: "pendente", descricao: "Pago de 14 a 21" },
@@ -1452,7 +1460,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p954", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p956", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
     { id: "p957", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
-    { id: "p958", favorecido: "GRASS CONTABILIDADE", categoria: "Honorários Contábeis", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
+    { id: "p958", favorecido: "GRASS CONTABILIDADE", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
     { id: "p959", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 351.36, status: "pendente", descricao: "Valor de julho (mai: 147,12). Pago de 08 a 11" },
     { id: "p960", favorecido: "CONTA AZUL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-10", valor: 279.93, status: "pendente", descricao: "Pago de 10 a 16 (cartão)" },
     { id: "p962", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-14", valor: 245.2, status: "pendente", descricao: "Pago de 14 a 21" },
@@ -1475,7 +1483,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p996", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p997", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-12-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
     { id: "p998", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
-    { id: "p999", favorecido: "GRASS CONTABILIDADE", categoria: "Honorários Contábeis", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
+    { id: "p999", favorecido: "GRASS CONTABILIDADE", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
     { id: "p1000", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 351.36, status: "pendente", descricao: "Valor de julho (mai: 147,12). Pago de 08 a 11" },
     { id: "p1001", favorecido: "CONTA AZUL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-10", valor: 279.93, status: "pendente", descricao: "Pago de 10 a 16 (cartão)" },
     { id: "p1003", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-14", valor: 245.2, status: "pendente", descricao: "Pago de 14 a 21" },
@@ -1664,7 +1672,8 @@ export const storePlussData: ClientFinanceData = {
     { id: "p1196", favorecido: "TECIDOS MONJJOLLO", categoria: "Tecido - Confecção", classificacao: "Confecção", vencimento: "2026-09-29", valor: 6819.15, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado para TECIDOS MONJJOLLO", conta: "C6 - BLAIMP" },
     { id: "p1197", favorecido: "SIMPLES NACIONAL", categoria: "Impostos sobre Aplicações", classificacao: "IMPOSTOS", vencimento: "2026-09-29", valor: 2021.79, status: "pago", pagamento: "2026-09-29", descricao: "SIMPLES NACIONAL", conta: "C6 - BLAIMP" },
     { id: "p1198", favorecido: "Connect Solucoes Contabeis", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 600.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
-    { id: "p1199", favorecido: "Connect Solucoes Contabeis", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 3242.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
+    { id: "p1199", favorecido: "Connect Solucoes Contabeis", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 1621.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
+    { id: "p1210", favorecido: "Connect Solucoes Contabeis", categoria: "BPO FINANCEIRO", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 1621.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
     { id: "p1200", favorecido: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-09-29", valor: 400.0, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", conta: "Nubank St" },
     { id: "p1201", favorecido: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Transporte Urbano (táxi, Uber)", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-29", valor: 31.94, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
     { id: "p1202", favorecido: "Transferência enviada pelo Pix|49.158.964 NAYARA GOMES DOMINGUES", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-09-29", valor: 130.0, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|49.158.964 NAYARA GOMES DOMINGUES", conta: "Nubank St" },
@@ -1745,7 +1754,6 @@ export const storePlussData: ClientFinanceData = {
         { nome: "Tarifas da Minha Página", padrao: false },
         { nome: "BPO FINANCEIRO", padrao: false },
         { nome: "Energia Elétrica", padrao: false },
-        { nome: "Honorários Contábeis", padrao: false },
         { nome: "Manutenção de Equipamentos", padrao: false },
         { nome: "Materiais de Limpeza e de Higiene", padrao: false },
         { nome: "Internet", padrao: false },
