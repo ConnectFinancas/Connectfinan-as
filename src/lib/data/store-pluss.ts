@@ -40,7 +40,13 @@ export const storePlussData: ClientFinanceData = {
   // "pendente" em Contas a Pagar (ids p848, p861-870, p872-877, p879, p883-885, p1011, p1012) —
   // já substituídas pelos lançamentos reais importados (todos "pago"). Contas a Receber de
   // setembro já estava 100% "recebido", sem nada pra tirar.
-  dataVersion: 21,
+  //
+  // Bump 21 → 22: Ads Shopee de setembro preenchido (R$ 5.088,05, informado pelo Ewerton — sem
+  // lançamento próprio em Contas a Pagar a partir desse mês). Frete pago, Devoluções e Reembolso,
+  // Frete Descontado (Tiktok/Mercado Livre), Afiliados Mercado Livre e Ads Shopee passam a
+  // aparecer agrupados dentro da seção colapsável "Deduções de Receita Ligadas à Venda" no DRE,
+  // em vez de soltos (ver "grupo" em linhasDestaqueDre e DreGridRow.children em derive.ts).
+  dataVersion: 22,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -83,9 +89,10 @@ export const storePlussData: ClientFinanceData = {
       comissao: [0, 0, 0, 28294.7, 47833.3, 26507.38, 18427.89, 17796.69, 15899.76, 0, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 0, 0, 2118.99, 1849.23, 0, 0, 0],
       // Shopee Ads de agosto (R$ 3.299,00) já entrou como lançamento próprio em Contas a Pagar
-      // (p841, DESPESAS COMERCIAIS / MARKETING) — não repete aqui pra não contar em dobro. Esse
-      // campo é só pros PRÓXIMOS meses, que o Ewerton preenche direto aqui.
-      ads: Array(12).fill(0),
+      // (p841, DESPESAS COMERCIAIS / MARKETING) — não repete aqui pra não contar em dobro. A
+      // partir de setembro, o Ewerton preenche o valor pago direto aqui (sem lançamento próprio
+      // em Contas a Pagar) — setembro R$ 5.088,05.
+      ads: [0, 0, 0, 0, 0, 0, 0, 0, 5088.05, 0, 0, 0],
     },
     shein: {
       receita: [0, 0, 0, 0, 1885.28, 2343.28, 1394.55, 588.81, 433.86, 0, 0, 0],
@@ -120,24 +127,36 @@ export const storePlussData: ClientFinanceData = {
 
   // Estrutura pedida: Receita → (Comissão) → CMV → Frete pago → Devoluções e Reembolso → Frete
   // descontado (Tiktok / Mercado Livre) → Imposto → Lucro Bruto ou Valor a Gastar → Despesas.
+  // Frete pago/Devoluções/Fretes descontados/Afiliados/Ads entram juntos dentro da seção
+  // colapsável "Deduções de Receita Ligadas à Venda" (grupo, a pedido do Ewerton) — só Imposto
+  // fica fora do grupo, como linha solta.
   linhasDestaqueDre: [
-    { rotulo: "Frete pago", classificacoes: ["DESPESAS LOGISTICAS"] },
+    { rotulo: "Frete pago", classificacoes: ["DESPESAS LOGISTICAS"], grupo: "Deduções de Receita Ligadas à Venda" },
     {
       rotulo: "Devoluções e Reembolso",
       categorias: [
         { classificacao: "REEMBOLSO CLIENTES", categoria: "reembolso" },
         { classificacao: "devoluções", categoria: "Devolução de Vendas" },
       ],
+      grupo: "Deduções de Receita Ligadas à Venda",
     },
-    { rotulo: "Frete Descontado direto do Tiktok", marketplaceCampo: { canal: "tiktok", campo: "freteDescontado" } },
-    { rotulo: "Frete Descontado pelo Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "freteDescontado" } },
+    {
+      rotulo: "Frete Descontado direto do Tiktok",
+      marketplaceCampo: { canal: "tiktok", campo: "freteDescontado" },
+      grupo: "Deduções de Receita Ligadas à Venda",
+    },
+    {
+      rotulo: "Frete Descontado pelo Mercado Livre",
+      marketplaceCampo: { canal: "mercadoLivre", campo: "freteDescontado" },
+      grupo: "Deduções de Receita Ligadas à Venda",
+    },
     // "Frete Descontado pela Shopee" removido do DRE a pedido do Ewerton (não deve mais ser
     // considerado nessa análise).
     // Ads/afiliados digitados manualmente na aba Informações do DRE (sem relatório automático) —
     // agosto da Shopee fica de fora porque já está lançada em Contas a Pagar (ver marketplaceManual
     // acima); Mercado Livre ainda não tem valor, fica pendente do Ewerton.
-    { rotulo: "Afiliados Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "ads" } },
-    { rotulo: "Ads Shopee", marketplaceCampo: { canal: "shopee", campo: "ads" } },
+    { rotulo: "Afiliados Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "ads" }, grupo: "Deduções de Receita Ligadas à Venda" },
+    { rotulo: "Ads Shopee", marketplaceCampo: { canal: "shopee", campo: "ads" }, grupo: "Deduções de Receita Ligadas à Venda" },
     { rotulo: "Imposto", classificacoes: ["IMPOSTOS"] },
   ],
 

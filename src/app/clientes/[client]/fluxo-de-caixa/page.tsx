@@ -765,8 +765,10 @@ export default function FluxoDeCaixaPage() {
                     }
                     const isComissaoRow = row.label === "(-) Comissões de Marketplace";
                     const isCmvRow = row.label === "(-) CMV";
-                    const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow;
-                    const isExpandableRow = (isClassRow || isComissaoRow || isCmvRow) && !!row.expandable;
+                    const isGrupoDestaqueRow = !!row.children && row.children.length > 0;
+                    const isClassRow =
+                      !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isGrupoDestaqueRow;
+                    const isExpandableRow = (isClassRow || isComissaoRow || isCmvRow || isGrupoDestaqueRow) && !!row.expandable;
                     const isOpen = isExpandableRow && linhaCompAberta === row.label;
                     const rowColor = row.isSubtotal ? "text-brand-900" : row.negative ? "text-warn-500" : "text-muted";
                     const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
@@ -802,6 +804,24 @@ export default function FluxoDeCaixaPage() {
                             {formatPct(pctLinhaComp(row, idx))}
                           </td>
                         </tr>
+                        {isOpen &&
+                          isGrupoDestaqueRow &&
+                          row.children!.map((filha) => (
+                            <tr key={filha.label} className="border-b border-border-subtle bg-surface/60">
+                              <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{filha.label}</td>
+                              {mesesExibidos.map((i) => (
+                                <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(filha.values[i])}
+                                </td>
+                              ))}
+                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                {formatCurrencyPrecise(filha.acumulado)}
+                              </td>
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                {formatPct(pctReceitaComp(filha))}
+                              </td>
+                            </tr>
+                          ))}
                         {isOpen &&
                           isClassRow &&
                           categoriaRowsFor(payables, row.label).map((catRow) => {

@@ -324,18 +324,45 @@ export function computeDreGrid(
   // config (ver LinhaDestaqueDre), elas substituem o fluxo padrão de "Receita Líquida" +
   // deduções manuais, indo direto pro "Lucro Bruto ou Valor a Gastar".
   const linhasDestaque = dreConfig.linhasDestaqueDre ?? [];
-  const destaqueRows = linhasDestaque.map((linha) => {
+  const destaqueRowsFlat = linhasDestaque.map((linha) => {
     const values = valoresDestaque(payables, receivables, dreConfig.marketplaceManual, linha).map(round2);
     const acumulado = round2(values.reduce((a, v) => a + v, 0));
-    return { label: linha.rotulo, values, acumulado, negative: true };
+    return { label: linha.rotulo, values, acumulado, negative: true, grupo: linha.grupo };
   });
   const totalDestaqueValues = Array(12).fill(0);
   let acumTotalDestaque = 0;
-  for (const row of destaqueRows) {
+  for (const row of destaqueRowsFlat) {
     row.values.forEach((v, i) => (totalDestaqueValues[i] += v));
     acumTotalDestaque += row.acumulado;
   }
   acumTotalDestaque = round2(acumTotalDestaque);
+
+  // Linhas com o mesmo "grupo" (ver LinhaDestaqueDre.grupo) viram uma seção colapsável só, na
+  // posição da primeira linha do grupo — o somatório aparece na seção, e as linhas originais vão
+  // pra "children" (abrem ao clicar, mesma ideia de uma classificação expandindo em categorias).
+  const destaqueRows: DreGridRow[] = [];
+  const grupoIndex = new Map<string, number>();
+  for (const row of destaqueRowsFlat) {
+    if (!row.grupo) {
+      destaqueRows.push({ label: row.label, values: row.values, acumulado: row.acumulado, negative: true });
+      continue;
+    }
+    if (!grupoIndex.has(row.grupo)) {
+      grupoIndex.set(row.grupo, destaqueRows.length);
+      destaqueRows.push({
+        label: row.grupo,
+        values: Array(12).fill(0),
+        acumulado: 0,
+        negative: true,
+        expandable: true,
+        children: [],
+      });
+    }
+    const grupoRow = destaqueRows[grupoIndex.get(row.grupo)!];
+    grupoRow.children!.push({ label: row.label, values: row.values, acumulado: row.acumulado, negative: true });
+    grupoRow.values = grupoRow.values.map((v, i) => round2(v + row.values[i]));
+    grupoRow.acumulado = round2(grupoRow.acumulado + row.acumulado);
+  }
 
   const { impostos, inadimplencia, investimentos } = deducoesManuais;
   const usaDestaque = linhasDestaque.length > 0;
@@ -763,6 +790,18 @@ function valorExcluidoDoPE(rotulo: string, mes: number, excecoesPontoEquilibrio?
   return excecoesPontoEquilibrio?.some((e) => e.mes === mes && e.linhas.includes(rotulo)) ?? false;
 }
 
+// Acha uma linha do DRE pelo label — primeiro no nível principal, depois dentro de "children"
+// (linhas de destaque agrupadas numa seção colapsável, ver DreGridRow.children) — pra
+// custosVariaveisDre continuar achando linhas como "Frete pago" mesmo depois de agrupadas.
+function findRowByLabel(dreGrid: DreGridRow[], label: string): DreGridRow | undefined {
+  for (const row of dreGrid) {
+    if (row.label === label) return row;
+    const found = row.children?.find((c) => c.label === label);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 export function computeMargemEPontoEquilibrio(
   dreGrid: DreGridRow[],
   custosVariaveisDre?: string[],
@@ -773,7 +812,7 @@ export function computeMargemEPontoEquilibrio(
   const receita = dreGrid.find((r) => r.label === "RECEITA")?.acumulado ?? 0;
   const cmv = dreGrid.find((r) => r.label === "(-) CMV")?.acumulado ?? 0;
   const extras = (custosVariaveisDre ?? []).reduce((a, label) => {
-    const row = dreGrid.find((r) => r.label === label);
+    const row = findRowByLabel(dreGrid, label);
     if (!row) return a;
     const total = row.values.reduce((sum, v, i) => sum + (valorExcluidoDoPE(label, i, excecoesPontoEquilibrio) ? 0 : v), 0);
     return a + total;
@@ -817,7 +856,7 @@ export function computeMargemEPontoEquilibrioPorMes(
   const custosFixosValuesBase = dreGrid.find((r) => r.label === "= Despesas totais")?.values ?? Array(12).fill(0);
   const resultadoValues = dreGrid.find((r) => r.isTotal)?.values ?? Array(12).fill(0);
   const extrasLabels = custosVariaveisDre ?? [];
-  const extrasRows = extrasLabels.map((label) => dreGrid.find((r) => r.label === label)?.values ?? Array(12).fill(0));
+  const extrasRows = extrasLabels.map((label) => findRowByLabel(dreGrid, label)?.values ?? Array(12).fill(0));
   const custosFixosExtraValues =
     payables && custosFixosClassificacoesExtras
       ? monthTotals(payables.filter((p) => custosFixosClassificacoesExtras.includes(p.classificacao)))

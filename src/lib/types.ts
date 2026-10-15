@@ -139,6 +139,10 @@ export type DreGridRow = {
   indent?: boolean;
   negative?: boolean;
   expandable?: boolean;
+  // Linhas de destaque (ver LinhaDestaqueDre.grupo) agrupadas dentro dessa — quando presente, a
+  // linha vira uma seção colapsável mostrando o somatório, e clicar nela abre essas linhas
+  // (mesma ideia visual de uma classificação expandindo em categorias).
+  children?: DreGridRow[];
 };
 
 export type CategoryGroup = {
@@ -179,6 +183,11 @@ export type LinhaDestaqueDre = {
   // linha de "Inadimplência" no DRE baseada no que foi lançado em Contas a Receber mas não
   // recebido, em vez de vir de Contas a Pagar. Sem lista, soma todas as classificações.
   receivablesPendentesClassificacoes?: string[];
+  // Quando setado, essa linha não aparece solta no DRE — ela entra dentro de uma seção colapsável
+  // com esse nome, junto com as outras linhas que tiverem o mesmo grupo (na ordem em que
+  // aparecem em linhasDestaqueDre). A seção mostra o somatório de todas elas e expande pra
+  // mostrar cada uma ao clicar.
+  grupo?: string;
 };
 
 export type ClientFinanceData = {

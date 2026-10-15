@@ -251,8 +251,10 @@ export default function FaturamentoDrePage() {
                 const isReceitaRow = row.label === "RECEITA" && temReceitaExpandivel;
                 const isComissaoRow = row.label === "(-) Comissões de Marketplace";
                 const isCmvRow = row.label === "(-) CMV";
-                const isClassRow = !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow;
-                const isExpandableRow = (isClassRow || isComissaoRow || isCmvRow || isReceitaRow) && !!row.expandable;
+                const isGrupoDestaqueRow = !!row.children && row.children.length > 0;
+                const isClassRow =
+                  !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow && !isGrupoDestaqueRow;
+                const isExpandableRow = (isClassRow || isComissaoRow || isCmvRow || isReceitaRow || isGrupoDestaqueRow) && !!row.expandable;
                 const isOpen = isExpandableRow && classAberta === row.label;
                 const rowColor = row.isSubtotal
                   ? "text-brand-900"
@@ -317,6 +319,26 @@ export default function FaturamentoDrePage() {
                           )}
                           <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
                             {formatPct(pctReceita(canalRow))}
+                          </td>
+                        </tr>
+                      ))}
+                    {isOpen &&
+                      isGrupoDestaqueRow &&
+                      row.children!.map((filha) => (
+                        <tr key={filha.label} className="border-b border-border-subtle bg-client-accent/[0.06]">
+                          <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{filha.label}</td>
+                          {mesesExibidos.map((i) => (
+                            <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(filha.values[i])}
+                            </td>
+                          ))}
+                          {mesFiltro === null && (
+                            <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(filha.acumulado)}
+                            </td>
+                          )}
+                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                            {formatPct(pctReceita(filha))}
                           </td>
                         </tr>
                       ))}
