@@ -211,6 +211,10 @@ export type ClientFinanceData = {
   // Classificações de Contas a Pagar que NÃO entram no DRE (nem em despesa nem em CMV) — usado
   // quando esse custo já está representado de outra forma (ex.: CMV informado por marketplace).
   classificacoesForaDoDre?: string[];
+  // Igual a classificacoesForaDoDre, mas no nível de categoria — tira só essa categoria
+  // específica do total normal da classificação, usado quando ela já é mostrada em outro lugar do
+  // DRE (ex.: uma linha de destaque própria dentro de "Deduções de Receita Ligadas à Venda").
+  categoriasForaDoDre?: { classificacao: string; categoria: string }[];
   // Classificações de Contas a Pagar que entram no DRE dentro do detalhamento do CMV, em vez de
   // como linha de despesa própria — ex.: insumos/embalagens que compõem o custo do produto.
   classificacoesNoCmv?: string[];

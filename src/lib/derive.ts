@@ -97,6 +97,7 @@ export function emptyMarketplaceManual(): Record<MarketplaceCanal, MarketplaceMe
 // Configuração de DRE específica de um cliente — ver campos equivalentes em ClientFinanceData.
 type DreConfig = {
   classificacoesForaDoDre?: string[];
+  categoriasForaDoDre?: { classificacao: string; categoria: string }[];
   classificacoesNoCmv?: string[];
   ocultarCmv?: boolean;
   marketplaceManual?: Record<MarketplaceCanal, MarketplaceMensal>;
@@ -286,6 +287,9 @@ export function computeDreGrid(
   dreConfig: DreConfig = {}
 ): DreGridRow[] {
   const foraDoDre = new Set(dreConfig.classificacoesForaDoDre ?? []);
+  const categoriasForaDoDre = new Set(
+    (dreConfig.categoriasForaDoDre ?? []).map((c) => `${c.classificacao}|${c.categoria}`)
+  );
   const noCmv = new Set(dreConfig.classificacoesNoCmv ?? []);
   const temMarketplace = !!dreConfig.marketplaceManual;
 
@@ -379,7 +383,11 @@ export function computeDreGrid(
   const classRows = categorias
     .filter((c) => c.classificacao !== "CMV" && !foraDoDre.has(c.classificacao) && !noCmv.has(c.classificacao))
     .map((c) => {
-      const values = monthTotals(payables.filter((p) => p.classificacao === c.classificacao));
+      const values = monthTotals(
+        payables.filter(
+          (p) => p.classificacao === c.classificacao && !categoriasForaDoDre.has(`${p.classificacao}|${p.categoria}`)
+        )
+      );
       const acumulado = round2(values.reduce((a, v) => a + v, 0));
       return { label: c.classificacao, values: values.map(round2), acumulado, negative: true, expandable: true };
     })

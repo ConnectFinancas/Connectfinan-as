@@ -84,7 +84,14 @@ export const storePlussData: ClientFinanceData = {
   // Bump 25 → 26: rótulo da linha de destaque "Frete pago" alterado pra "Frete pago (Transporte
   // de Mercadorias compradas)", a pedido do Ewerton — deixa explícito que é frete sobre a compra
   // de mercadoria, não sobre a venda (que já é o "Frete Descontado" de cada marketplace).
-  dataVersion: 26,
+  //
+  // Bump 26 → 27: "Afiliados Tiktok" vira linha de destaque própria dentro de "Deduções de
+  // Receita Ligadas à Venda" (igual Afiliados Mercado Livre/Ads Shopee), em vez de ficar dentro do
+  // bloco genérico de DESPESAS COMERCIAIS / MARKETING — a pedido do Ewerton. Categoria renomeada
+  // de "Afiliados" (genérica, compartilhada com ML/Shopee) pra "Afiliados Tiktok" nos 2 lançamentos
+  // da Tiktok (p831 junho, p838 julho), e excluída do total normal da classificação via novo campo
+  // categoriasForaDoDre (ver derive.ts) pra não contar em dobro. Também somada em custosVariaveisDre.
+  dataVersion: 27,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -162,6 +169,10 @@ export const storePlussData: ClientFinanceData = {
   // despesas porque viraram linhas destacadas (frete pago, imposto, devoluções) mais acima no DRE.
   classificacoesForaDoDre: ["COMPRA DE PRODUTOS", "Confecção", "DESPESAS LOGISTICAS", "IMPOSTOS", "REEMBOLSO CLIENTES", "devoluções"],
   classificacoesNoCmv: ["INSUMOS", "embalagens"],
+  // Afiliados Tiktok sai do bloco genérico de DESPESAS COMERCIAIS / MARKETING e vira linha própria
+  // dentro de "Deduções de Receita Ligadas à Venda" (ver linhasDestaqueDre abaixo) — essa exclusão
+  // evita contar o valor duas vezes (uma na linha de destaque, outra na despesa normal).
+  categoriasForaDoDre: [{ classificacao: "DESPESAS COMERCIAIS / MARKETING", categoria: "Afiliados Tiktok" }],
 
   // Estrutura pedida: Receita → (Comissão) → CMV → Frete pago → Devoluções e Reembolso → Frete
   // descontado (Tiktok / Mercado Livre) → Imposto → Lucro Bruto ou Valor a Gastar → Despesas.
@@ -199,6 +210,11 @@ export const storePlussData: ClientFinanceData = {
     // acima); Mercado Livre ainda não tem valor, fica pendente do Ewerton.
     { rotulo: "Afiliados Mercado Livre", marketplaceCampo: { canal: "mercadoLivre", campo: "ads" }, grupo: "Deduções de Receita Ligadas à Venda" },
     { rotulo: "Ads Shopee", marketplaceCampo: { canal: "shopee", campo: "ads" }, grupo: "Deduções de Receita Ligadas à Venda" },
+    {
+      rotulo: "Afiliados Tiktok",
+      categorias: [{ classificacao: "DESPESAS COMERCIAIS / MARKETING", categoria: "Afiliados Tiktok" }],
+      grupo: "Deduções de Receita Ligadas à Venda",
+    },
     { rotulo: "Imposto", classificacoes: ["IMPOSTOS"] },
   ],
 
@@ -214,6 +230,7 @@ export const storePlussData: ClientFinanceData = {
     "Devoluções e Reembolso",
     "Afiliados Mercado Livre",
     "Ads Shopee",
+    "Afiliados Tiktok",
   ],
 
   // NÃO soma COMPRA DE PRODUTOS aqui (mecanismo de custosFixosClassificacoesExtras existe em
@@ -1402,7 +1419,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p828", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 39783.05, status: "pago", pagamento: "2026-06-30", descricao: "Mercado Livre Ads - junho/2026 (total do mês, planilha de DRE)" },
     { id: "p829", favorecido: "Mercado Livre", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 3928.87, status: "pago", pagamento: "2026-06-30", descricao: "Afiliados Mercado Livre - junho/2026 (total do mês, planilha de DRE)" },
     { id: "p830", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-06-30", valor: 9761.57, status: "pago", pagamento: "2026-06-30", descricao: "Taxa de envio para o Full - junho/2026 (total do mês, planilha de DRE)" },
-    { id: "p831", favorecido: "Tiktok", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 16255.48, status: "pago", pagamento: "2026-06-30", descricao: "Afiliados Tiktok - junho/2026 (total do mês, planilha de DRE)" },
+    { id: "p831", favorecido: "Tiktok", categoria: "Afiliados Tiktok", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 16255.48, status: "pago", pagamento: "2026-06-30", descricao: "Afiliados Tiktok - junho/2026 (total do mês, planilha de DRE)" },
     { id: "p832", favorecido: "Tiktok", categoria: "Comissão Tiktok (Taxa de Serviços)", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 8632.92, status: "pago", pagamento: "2026-06-30", descricao: "Comissão Tiktok Shop (taxa de serviços) - junho/2026 (total do mês, planilha de DRE)" },
     { id: "p833", favorecido: "Shopee", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-06-30", valor: 8104.16, status: "pago", pagamento: "2026-06-30", descricao: "Shopee Ads - junho/2026 (total do mês, planilha de DRE)" },
 
@@ -1410,7 +1427,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p835", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 36042.62, status: "pago", pagamento: "2026-07-31", descricao: "Mercado Livre Ads - julho/2026 (total do mês, planilha de DRE)" },
     { id: "p836", favorecido: "Mercado Livre", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 9347.7, status: "pago", pagamento: "2026-07-31", descricao: "Afiliados Mercado Livre - julho/2026 (total do mês, planilha de DRE)" },
     { id: "p837", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-07-31", valor: 3282.11, status: "pago", pagamento: "2026-07-31", descricao: "Taxa de envio para o Full - julho/2026 (total do mês, planilha de DRE)" },
-    { id: "p838", favorecido: "Tiktok", categoria: "Afiliados", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 3563.78, status: "pago", pagamento: "2026-07-31", descricao: "Afiliados Tiktok - julho/2026 (total do mês, planilha de DRE)" },
+    { id: "p838", favorecido: "Tiktok", categoria: "Afiliados Tiktok", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 3563.78, status: "pago", pagamento: "2026-07-31", descricao: "Afiliados Tiktok - julho/2026 (total do mês, planilha de DRE)" },
     { id: "p839", favorecido: "Tiktok", categoria: "Comissão Tiktok (Taxa de Serviços)", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 2985.79, status: "pago", pagamento: "2026-07-31", descricao: "Comissão Tiktok Shop (taxa de serviços) - julho/2026 (total do mês, planilha de DRE)" },
     { id: "p840", favorecido: "Shopee", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-07-31", valor: 4693.97, status: "pago", pagamento: "2026-07-31", descricao: "Shopee Ads - julho/2026 (total do mês, planilha de DRE)" },
 
@@ -1788,6 +1805,7 @@ export const storePlussData: ClientFinanceData = {
       categorias: [
         { nome: "Tarifa de Campanha de Publicidade", padrao: false },
         { nome: "Afiliados", padrao: false },
+        { nome: "Afiliados Tiktok", padrao: false },
         { nome: "Cupom", padrao: false },
         { nome: "Movimentos Comerciais / Brindes", padrao: false },
         { nome: "Comissão Tiktok (Taxa de Serviços)", padrao: false },

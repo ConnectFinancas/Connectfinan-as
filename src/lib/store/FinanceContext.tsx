@@ -75,6 +75,7 @@ type FinanceContextValue = FinanceState &
     | "resumoExecutivo"
     | "pontoDeAtencao"
     | "classificacoesNoCmv"
+    | "categoriasForaDoDre"
     | "saldoBancarioMensal"
     | "custosVariaveisDre"
     | "custosFixosClassificacoesExtras"
@@ -282,6 +283,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
   const dreConfig = useMemo(
     () => ({
       classificacoesForaDoDre: seed.classificacoesForaDoDre,
+      categoriasForaDoDre: seed.categoriasForaDoDre,
       classificacoesNoCmv: seed.classificacoesNoCmv,
       ocultarCmv: seed.ocultarCmv,
       marketplaceManual: client.temInformacoesDre ? state.marketplaceManual : undefined,
@@ -289,6 +291,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     }),
     [
       seed.classificacoesForaDoDre,
+      seed.categoriasForaDoDre,
       seed.classificacoesNoCmv,
       seed.ocultarCmv,
       seed.linhasDestaqueDre,
@@ -340,6 +343,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     resumoExecutivo: seed.resumoExecutivo,
     pontoDeAtencao: seed.pontoDeAtencao,
     classificacoesNoCmv: seed.classificacoesNoCmv,
+    categoriasForaDoDre: seed.categoriasForaDoDre,
     saldoBancarioMensal: seed.saldoBancarioMensal,
     custosVariaveisDre: seed.custosVariaveisDre,
     custosFixosClassificacoesExtras: seed.custosFixosClassificacoesExtras,

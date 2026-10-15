@@ -55,8 +55,13 @@ function classTotals(payables: Payable[], classificacao: string) {
   return { values, acumulado };
 }
 
-function categoriaRowsFor(payables: Payable[], classificacao: string) {
-  const items = payables.filter((p) => p.classificacao === classificacao);
+function categoriaRowsFor(
+  payables: Payable[],
+  classificacao: string,
+  categoriasForaDoDre: { classificacao: string; categoria: string }[] = []
+) {
+  const fora = new Set(categoriasForaDoDre.map((c) => `${c.classificacao}|${c.categoria}`));
+  const items = payables.filter((p) => p.classificacao === classificacao && !fora.has(`${p.classificacao}|${p.categoria}`));
   const byCategoria = new Map<string, Payable[]>();
   for (const p of items) {
     if (!byCategoria.has(p.categoria)) byCategoria.set(p.categoria, []);
@@ -122,6 +127,7 @@ export default function FluxoDeCaixaPage() {
     excecoesPontoEquilibrio,
     marketplaceManual,
     classificacoesNoCmv,
+    categoriasForaDoDre,
     saldoBancarioMensal,
   } = useFinance();
 
@@ -906,7 +912,7 @@ export default function FluxoDeCaixaPage() {
                           ))}
                         {isOpen &&
                           isClassRow &&
-                          categoriaRowsFor(payables, row.label).map((catRow) => {
+                          categoriaRowsFor(payables, row.label, categoriasForaDoDre).map((catRow) => {
                             const catKey = `${row.label}|${catRow.categoria}`;
                             const catOpen = categoriaCompAberta === catKey;
                             const catLancamentos = catRow.lancamentos.filter(
@@ -1025,7 +1031,7 @@ export default function FluxoDeCaixaPage() {
                                   </td>
                                 </tr>
                                 {subOpen &&
-                                  categoriaRowsFor(payables, classificacao).map((catRow) => {
+                                  categoriaRowsFor(payables, classificacao, categoriasForaDoDre).map((catRow) => {
                                     const catKey = `${classificacao}|${catRow.categoria}`;
                                     const catOpen = categoriaCompAberta === catKey;
                                     const catLancamentos = catRow.lancamentos.filter(

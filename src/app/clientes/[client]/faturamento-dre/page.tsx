@@ -40,8 +40,13 @@ function classTotals(payables: Payable[], classificacao: string) {
   return { values, acumulado };
 }
 
-function categoriaRowsFor(payables: Payable[], classificacao: string) {
-  const items = payables.filter((p) => p.classificacao === classificacao);
+function categoriaRowsFor(
+  payables: Payable[],
+  classificacao: string,
+  categoriasForaDoDre: { classificacao: string; categoria: string }[] = []
+) {
+  const fora = new Set(categoriasForaDoDre.map((c) => `${c.classificacao}|${c.categoria}`));
+  const items = payables.filter((p) => p.classificacao === classificacao && !fora.has(`${p.classificacao}|${p.categoria}`));
   const byCategoria = new Map<string, Payable[]>();
   for (const p of items) {
     if (!byCategoria.has(p.categoria)) byCategoria.set(p.categoria, []);
@@ -68,7 +73,7 @@ function formatPct(pct: number | null) {
 }
 
 export default function FaturamentoDrePage() {
-  const { summary, payables, receivables, marketplaceManual, classificacoesNoCmv, client } = useFinance();
+  const { summary, payables, receivables, marketplaceManual, classificacoesNoCmv, categoriasForaDoDre, client } = useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
   const [detalhamentoAberto, setDetalhamentoAberto] = useState(false);
   const [classAberta, setClassAberta] = useState<string | null>(null);
@@ -344,7 +349,7 @@ export default function FaturamentoDrePage() {
                       ))}
                     {isOpen &&
                       isClassRow &&
-                      categoriaRowsFor(payables, row.label).map((catRow) => {
+                      categoriaRowsFor(payables, row.label, categoriasForaDoDre).map((catRow) => {
                         const catKey = `${row.label}|${catRow.categoria}`;
                         const catOpen = categoriaAberta === catKey;
                         const catPct = pctValorAGastar(catRow);
@@ -474,7 +479,7 @@ export default function FaturamentoDrePage() {
                               </td>
                             </tr>
                             {subOpen &&
-                              categoriaRowsFor(payables, classificacao).map((catRow) => {
+                              categoriaRowsFor(payables, classificacao, categoriasForaDoDre).map((catRow) => {
                                 const catKey = `${classificacao}|${catRow.categoria}`;
                                 const catOpen = categoriaAberta === catKey;
                                 const catPct = pctReceita(catRow);
