@@ -91,7 +91,15 @@ export const storePlussData: ClientFinanceData = {
   // de "Afiliados" (genérica, compartilhada com ML/Shopee) pra "Afiliados Tiktok" nos 2 lançamentos
   // da Tiktok (p831 junho, p838 julho), e excluída do total normal da classificação via novo campo
   // categoriasForaDoDre (ver derive.ts) pra não contar em dobro. Também somada em custosVariaveisDre.
-  dataVersion: 27,
+  //
+  // Bump 27 → 28: Afiliados Tiktok de setembro (R$ 6.387,80, "Comissão de afiliados" do relatório
+  // Financeiro-Resumo) separado da comissão bundled da Tiktok — novo lançamento p1211 (categoria
+  // "Afiliados Tiktok", mesmo tratamento de junho/julho) e tiktok.comissao[8] reduzido de
+  // R$ 36.035,54 pra R$ 29.647,74 (36.035,54 − 6.387,80), pra não ficar contando esse valor duas
+  // vezes — uma dentro de "Comissões de Marketplace", outra na linha de destaque. Agosto segue
+  // bundled por ora (R$ 6.478,77 de afiliados ainda dentro do comissao[7] de R$ 29.926,10) — não
+  // pedido ainda pelo Ewerton.
+  dataVersion: 28,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -149,7 +157,7 @@ export const storePlussData: ClientFinanceData = {
     tiktok: {
       receita: [0, 0, 0, 35564.37, 59357.68, 75469.33, 47552.63, 105339.24, 123064.49, 0, 0, 0],
       cmv: [0, 0, 0, 9930.7, 7927.5, 38826.0, 23619.8, 51561.0, 58131.0, 0, 0, 0],
-      comissao: [0, 0, 0, 7829.38, 7122.92, 4636.92, 6147.79, 29926.1, 36035.54, 0, 0, 0],
+      comissao: [0, 0, 0, 7829.38, 7122.92, 4636.92, 6147.79, 29926.1, 29647.74, 0, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 7120.73, 1983.96, 0, 0, 0, 0, 0],
       ads: Array(12).fill(0),
     },
@@ -1699,6 +1707,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p1198", favorecido: "Connect Solucoes Contabeis", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 600.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
     { id: "p1199", favorecido: "Connect Solucoes Contabeis", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 1621.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
     { id: "p1210", favorecido: "Connect Solucoes Contabeis", categoria: "BPO FINANCEIRO", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 1621.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
+    { id: "p1211", favorecido: "Tiktok", categoria: "Afiliados Tiktok", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-09-30", valor: 6387.8, status: "pago", pagamento: "2026-09-30", descricao: "Comissão de afiliados Tiktok - setembro/2026 (relatório Financeiro-Resumo)" },
     { id: "p1200", favorecido: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-09-29", valor: 400.0, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", conta: "Nubank St" },
     { id: "p1201", favorecido: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Transporte Urbano (táxi, Uber)", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-29", valor: 31.94, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
     { id: "p1202", favorecido: "Transferência enviada pelo Pix|49.158.964 NAYARA GOMES DOMINGUES", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-09-29", valor: 130.0, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|49.158.964 NAYARA GOMES DOMINGUES", conta: "Nubank St" },
