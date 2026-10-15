@@ -104,7 +104,13 @@ export const storePlussData: ClientFinanceData = {
   // agora segue a sequência Mercado Livre (frete descontado + afiliados) → Tiktok (frete
   // descontado + afiliados) → Shopee (ads) → genéricas (frete pago, devoluções e reembolso), em
   // vez da ordem anterior que misturava canais. Só reordena a exibição, nenhum valor muda.
-  dataVersion: 29,
+  //
+  // Bump 29 → 30: já tinha lançamento de Mercado Turbo (assinatura do sistema, categoria
+  // "Sistemas (ERPs e Etc)" em DESPESAS ADMINISTRATIVAS) — então, a pedido do Ewerton, só o
+  // vencimento das 3 provisões futuras ainda "pendente" foi ajustado pro dia 17 (p915 outubro,
+  // p957 novembro, p998 dezembro — todas estavam no dia 07). Os pagamentos já realizados (abril,
+  // junho, setembro) ficaram como estavam, com a data real em que ocorreram.
+  dataVersion: 30,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -1477,7 +1483,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p912", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
     { id: "p913", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p914", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
-    { id: "p915", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
+    { id: "p915", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-17", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
     { id: "p916", favorecido: "GRASS CONTABILIDADE", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
     { id: "p917", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-08", valor: 351.36, status: "pendente", descricao: "Valor de julho (mai: 147,12). Pago de 08 a 11" },
     { id: "p919", favorecido: "CONTA AZUL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-10", valor: 279.93, status: "pendente", descricao: "Pago de 10 a 16 (cartão)" },
@@ -1500,7 +1506,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p953", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
     { id: "p954", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p956", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
-    { id: "p957", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
+    { id: "p957", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-17", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
     { id: "p958", favorecido: "GRASS CONTABILIDADE", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
     { id: "p959", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-08", valor: 351.36, status: "pendente", descricao: "Valor de julho (mai: 147,12). Pago de 08 a 11" },
     { id: "p960", favorecido: "CONTA AZUL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-10", valor: 279.93, status: "pendente", descricao: "Pago de 10 a 16 (cartão)" },
@@ -1523,7 +1529,7 @@ export const storePlussData: ClientFinanceData = {
     { id: "p994", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
     { id: "p996", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
     { id: "p997", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-12-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
-    { id: "p998", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
+    { id: "p998", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-17", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
     { id: "p999", favorecido: "GRASS CONTABILIDADE", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
     { id: "p1000", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-08", valor: 351.36, status: "pendente", descricao: "Valor de julho (mai: 147,12). Pago de 08 a 11" },
     { id: "p1001", favorecido: "CONTA AZUL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-12-10", valor: 279.93, status: "pendente", descricao: "Pago de 10 a 16 (cartão)" },
