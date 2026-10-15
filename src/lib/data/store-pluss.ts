@@ -35,7 +35,12 @@ export const storePlussData: ClientFinanceData = {
   // classificação que essa categoria já usa nos demais meses (evita duplicar a categoria em duas
   // classificações, igual ao problema já corrigido na MJ Shoes). Saldo bancário de setembro e
   // Afiliados Mercado Livre (pendente desde agosto) ainda não informados — ficam de fora por ora.
-  dataVersion: 20,
+  //
+  // Bump 20 → 21: removidas as 23 provisões recorrentes de setembro que ainda estavam como
+  // "pendente" em Contas a Pagar (ids p848, p861-870, p872-877, p879, p883-885, p1011, p1012) —
+  // já substituídas pelos lançamentos reais importados (todos "pago"). Contas a Receber de
+  // setembro já estava 100% "recebido", sem nada pra tirar.
+  dataVersion: 21,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -1363,29 +1368,6 @@ export const storePlussData: ClientFinanceData = {
     // (vencimento futuro em relação a HOJE). Fora dessa previsão: CMV, compras, fretes,
     // comissões/ads, retiradas avulsas, premiações e pagamentos avulsos (continuam entrando à
     // parte, conforme forem lançados).
-    { id: "p1012", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-06", valor: 142.89, status: "pendente", descricao: "Fatura Claro consolidada em um único lançamento (a pedido do Ewerton)" },
-    { id: "p848", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-01", valor: 94.61, status: "pendente", descricao: "Unidade 2. Valor de julho (entre 24 e 95). Pago de 01 a 14" },
-    { id: "p1011", favorecido: "Folha de Pagamento (Equipe)", categoria: "Salários", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-01", valor: 11867.6, status: "pendente", descricao: "Salário + Vale-Transporte de toda a equipe, consolidado em um único lançamento (a pedido do Ewerton)" },
-    { id: "p861", favorecido: "RENAN GUEDES ALVES", categoria: "PRO - LABORE | RENAN", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-01", valor: 20000.0, status: "pendente", descricao: "Pago de 01 a 02" },
-    { id: "p862", favorecido: "DLOCAL BRASIL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-02", valor: 45.0, status: "pendente", descricao: "Assinatura 1. Pago de 02 a 08" },
-    { id: "p863", favorecido: "GABRIEL PIRES DA SILVA FILHO", categoria: "PRÓ-LABORE | GABRIEL", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-02", valor: 20500.0, status: "pendente", descricao: "Valor de julho (antes 20.000). Pago de 02 a 06" },
-    { id: "p864", favorecido: "BANCO (TAR PLANO ADAPT)", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-09-05", valor: 169.0, status: "pendente", descricao: "Pago de 02 a 05" },
-    { id: "p865", favorecido: "CONTROLID", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 52.2, status: "pendente", descricao: "Relógio de ponto. Pago de 03 a 06" },
-    { id: "p866", favorecido: "DLOCAL BRASIL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 45.0, status: "pendente", descricao: "Assinatura 2. Pago de 03 a 09" },
-    { id: "p867", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 178.73, status: "pendente", descricao: "Unidade 1. Valor de julho (jun: 467,95). Pago de 03 a 13" },
-    { id: "p868", favorecido: "TELEFÔNICA (VIVO)", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-08", valor: 99.99, status: "pendente", descricao: "Pago de 03 a 17" },
-    { id: "p869", favorecido: "TELEFÔNICA (VIVO)", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-08", valor: 106.69, status: "pendente", descricao: "Valor de julho (jun: 324,51). Pago de 03 a 17" },
-    { id: "p870", favorecido: "ELARI EMPREENDIMENTOS E PARTICIPAÇÕES", categoria: "Aluguel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-10", valor: 15379.12, status: "pendente", descricao: "Pago de 04 a 10" },
-    { id: "p872", favorecido: "IPAG / MAGIIC (COBRE FÁCIL)", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-06", valor: 799.0, status: "pendente", descricao: "Pago de 06 a 18" },
-    { id: "p873", favorecido: "PORTO SEGURO SAÚDE", categoria: "Plano de Saúde Sócios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-06", valor: 5009.72, status: "pendente", descricao: "Valor de julho. Pago de 06 a 16" },
-    { id: "p874", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-07", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
-    { id: "p875", favorecido: "GRASS CONTABILIDADE", categoria: "Honorários Contábeis", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-08", valor: 350.0, status: "pendente", descricao: "Pago de 08 a 24" },
-    { id: "p876", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-08", valor: 351.36, status: "pendente", descricao: "Valor de julho (mai: 147,12). Pago de 08 a 11" },
-    { id: "p877", favorecido: "CONTA AZUL", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-10", valor: 279.93, status: "pendente", descricao: "Pago de 10 a 16 (cartão)" },
-    { id: "p879", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-14", valor: 245.2, status: "pendente", descricao: "Pago de 14 a 21" },
-    { id: "p883", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-20", valor: 1655.03, status: "pendente", descricao: "Valor de julho. Pago de 20 a 23" },
-    { id: "p884", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "BPO FINANCEIRO", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-20", valor: 1655.03, status: "pendente", descricao: "Valor de julho. Pago de 20 a 23" },
-    { id: "p885", favorecido: "ONE GESTÃO DE NEGÓCIOS", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-20", valor: 140.0, status: "pendente", descricao: "Mensal" },
     { id: "p1014", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-06", valor: 142.89, status: "pendente", descricao: "Fatura Claro consolidada em um único lançamento (a pedido do Ewerton)" },
     { id: "p889", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-01", valor: 94.61, status: "pendente", descricao: "Unidade 2. Valor de julho (entre 24 e 95). Pago de 01 a 14" },
     { id: "p1013", favorecido: "Folha de Pagamento (Equipe)", categoria: "Salários", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-01", valor: 11867.6, status: "pendente", descricao: "Salário + Vale-Transporte de toda a equipe, consolidado em um único lançamento (a pedido do Ewerton)" },
