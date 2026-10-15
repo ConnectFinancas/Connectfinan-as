@@ -77,6 +77,31 @@ function categoriaRowsFor(payables: Payable[], classificacao: string) {
     .sort((a, b) => b.acumulado - a.acumulado);
 }
 
+// Mesmo drill-down de categoriaRowsFor, só que em regime de CAIXA (pela data de pagamento, não
+// de vencimento) — usado na tabela "DRE de Caixa" pra abrir classificação → categoria → lançamentos,
+// igual a estrutura da aba Faturamento & DRE.
+function categoriaRowsForCaixa(payables: Payable[], classificacao: string) {
+  const items = payables.filter((p) => p.status === "pago" && p.pagamento && p.classificacao === classificacao);
+  const byCategoria = new Map<string, Payable[]>();
+  for (const p of items) {
+    if (!byCategoria.has(p.categoria)) byCategoria.set(p.categoria, []);
+    byCategoria.get(p.categoria)!.push(p);
+  }
+  return [...byCategoria.entries()]
+    .map(([categoria, list]) => {
+      const values = Array(12).fill(0);
+      for (const p of list) values[new Date(p.pagamento! + "T00:00:00").getMonth()] += p.valor;
+      const acumulado = list.reduce((a, p) => a + p.valor, 0);
+      return {
+        categoria,
+        values,
+        acumulado,
+        lancamentos: [...list].sort((a, b) => a.pagamento!.localeCompare(b.pagamento!)),
+      };
+    })
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 // Formata percentual de representatividade — "—" quando a base é zero (nada pra comparar ainda).
 function formatPct(pct: number | null) {
   return pct === null ? "—" : `${pct.toFixed(1)}%`;
@@ -101,6 +126,7 @@ export default function FluxoDeCaixaPage() {
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
+  const [categoriaCaixaAberta, setCategoriaCaixaAberta] = useState<string | null>(null);
   const [linhaCompAberta, setLinhaCompAberta] = useState<string | null>(null);
   const [categoriaCompAberta, setCategoriaCompAberta] = useState<string | null>(null);
   const [cmvSubCompAberta, setCmvSubCompAberta] = useState<string | null>(null);
@@ -508,11 +534,15 @@ export default function FluxoDeCaixaPage() {
                 const tipo: "entrada" | "saida" = row.negative ? "saida" : "entrada";
                 const rowColor = row.isSubtotal ? "text-brand-900" : row.negative ? "text-warn-500" : "text-muted";
                 const acumColor = row.isTotal ? (row.acumulado >= 0 ? "text-accent-500" : "text-danger-500") : rowColor;
-                const lancamentos = lancamentosFluxoCaixaPorLinha(payables, receivables, tipo, row.label).filter((l) => {
-                  if (mesFiltro === null) return true;
-                  const data = tipo === "entrada" ? (l as { recebimento?: string }).recebimento : (l as { pagamento?: string }).pagamento;
-                  return !!data && new Date(data + "T00:00:00").getMonth() === mesFiltro;
-                });
+                const lancamentos =
+                  tipo === "entrada"
+                    ? lancamentosFluxoCaixaPorLinha(payables, receivables, tipo, row.label).filter((l) => {
+                        if (mesFiltro === null) return true;
+                        const data = (l as { recebimento?: string }).recebimento;
+                        return !!data && new Date(data + "T00:00:00").getMonth() === mesFiltro;
+                      })
+                    : [];
+                const categoriasSaida = tipo === "saida" ? categoriaRowsForCaixa(payables, row.label) : [];
                 return (
                   <Fragment key={idx}>
                     <tr
@@ -550,15 +580,13 @@ export default function FluxoDeCaixaPage() {
                         {formatPct(pctCaixa(row))}
                       </td>
                     </tr>
-                    {isOpen && (
+                    {isOpen && tipo === "entrada" && (
                       <tr className="border-b border-border-subtle bg-surface/60">
                         <td colSpan={mesesExibidos.length + 3} className="py-2 pl-9 pr-5">
                           <div className="flex max-w-2xl flex-col gap-1">
                             {lancamentos.map((l) => (
                               <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
-                                <span className="w-16 shrink-0">
-                                  {formatDateBR(tipo === "entrada" ? (l as { recebimento?: string }).recebimento! : (l as { pagamento?: string }).pagamento!)}
-                                </span>
+                                <span className="w-16 shrink-0">{formatDateBR((l as { recebimento?: string }).recebimento!)}</span>
                                 <span className="flex-1 truncate">
                                   {("favorecido" in l ? l.favorecido : l.cliente) !== "—" ? `${"favorecido" in l ? l.favorecido : l.cliente} — ` : ""}
                                   {l.descricao}
@@ -571,6 +599,60 @@ export default function FluxoDeCaixaPage() {
                         </td>
                       </tr>
                     )}
+                    {isOpen &&
+                      tipo === "saida" &&
+                      categoriasSaida.map((catRow) => {
+                        const catKey = `${row.label}|${catRow.categoria}`;
+                        const catOpen = categoriaCaixaAberta === catKey;
+                        const catLancamentos = catRow.lancamentos.filter(
+                          (l) => mesFiltro === null || new Date(l.pagamento! + "T00:00:00").getMonth() === mesFiltro
+                        );
+                        return (
+                          <Fragment key={catKey}>
+                            <tr
+                              onClick={() => setCategoriaCaixaAberta(catOpen ? null : catKey)}
+                              className="cursor-pointer border-b border-border-subtle bg-surface/60 hover:bg-surface-muted/60"
+                            >
+                              <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">
+                                <span className="inline-flex items-center gap-1">
+                                  <ChevronRight size={11} className={`text-faint transition-transform ${catOpen ? "rotate-90" : ""}`} />
+                                  {catRow.categoria}
+                                </span>
+                              </td>
+                              {mesesExibidos.map((i) => (
+                                <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                  {formatCurrencyPrecise(catRow.values[i])}
+                                </td>
+                              ))}
+                              <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                                {formatCurrencyPrecise(catRow.acumulado)}
+                              </td>
+                              <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                                {formatPct(pctCaixa(catRow))}
+                              </td>
+                            </tr>
+                            {catOpen && (
+                              <tr className="border-b border-border-subtle bg-surface/30">
+                                <td colSpan={mesesExibidos.length + 3} className="py-2 pl-14 pr-5">
+                                  <div className="flex max-w-2xl flex-col gap-1">
+                                    {catLancamentos.map((l) => (
+                                      <div key={l.id} className="flex items-center gap-3 text-[11px] text-faint">
+                                        <span className="w-16 shrink-0">{formatDateBR(l.pagamento!)}</span>
+                                        <span className="flex-1 truncate">
+                                          {l.favorecido !== "—" ? `${l.favorecido} — ` : ""}
+                                          {l.descricao}
+                                        </span>
+                                        <span className="w-28 shrink-0 text-right tabular-nums">{formatCurrencyPrecise(l.valor)}</span>
+                                      </div>
+                                    ))}
+                                    {catLancamentos.length === 0 && <p className="text-[11px] text-faint">Sem lançamentos</p>}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
                   </Fragment>
                 );
               })}
