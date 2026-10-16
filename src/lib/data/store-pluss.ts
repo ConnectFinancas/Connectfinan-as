@@ -115,7 +115,20 @@ export const storePlussData: ClientFinanceData = {
   // mesmo padrão de p207/p208/p209 de agosto) — Tarifa de Campanha de Publicidade R$ 4.021,27,
   // Tarifas de Envios Full R$ 4.045,43, Tarifas da Minha Página R$ 99,00, a partir do relatório
   // que o Ewerton confirmou valer pra setembro.
-  dataVersion: 31,
+  //
+  // Bump 31 → 32: corrigido o resultado negativo de abril/2026 (estava em -R$ 155.594,43, deveria
+  // ser positivo). Causa raiz: 5 lançamentos de "Simples Nacional - DAS" (p808-p812, R$
+  // 216.992,22 somados) pagos de uma vez só em 13/04/2026, mas referentes a COMPETÊNCIAS
+  // ANTERIORES (nov/dez de 2025, jan/fev/2026) — regularização de atraso, não imposto de abril.
+  // Como a linha de destaque "Imposto" soma por vencimento, esses 5 lançamentos estavam inflando
+  // abril sozinhos. Movidos pra nova classificação "IMPOSTOS ATRASADOS" (fora do DRE, igual
+  // IMPOSTOS normal, mas sem entrar na linha de destaque) — continuam aparecendo normalmente em
+  // Contas a Pagar e no Fluxo de Caixa (o dinheiro saiu de verdade em abril). Resultado de abril
+  // passa de -R$ 155.594,43 pra +R$ 61.397,79, batendo com a planilha original "DRE 2026 - STORE
+  // PLUS" (GERAÇÃO DE CAIXA de abril = R$ 71.684,21; a diferença residual vem de Frete
+  // pago/CMV/Insumos, que já eram recalculados a partir de Contas a Pagar real desde o início,
+  // mais granular que a planilha — por design, ver nota de Abril a Julho abaixo).
+  dataVersion: 32,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -191,7 +204,19 @@ export const storePlussData: ClientFinanceData = {
   // linha própria em linhasDestaqueDre, ver abaixo). Insumos (embalagens etc.) entram, mas como
   // parte do detalhamento do CMV. Logística, Impostos e Reembolso saem da seção genérica de
   // despesas porque viraram linhas destacadas (frete pago, imposto, devoluções) mais acima no DRE.
-  classificacoesForaDoDre: ["COMPRA DE PRODUTOS", "Confecção", "DESPESAS LOGISTICAS", "IMPOSTOS", "REEMBOLSO CLIENTES", "devoluções"],
+  // "IMPOSTOS ATRASADOS" fica fora do DRE inteiro (nem despesa genérica, nem linha de destaque de
+  // Imposto) — são DAS de competências anteriores (nov/dez 2025, jan/fev 2026) pagos de uma vez só
+  // em 13/04/2026 (regularização), que não representam o imposto de abril/2026. Continuam
+  // aparecendo normalmente em Contas a Pagar e no Fluxo de Caixa (o caixa realmente saiu em abril).
+  classificacoesForaDoDre: [
+    "COMPRA DE PRODUTOS",
+    "Confecção",
+    "DESPESAS LOGISTICAS",
+    "IMPOSTOS",
+    "IMPOSTOS ATRASADOS",
+    "REEMBOLSO CLIENTES",
+    "devoluções",
+  ],
   classificacoesNoCmv: ["INSUMOS", "embalagens"],
   // Afiliados Tiktok sai do bloco genérico de DESPESAS COMERCIAIS / MARKETING e vira linha própria
   // dentro de "Deduções de Receita Ligadas à Venda" (ver linhasDestaqueDre abaixo) — essa exclusão
@@ -1415,11 +1440,11 @@ export const storePlussData: ClientFinanceData = {
     { id: "p804", favorecido: "Elaine Cristina Menezes Ramos", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-07-31", valor: 250.0, status: "pago", pagamento: "2026-07-31", descricao: "Transferência enviada|Elaine Cristina Menezes Ramos", conta: "Nubank St" },
     { id: "p805", favorecido: "AZEVEDO & SILVA TRANSPORTES LTDA", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-07-31", valor: 220.0, status: "pago", pagamento: "2026-07-31", descricao: "Transferência enviada|AZEVEDO & SILVA TRANSPORTES LTDA", conta: "Nubank St" },
     { id: "p806", favorecido: "49.158.964 NAYARA GOMES DOMINGUES", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-07-31", valor: 42.0, status: "pago", pagamento: "2026-07-31", descricao: "Transferência enviada|49.158.964 NAYARA GOMES DOMINGUES", conta: "Nubank St" },
-    { id: "p807", favorecido: "TAP CREPE ALICE  LANCHONETE LTDA", categoria: "Lanches e Refeições", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-07-31", valor: 25.0, status: "pago", pagamento: "2026-07-31", descricao: "Transferência enviada|TAP CREPE ALICE  LANCHONETE LTDA", conta: "Nubank St" },{ id: "p808", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 48251.36, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. DEZEMBRO/2025" },
-    { id: "p809", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 27091.21, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. SETEMBRO/2025" },
-    { id: "p810", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 47166.77, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. NOVEMBRO/2025" },
-    { id: "p811", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 40759.9, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. FEVEREIRO/2026" },
-    { id: "p812", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS", classificacao: "IMPOSTOS", vencimento: "2026-04-13", valor: 53722.98, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. JANEIRO/2026" },
+    { id: "p807", favorecido: "TAP CREPE ALICE  LANCHONETE LTDA", categoria: "Lanches e Refeições", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-07-31", valor: 25.0, status: "pago", pagamento: "2026-07-31", descricao: "Transferência enviada|TAP CREPE ALICE  LANCHONETE LTDA", conta: "Nubank St" },{ id: "p808", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS (Regularização)", classificacao: "IMPOSTOS ATRASADOS", vencimento: "2026-04-13", valor: 48251.36, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. DEZEMBRO/2025" },
+    { id: "p809", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS (Regularização)", classificacao: "IMPOSTOS ATRASADOS", vencimento: "2026-04-13", valor: 27091.21, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. SETEMBRO/2025" },
+    { id: "p810", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS (Regularização)", classificacao: "IMPOSTOS ATRASADOS", vencimento: "2026-04-13", valor: 47166.77, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. NOVEMBRO/2025" },
+    { id: "p811", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS (Regularização)", classificacao: "IMPOSTOS ATRASADOS", vencimento: "2026-04-13", valor: 40759.9, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. FEVEREIRO/2026" },
+    { id: "p812", favorecido: "Simples Nacional", categoria: "Simples Nacional - DAS (Regularização)", classificacao: "IMPOSTOS ATRASADOS", vencimento: "2026-04-13", valor: 53722.98, status: "pago", pagamento: "2026-04-13", descricao: "SIMPLES NACIONAL REF. JANEIRO/2026" },
 
     // Ads/afiliados/cupom de marketplace de abril a julho/2026 — não vieram em nenhum relatório
     // de Contas a Pagar nem no detalhamento por lançamento da planilha de DRE (só existem como
@@ -1870,6 +1895,14 @@ export const storePlussData: ClientFinanceData = {
         { nome: "Impostos sobre Aplicações", padrao: true },
         { nome: "Simples Nacional - DAS", padrao: true },
       ],
+    },
+    {
+      // Fora do DRE (ver classificacoesForaDoDre acima) — DAS de competências anteriores pago em
+      // atraso de uma vez só, não é imposto do mês corrente.
+      classificacao: "IMPOSTOS ATRASADOS",
+      color: "#d97706",
+      padrao: true,
+      categorias: [{ nome: "Simples Nacional - DAS (Regularização)", padrao: true }],
     },
     {
       classificacao: "INSUMOS",
