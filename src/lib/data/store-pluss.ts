@@ -110,7 +110,12 @@ export const storePlussData: ClientFinanceData = {
   // vencimento das 3 provisões futuras ainda "pendente" foi ajustado pro dia 17 (p915 outubro,
   // p957 novembro, p998 dezembro — todas estavam no dia 07). Os pagamentos já realizados (abril,
   // junho, setembro) ficaram como estavam, com a data real em que ocorreram.
-  dataVersion: 30,
+  //
+  // Bump 30 → 31: 3 taxas internas do Mercado Livre de setembro lançadas (p1212/p1213/p1214,
+  // mesmo padrão de p207/p208/p209 de agosto) — Tarifa de Campanha de Publicidade R$ 4.021,27,
+  // Tarifas de Envios Full R$ 4.045,43, Tarifas da Minha Página R$ 99,00, a partir do relatório
+  // que o Ewerton confirmou valer pra setembro.
+  dataVersion: 31,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -1722,6 +1727,9 @@ export const storePlussData: ClientFinanceData = {
     { id: "p1199", favorecido: "Connect Solucoes Contabeis", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 1621.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
     { id: "p1210", favorecido: "Connect Solucoes Contabeis", categoria: "BPO FINANCEIRO", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-29", valor: 1621.0, status: "pago", pagamento: "2026-09-29", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
     { id: "p1211", favorecido: "Tiktok", categoria: "Afiliados Tiktok", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-09-30", valor: 6387.8, status: "pago", pagamento: "2026-09-30", descricao: "Comissão de afiliados Tiktok - setembro/2026 (relatório Financeiro-Resumo)" },
+    { id: "p1212", favorecido: "Mercado Livre", categoria: "Tarifa de Campanha de Publicidade", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-09-30", valor: 4021.27, status: "pago", pagamento: "2026-09-30", descricao: "Tarifa por campanha de publicidade - Mercado Livre", conta: "Mercado Livre" },
+    { id: "p1213", favorecido: "Mercado Livre", categoria: "Tarifas de Envios Full", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-09-30", valor: 4045.43, status: "pago", pagamento: "2026-09-30", descricao: "Tarifas de envios Full - Mercado Livre", conta: "Mercado Livre" },
+    { id: "p1214", favorecido: "Mercado Livre", categoria: "Tarifas da Minha Página", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-30", valor: 99.0, status: "pago", pagamento: "2026-09-30", descricao: "Tarifas da Minha Página - Mercado Livre", conta: "Mercado Livre" },
     { id: "p1200", favorecido: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-09-29", valor: 400.0, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", conta: "Nubank St" },
     { id: "p1201", favorecido: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Transporte Urbano (táxi, Uber)", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-09-29", valor: 31.94, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
     { id: "p1202", favorecido: "Transferência enviada pelo Pix|49.158.964 NAYARA GOMES DOMINGUES", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-09-29", valor: 130.0, status: "pago", pagamento: "2026-09-29", descricao: "Transferência enviada pelo Pix|49.158.964 NAYARA GOMES DOMINGUES", conta: "Nubank St" },
