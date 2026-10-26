@@ -8,8 +8,10 @@ export const maxDuration = 60;
 // Sincroniza o Contas a Receber do IXC (fn_areceber) pra public.ixc_contas_a_receber, separado
 // por filial: id_filial 1 = Connect, id_filial 2 = Connect Ecommerce (ver cadastro de cliente no
 // IXC). Chamado de duas formas:
-//   - Vercel Cron, com o header "Authorization: Bearer <CRON_SECRET>" que o próprio Vercel envia;
-//   - Manualmente, por um admin logado (sessão via cookie).
+//   - Vercel Cron 1x por dia (ver vercel.json — plano Hobby não permite mais frequente), com o
+//     header "Authorization: Bearer <CRON_SECRET>" que o próprio Vercel envia;
+//   - Manualmente, por um admin logado (sessão via cookie), abrindo essa URL direto no navegador
+//     pra forçar uma sincronização na hora sem esperar o cron.
 const FILIAIS: { idFilial: number; clientSlug: "connect" | "connect-ecommerce" }[] = [
   { idFilial: 1, clientSlug: "connect" },
   { idFilial: 2, clientSlug: "connect-ecommerce" },

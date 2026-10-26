@@ -180,10 +180,12 @@ export function FinanceProvider({ client, children }: { client: Client; children
     window.localStorage.setItem(storageKey, JSON.stringify(state));
   }, [state, hydrated, storageKey]);
 
-  // Connect e Connect Ecommerce têm o Contas a Receber sincronizado em tempo real do IXC (ver
-  // src/app/api/integracoes/ixc/sync) — substitui os lançamentos vindos do seed/localStorage com
-  // prefixo "ixc-" pelos que estão agora em ixc_contas_a_receber, mantendo intactos os que o
-  // próprio usuário cadastrou pela tela (id com "_", ver criadoPelaTela).
+  // Connect e Connect Ecommerce têm o Contas a Receber sincronizado do IXC (ver
+  // src/app/api/integracoes/ixc/sync) — roda 1x por dia via cron do Vercel (plano Hobby não
+  // permite cron mais frequente; dá pra forçar uma sincronização na hora abrindo a URL da rota
+  // logado como admin). Substitui os lançamentos vindos do seed/localStorage com prefixo "ixc-"
+  // pelos que estão agora em ixc_contas_a_receber, mantendo intactos os que o próprio usuário
+  // cadastrou pela tela (id com "_", ver criadoPelaTela).
   const IXC_CLASSIFICACAO: Record<string, { classificacao: string; categoria: string }> = {
     connect: { classificacao: "Faturamento", categoria: "Faturamento Geral" },
     "connect-ecommerce": { classificacao: "Honorários", categoria: "Honorários Connect Ecommerce" },
