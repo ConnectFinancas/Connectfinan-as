@@ -92,28 +92,15 @@ export type IxcTituloAReceber = Record<string, unknown> & {
   status?: IxcStatusAReceber;
 };
 
-// Lista títulos de Contas a Receber de um cliente, com filtro opcional por status e período de
-// vencimento (passado/presente/futuro) — pagina automaticamente até trazer tudo.
-export async function ixcListarContasAReceber(opts: {
-  idCliente?: string;
-  status?: IxcStatusAReceber[];
-  vencimentoDe?: string; // "AAAA-MM-DD"
-  vencimentoAte?: string; // "AAAA-MM-DD"
-}): Promise<IxcTituloAReceber[]> {
-  const gridParam: IxcGridFiltro[] = [];
-  if (opts.idCliente) gridParam.push({ TB: "fn_areceber.id_cliente", OP: "=", P: opts.idCliente });
-  if (opts.status && opts.status.length > 0) {
-    gridParam.push({ TB: "fn_areceber.status", OP: "IN", P: opts.status.join(",") });
-  }
-  if (opts.vencimentoDe) gridParam.push({ TB: "fn_areceber.data_vencimento", OP: ">=", P: opts.vencimentoDe });
-  if (opts.vencimentoAte) gridParam.push({ TB: "fn_areceber.data_vencimento", OP: "<=", P: opts.vencimentoAte });
-
-  const registros: IxcTituloAReceber[] = [];
+// Busca genérica paginada num recurso "listar" do IXC, aplicando os filtros de grid_param e
+// trazendo todas as páginas até o total informado pela API.
+async function ixcListarTudo<T>(recurso: string, sortname: string, gridParam: IxcGridFiltro[]): Promise<T[]> {
+  const registros: T[] = [];
   let page = 1;
   const rp = 500;
   for (;;) {
-    const { total, registros: pagina } = await ixcListar<IxcTituloAReceber>("fn_areceber", {
-      sortname: "fn_areceber.data_vencimento",
+    const { total, registros: pagina } = await ixcListar<T>(recurso, {
+      sortname,
       sortorder: "asc",
       page,
       rp,
@@ -124,4 +111,32 @@ export async function ixcListarContasAReceber(opts: {
     page += 1;
   }
   return registros;
+}
+
+// Lista os IDs (e nome) dos clientes de uma filial — "id_filial": 1 = Connect, 2 = Connect
+// Ecommerce (confirmado no cadastro de cliente do IXC, campo "Filial").
+export async function ixcListarClientesPorFilial(idFilial: number): Promise<{ id: string; razao: string }[]> {
+  const registros = await ixcListarTudo<Record<string, unknown>>("cliente", "cliente.id", [
+    { TB: "cliente.id_filial", OP: "=", P: idFilial },
+  ]);
+  return registros.map((r) => ({ id: String(r.id), razao: String(r.razao ?? r.nome_fantasia ?? r.id) }));
+}
+
+// Lista títulos de Contas a Receber de uma lista de clientes, com filtro opcional por status e
+// período de vencimento (passado/presente/futuro) — pagina automaticamente até trazer tudo.
+export async function ixcListarContasAReceber(opts: {
+  idsCliente: string[];
+  status?: IxcStatusAReceber[];
+  vencimentoDe?: string; // "AAAA-MM-DD"
+  vencimentoAte?: string; // "AAAA-MM-DD"
+}): Promise<IxcTituloAReceber[]> {
+  if (opts.idsCliente.length === 0) return [];
+  const gridParam: IxcGridFiltro[] = [{ TB: "fn_areceber.id_cliente", OP: "IN", P: opts.idsCliente.join(",") }];
+  if (opts.status && opts.status.length > 0) {
+    gridParam.push({ TB: "fn_areceber.status", OP: "IN", P: opts.status.join(",") });
+  }
+  if (opts.vencimentoDe) gridParam.push({ TB: "fn_areceber.data_vencimento", OP: ">=", P: opts.vencimentoDe });
+  if (opts.vencimentoAte) gridParam.push({ TB: "fn_areceber.data_vencimento", OP: "<=", P: opts.vencimentoAte });
+
+  return ixcListarTudo<IxcTituloAReceber>("fn_areceber", "fn_areceber.data_vencimento", gridParam);
 }
