@@ -1,9 +1,11 @@
-// Integração OAuth com o IXC (sistema onde ficam o cadastro de clientes e o Contas a Receber da
-// Connect/Connect Ecommerce). As URLs exatas de autorização/token ainda não foram confirmadas com
-// o suporte do IXC — os valores abaixo seguem o padrão OAuth 2.0 (RFC 6749) e são sobrescrevíveis
-// por variável de ambiente assim que a documentação da instância confirmar os caminhos certos.
-
-export const IXC_REDIRECT_URI = "https://connectfinan-as.vercel.app/api/integracoes/ixc/callback";
+// Integração com a API do IXC (sistema onde ficam o cadastro de clientes e o Contas a Receber da
+// Connect/Connect Ecommerce). Confirmado com o suporte do IXC: autenticação é Basic Auth
+// (usuário/senha do próprio sistema) — o OAuth Server e o token do módulo "query-builder"
+// (Looker) NÃO se aplicam a essa API. Doc oficial: https://wikiapiprovedor.ixcsoft.com.br/.
+//
+// Uso típico (exemplo do próprio suporte):
+//   GET /webservice/v1/fn_areceber, header "ixcsoft: listar", corpo com qtype/query/oper/page/
+//   rp/sortname e, opcionalmente, grid_param (array de filtros extras em JSON-dentro-de-string).
 
 function baseUrl(): string {
   const url = process.env.IXC_BASE_URL;
@@ -11,44 +13,115 @@ function baseUrl(): string {
   return url.replace(/\/$/, "");
 }
 
-export function ixcAuthorizeUrl(state: string): string {
-  const path = process.env.IXC_AUTHORIZE_PATH || "/oauth/authorize";
-  const clientId = process.env.IXC_CLIENT_ID;
-  if (!clientId) throw new Error("IXC_CLIENT_ID não configurado nas variáveis de ambiente do servidor.");
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: IXC_REDIRECT_URI,
-    response_type: "code",
-    state,
-  });
-  return `${baseUrl()}${path}?${params.toString()}`;
+function authHeader(): string {
+  const usuario = process.env.IXC_USUARIO;
+  const senha = process.env.IXC_SENHA;
+  if (!usuario || !senha) {
+    throw new Error("IXC_USUARIO/IXC_SENHA não configurados nas variáveis de ambiente do servidor.");
+  }
+  return "Basic " + Buffer.from(`${usuario}:${senha}`).toString("base64");
 }
 
-export async function ixcTrocarCodigoPorToken(code: string) {
-  const path = process.env.IXC_TOKEN_PATH || "/oauth/token";
-  const clientId = process.env.IXC_CLIENT_ID;
-  const clientSecret = process.env.IXC_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new Error("IXC_CLIENT_ID/IXC_CLIENT_SECRET não configurados nas variáveis de ambiente do servidor.");
+export type IxcGridFiltro = { TB: string; OP: string; P: string | number };
+
+export type IxcListarParams = {
+  qtype?: string;
+  query?: string;
+  oper?: string;
+  page?: string | number;
+  rp?: string | number;
+  sortname?: string;
+  sortorder?: "asc" | "desc";
+  gridParam?: IxcGridFiltro[];
+};
+
+// Faz uma chamada "listar" num recurso do webservice (ex.: "fn_areceber", "cliente") — monta o
+// corpo no formato que o IXC espera (grid_param é o array de filtros, mas vai como STRING com o
+// JSON dentro, não como array de verdade — confirmado no exemplo do suporte).
+export async function ixcListar<T = Record<string, unknown>>(
+  recurso: string,
+  params: IxcListarParams = {}
+): Promise<{ total: string; registros: T[] }> {
+  const body: Record<string, string> = {
+    qtype: params.qtype ?? `${recurso}.id`,
+    query: params.query ?? "",
+    oper: params.oper ?? (params.query ? "=" : ">"),
+    page: String(params.page ?? "1"),
+    rp: String(params.rp ?? "100"),
+    sortname: params.sortname ?? `${recurso}.id`,
+    sortorder: params.sortorder ?? "asc",
+  };
+  if (params.gridParam && params.gridParam.length > 0) {
+    body.grid_param = JSON.stringify(params.gridParam);
   }
-  const resp = await fetch(`${baseUrl()}${path}`, {
+
+  const resp = await fetch(`${baseUrl()}/webservice/v1/${recurso}`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: IXC_REDIRECT_URI,
-      client_id: clientId,
-      client_secret: clientSecret,
-    }),
+    headers: {
+      "Content-Type": "application/json",
+      ixcsoft: "listar",
+      Authorization: authHeader(),
+    },
+    body: JSON.stringify(body),
   });
+
   if (!resp.ok) {
     const texto = await resp.text();
-    throw new Error(`IXC recusou a troca do código por token (${resp.status}): ${texto}`);
+    throw new Error(`IXC respondeu ${resp.status} em /webservice/v1/${recurso}: ${texto.slice(0, 500)}`);
   }
-  return (await resp.json()) as {
-    access_token: string;
-    refresh_token?: string;
-    expires_in?: number;
-  };
+
+  const json = await resp.json();
+  // O webservice do IXC retorna { type: "success", total: "N", registros: [...] } quando dá
+  // certo, ou { type: "error", message: "..." } quando dá errado — mesmo em HTTP 200.
+  if (json?.type === "error") {
+    throw new Error(`IXC recusou a consulta em ${recurso}: ${json.message ?? JSON.stringify(json)}`);
+  }
+  return { total: json.total ?? "0", registros: json.registros ?? [] };
+}
+
+// Status dos títulos em fn_areceber, conforme o suporte: A=aberto, R=recebido, C=cancelado,
+// P=parcialmente recebido.
+export type IxcStatusAReceber = "A" | "R" | "C" | "P";
+
+export type IxcTituloAReceber = Record<string, unknown> & {
+  id: string;
+  id_cliente?: string;
+  data_vencimento?: string;
+  data_pagamento?: string;
+  valor?: string;
+  status?: IxcStatusAReceber;
+};
+
+// Lista títulos de Contas a Receber de um cliente, com filtro opcional por status e período de
+// vencimento (passado/presente/futuro) — pagina automaticamente até trazer tudo.
+export async function ixcListarContasAReceber(opts: {
+  idCliente?: string;
+  status?: IxcStatusAReceber[];
+  vencimentoDe?: string; // "AAAA-MM-DD"
+  vencimentoAte?: string; // "AAAA-MM-DD"
+}): Promise<IxcTituloAReceber[]> {
+  const gridParam: IxcGridFiltro[] = [];
+  if (opts.idCliente) gridParam.push({ TB: "fn_areceber.id_cliente", OP: "=", P: opts.idCliente });
+  if (opts.status && opts.status.length > 0) {
+    gridParam.push({ TB: "fn_areceber.status", OP: "IN", P: opts.status.join(",") });
+  }
+  if (opts.vencimentoDe) gridParam.push({ TB: "fn_areceber.data_vencimento", OP: ">=", P: opts.vencimentoDe });
+  if (opts.vencimentoAte) gridParam.push({ TB: "fn_areceber.data_vencimento", OP: "<=", P: opts.vencimentoAte });
+
+  const registros: IxcTituloAReceber[] = [];
+  let page = 1;
+  const rp = 500;
+  for (;;) {
+    const { total, registros: pagina } = await ixcListar<IxcTituloAReceber>("fn_areceber", {
+      sortname: "fn_areceber.data_vencimento",
+      sortorder: "asc",
+      page,
+      rp,
+      gridParam,
+    });
+    registros.push(...pagina);
+    if (registros.length >= Number(total) || pagina.length === 0) break;
+    page += 1;
+  }
+  return registros;
 }
