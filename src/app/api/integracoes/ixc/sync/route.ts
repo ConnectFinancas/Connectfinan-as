@@ -36,42 +36,46 @@ async function autorizado(request: NextRequest): Promise<boolean> {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await autorizado(request))) {
-    return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
-  }
-
-  const admin = createAdminClient();
-  const resumo: Record<string, number> = {};
-
-  for (const { idFilial, clientSlug } of FILIAIS) {
-    const clientes = await ixcListarClientesPorFilial(idFilial);
-    const nomePorId = new Map(clientes.map((c) => [c.id, c.razao]));
-    const titulos = await ixcListarContasAReceber({
-      idsCliente: clientes.map((c) => c.id),
-      status: [...STATUS_SINCRONIZADOS],
-    });
-
-    const linhas = titulos.map((t: IxcTituloAReceber) => ({
-      id: `ixc-${t.id}`,
-      client_slug: clientSlug,
-      ixc_cliente_id: t.id_cliente ?? null,
-      cliente_nome: t.id_cliente ? nomePorId.get(String(t.id_cliente)) ?? null : null,
-      descricao: (t.obs as string) ?? (t.descricao as string) ?? null,
-      valor: Number(t.valor ?? 0),
-      data_vencimento: t.data_vencimento || null,
-      data_pagamento: t.data_pagamento || null,
-      status: t.status ?? "A",
-      synced_at: new Date().toISOString(),
-    }));
-
-    if (linhas.length > 0) {
-      const { error } = await admin.from("ixc_contas_a_receber").upsert(linhas, { onConflict: "id" });
-      if (error) {
-        return NextResponse.json({ erro: `Falhou ao salvar ${clientSlug}: ${error.message}` }, { status: 500 });
-      }
+  try {
+    if (!(await autorizado(request))) {
+      return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
     }
-    resumo[clientSlug] = linhas.length;
-  }
 
-  return NextResponse.json({ ok: true, sincronizados: resumo });
+    const admin = createAdminClient();
+    const resumo: Record<string, number> = {};
+
+    for (const { idFilial, clientSlug } of FILIAIS) {
+      const clientes = await ixcListarClientesPorFilial(idFilial);
+      const nomePorId = new Map(clientes.map((c) => [c.id, c.razao]));
+      const titulos = await ixcListarContasAReceber({
+        idsCliente: clientes.map((c) => c.id),
+        status: [...STATUS_SINCRONIZADOS],
+      });
+
+      const linhas = titulos.map((t: IxcTituloAReceber) => ({
+        id: `ixc-${t.id}`,
+        client_slug: clientSlug,
+        ixc_cliente_id: t.id_cliente ?? null,
+        cliente_nome: t.id_cliente ? nomePorId.get(String(t.id_cliente)) ?? null : null,
+        descricao: (t.obs as string) ?? (t.descricao as string) ?? null,
+        valor: Number(t.valor ?? 0),
+        data_vencimento: t.data_vencimento || null,
+        data_pagamento: t.data_pagamento || null,
+        status: t.status ?? "A",
+        synced_at: new Date().toISOString(),
+      }));
+
+      if (linhas.length > 0) {
+        const { error } = await admin.from("ixc_contas_a_receber").upsert(linhas, { onConflict: "id" });
+        if (error) {
+          return NextResponse.json({ erro: `Falhou ao salvar ${clientSlug}: ${error.message}` }, { status: 500 });
+        }
+      }
+      resumo[clientSlug] = linhas.length;
+    }
+
+    return NextResponse.json({ ok: true, sincronizados: resumo });
+  } catch (e) {
+    return NextResponse.json({ erro: e instanceof Error ? e.message : "Erro desconhecido na sincronização." }, { status: 500 });
+  }
 }
