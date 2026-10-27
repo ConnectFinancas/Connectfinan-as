@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { getFinanceData } from "@/lib/data/financeRegistry";
-import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { computeContasPagarKpis, computeContasReceberKpis, computeFinanceSummary, computeFluxoCaixa, emptyMarketplaceManual } from "@/lib/derive";
 import { CategoryGroup, Client, ClientFinanceData, MarketplaceCanal, MarketplaceMensal, Payable, Receivable, TransferenciaConta } from "@/lib/types";
 
@@ -179,52 +178,6 @@ export function FinanceProvider({ client, children }: { client: Client; children
     if (!hydrated) return;
     window.localStorage.setItem(storageKey, JSON.stringify(state));
   }, [state, hydrated, storageKey]);
-
-  // Connect e Connect Ecommerce têm o Contas a Receber sincronizado do IXC (ver
-  // src/app/api/integracoes/ixc/sync) — roda 1x por dia via cron do Vercel (plano Hobby não
-  // permite cron mais frequente; dá pra forçar uma sincronização na hora abrindo a URL da rota
-  // logado como admin). Substitui os lançamentos vindos do seed/localStorage com prefixo "ixc-"
-  // pelos que estão agora em ixc_contas_a_receber, mantendo intactos os que o próprio usuário
-  // cadastrou pela tela (id com "_", ver criadoPelaTela).
-  const IXC_CLASSIFICACAO: Record<string, { classificacao: string; categoria: string }> = {
-    connect: { classificacao: "Faturamento", categoria: "Faturamento Geral" },
-    "connect-ecommerce": { classificacao: "Honorários", categoria: "Honorários Connect Ecommerce" },
-  };
-  useEffect(() => {
-    if (!hydrated) return;
-    const config = IXC_CLASSIFICACAO[client.slug];
-    if (!config) return;
-
-    let cancelado = false;
-    const supabase = createBrowserClient();
-    supabase
-      .from("ixc_contas_a_receber")
-      .select("*")
-      .eq("client_slug", client.slug)
-      .then(({ data, error }) => {
-        if (cancelado || error || !data) return;
-        const sincronizados: Receivable[] = data.map((row) => ({
-          id: row.id,
-          cliente: row.cliente_nome ?? "—",
-          categoria: config.categoria,
-          classificacao: config.classificacao,
-          descricao: row.descricao ?? row.cliente_nome ?? "Título IXC",
-          vencimento: row.data_vencimento,
-          valor: Number(row.valor ?? 0),
-          status: row.status === "R" ? "recebido" : "pendente",
-          recebimento: row.status === "R" ? (row.data_pagamento ?? undefined) : undefined,
-          formaRecebimento: row.status === "R" ? "Outro" : undefined,
-        }));
-        setState((s) => ({
-          ...s,
-          receivables: [...sincronizados, ...s.receivables.filter((r) => criadoPelaTela(r.id))],
-        }));
-      });
-    return () => {
-      cancelado = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, client.slug]);
 
   const addPayable = (entries: Payable[]) =>
     setState((s) => ({ ...s, payables: [...entries, ...s.payables] }));
