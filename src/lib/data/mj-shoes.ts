@@ -165,7 +165,14 @@ export const mjShoesData: ClientFinanceData = {
   // em DESPESAS ADMINISTRATIVAS quanto em DESPESAS EVENTUAIS). Os 6 lançamentos de maio
   // (embalagens/decoração, ids p147-p152) que estavam em DESPESAS EVENTUAIS foram reclassificados
   // pra DESPESAS ADMINISTRATIVAS, e a categoria duplicada foi removida do grupo DESPESAS EVENTUAIS.
-  dataVersion: 22,
+  // Bump 22 → 23: confirmado pelo Ewerton que o lançamento de ICMS do dia 28 (R$28.886,71/mês,
+  // SEFAZ PE) é o "ICMS Fronteira" — recorrente todo mês. Nova categoria "ICMS Fronteira" (ao lado
+  // de "ICMS", que continua existindo pra outros lançamentos de imposto estadual). Renomeados os
+  // 4 lançamentos do dia 28 com esse valor: maio (p91, já pago) e a projeção de Out/Nov/Dez
+  // (p43/p66/p88). Valor não mudou. O lançamento do dia 29 (R$15.220,35) e os outros ICMS com
+  // valor diferente (julho, setembro) continuam como "ICMS" genérico — não fazem parte dessa
+  // confirmação.
+  dataVersion: 23,
   // Impostos e Investimentos já entram no DRE como linha de destaque (linhasDestaqueDre abaixo) —
   // sem isso, o mesmo lançamento apareceria de novo dentro de DESPESAS, contando duas vezes.
   classificacoesForaDoDre: ["IMPOSTOS", "INVESTIMENTO"],
@@ -554,7 +561,7 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p40", favorecido: "RECEITA FEDERAL", categoria: "INSS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-20", valor: 421.45, status: "pendente", descricao: "Valor de maio" },
   { id: "p41", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-10-20", valor: 28902.42, status: "pendente", descricao: "Valor de maio" },
   { id: "p42", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-24", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
-  { id: "p43", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-10-28", valor: 28886.71, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
+  { id: "p43", favorecido: "SEFAZ PE", categoria: "ICMS Fronteira", classificacao: "IMPOSTOS", vencimento: "2026-10-28", valor: 28886.71, status: "pendente", descricao: "Valor de maio. ICMS Fronteira — confirmado pelo Ewerton que é recorrente todo dia 28" },
   { id: "p44", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-10-29", valor: 15220.35, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
   { id: "p45", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-31", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
   { id: "p46", favorecido: "JOSENILDO LUCAS DA CRUZ SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-11-02", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
@@ -574,7 +581,7 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p63", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-11-20", valor: 28902.42, status: "pendente", descricao: "Valor de maio" },
   { id: "p64", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-11-21", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
   { id: "p65", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-11-28", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
-  { id: "p66", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-11-28", valor: 28886.71, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
+  { id: "p66", favorecido: "SEFAZ PE", categoria: "ICMS Fronteira", classificacao: "IMPOSTOS", vencimento: "2026-11-28", valor: 28886.71, status: "pendente", descricao: "Valor de maio. ICMS Fronteira — confirmado pelo Ewerton que é recorrente todo dia 28" },
   { id: "p67", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-11-29", valor: 15220.35, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
   { id: "p68", favorecido: "JOSENILDO LUCAS DA CRUZ SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-12-02", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
   { id: "p69", favorecido: "JULY ADILA GOMES DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-12-04", valor: 1500.0, status: "pendente", descricao: "Pago em espécie" },
@@ -593,13 +600,13 @@ export const mjShoesData: ClientFinanceData = {
   { id: "p85", favorecido: "RECEITA FEDERAL", categoria: "INSS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-12-20", valor: 421.45, status: "pendente", descricao: "Valor de maio" },
   { id: "p86", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-12-20", valor: 28902.42, status: "pendente", descricao: "Valor de maio" },
   { id: "p87", favorecido: "SEGURANÇA", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-12-26", valor: 50.0, status: "pendente", descricao: "Pago todo sábado em espécie" },
-  { id: "p88", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-12-28", valor: 28886.71, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
+  { id: "p88", favorecido: "SEFAZ PE", categoria: "ICMS Fronteira", classificacao: "IMPOSTOS", vencimento: "2026-12-28", valor: 28886.71, status: "pendente", descricao: "Valor de maio. ICMS Fronteira — confirmado pelo Ewerton que é recorrente todo dia 28" },
   { id: "p89", favorecido: "SEFAZ PE", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-12-29", valor: 15220.35, status: "pendente", descricao: "Valor de maio. Confirmar se é antecipação mensal ou parcelamento" },
 
 
   // --- Maio/2026: extraído do Detalhamento Mai2026 da planilha DRE_2026_-_M_J_SHOES ---
   { id: "p90", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-05-20", valor: 28902.42, status: "pago", pagamento: "2026-05-20", descricao: "SIMPLES NACIONAL (maio/2026)" },
-  { id: "p91", favorecido: "RECEITA FEDERAL", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-05-28", valor: 28886.71, status: "pago", pagamento: "2026-05-28", descricao: "ICMS DIV E-FISCO (maio/2026)" },
+  { id: "p91", favorecido: "RECEITA FEDERAL", categoria: "ICMS Fronteira", classificacao: "IMPOSTOS", vencimento: "2026-05-28", valor: 28886.71, status: "pago", pagamento: "2026-05-28", descricao: "ICMS DIV E-FISCO (maio/2026) — ICMS Fronteira, confirmado pelo Ewerton que é recorrente todo dia 28" },
   { id: "p92", favorecido: "RECEITA FEDERAL", categoria: "ICMS", classificacao: "IMPOSTOS", vencimento: "2026-05-29", valor: 15220.35, status: "pago", pagamento: "2026-05-29", descricao: "ICMS DIV E-FISCO (maio/2026)" },
   { id: "p93", favorecido: "JOSENILDO LUCAS DA CRUZ SILVA", categoria: "Complemento Salarial", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-05-05", valor: 182.0, status: "pago", pagamento: "2026-05-05", descricao: "COMPLEMENTO SALARIAL - LUCAS (maio/2026)" },
   { id: "p94", favorecido: "THAMIRES LUANA MACEDO VIANA", categoria: "Complemento Salarial", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-05-05", valor: 247.0, status: "pago", pagamento: "2026-05-05", descricao: "COMPLEMENTO SALARIAL - THAMY (maio/2026)" },
@@ -1616,6 +1623,7 @@ export const mjShoesData: ClientFinanceData = {
       categorias: [
         { nome: "Imposto (Simples Nacional)", padrao: true },
         { nome: "ICMS", padrao: true },
+        { nome: "ICMS Fronteira", padrao: true },
         { nome: "PIS/COFINS", padrao: true },
       ],
     },
