@@ -33,12 +33,18 @@ export const mjPrimeData: ClientFinanceData = {
   // - O tributo de R$1.443,69 à Receita Federal (24/09) — presumido DAS da própria MJ Prime.
   // - "Recuperação de saldo para cancelamento" de R$5.302,20 (09/09, PagBank) — tratado como
   //   ajuste interno (não lançado), mesmo padrão da "Reserva de saldo para saque".
-  dataVersion: 3,
+  dataVersion: 4,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
     investimentos: 0,
   },
+  // CMV oficial por mês — soma da coluna "Custo" dos relatórios "Vendas por Produto" de cada
+  // empresa do grupo (mesmo critério pedido pelo Ewerton). Setembro/2026: R$28.451,43 (BORBA
+  // MOVEIS LTDA) + R$427.980,40 (MJ ELETRO LTDA ME/MJ PRIME) = R$456.431,83. Índice 0 = Jan,
+  // 8 = Setembro. Falta o relatório da C E J SERVIÇOS — o valor de setembro pode estar
+  // subestimado até ele chegar.
+  cmvManual: [0, 0, 0, 0, 0, 0, 0, 0, 456431.83, 0, 0, 0],
 
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
