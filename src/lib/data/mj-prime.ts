@@ -41,9 +41,9 @@ export const mjPrimeData: ClientFinanceData = {
   },
   // CMV oficial por mês — soma da coluna "Custo" dos relatórios "Vendas por Produto" de cada
   // empresa do grupo (mesmo critério pedido pelo Ewerton). Setembro/2026: R$28.451,43 (BORBA
-  // MOVEIS LTDA) + R$427.980,40 (MJ ELETRO LTDA ME/MJ PRIME) = R$456.431,83. Índice 0 = Jan,
-  // 8 = Setembro. Falta o relatório da C E J SERVIÇOS — o valor de setembro pode estar
-  // subestimado até ele chegar.
+  // MOVEIS LTDA) + R$427.980,40 (MJ ELETRO LTDA ME/MJ PRIME) = R$456.431,83. A C E J SERVIÇOS
+  // não entra aqui — confirmado com o Ewerton que ela não tem custo sobre vendas (é serviço).
+  // Índice 0 = Jan, 8 = Setembro.
   cmvManual: [0, 0, 0, 0, 0, 0, 0, 0, 456431.83, 0, 0, 0],
 
   fluxoCaixaPeriodo: "—",
