@@ -108,7 +108,14 @@ export const mjPrimeData: ClientFinanceData = {
   // que é fornecedor (vira CMV) do que é realmente diverso (FGTS/INSS/tarifas, ~R$79 mil). Um
   // lançamento de R$2.900,00 (01/10, caixa físico) ficou sem descrição na planilha original —
   // lançado como "(sem descrição)", confirme.
-  dataVersion: 12,
+  // Bump 12 → 13: substituído o CMV provisório de Março a Julho pelo oficial, confirmado pelo
+  // Ewerton — veio da aba "Ano 2026" do arquivo "DRE_2026_-_MJ_PRIME__5.xlsx" (que já tínhamos
+  // recebido antes dos ACOMP_FINANCEIRO), somando "CMV MJ PRIME" + "FRETE PRODUTOS" + "CMV BORBA"
+  // + "FRETE PRODUTOS" de cada mês (frete de mercadoria entra como custo, igual nos outros
+  // meses). Fevereiro e Outubro não têm essa aba preenchida nesse arquivo — continuam com o
+  // provisório (soma das linhas de CMV em Contas a Pagar) até o Ewerton confirmar/enviar o
+  // oficial desses dois meses.
+  dataVersion: 13,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -116,16 +123,18 @@ export const mjPrimeData: ClientFinanceData = {
   },
   // CMV oficial por mês. Setembro/2026: soma da coluna "Custo" dos relatórios "Vendas por
   // Produto" de cada empresa do grupo — R$28.451,43 (BORBA MOVEIS LTDA) + R$427.980,40 (MJ
-  // ELETRO LTDA ME/MJ PRIME) = R$456.431,83. Fevereiro a Julho/2026: soma das próprias linhas de
-  // CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor via caixa físico +
-  // resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40 (fevereiro), R$387.185,60
-  // (março), R$432.178,71 (abril), R$292.148,92 (maio), R$410.918,99 (junho, já incluindo o
-  // fornecedor de 23/06 confirmado pelo Ewerton), R$445.941,56 (julho) e R$683.792,49 (outubro,
-  // já incluindo os R$547.252,57 de fornecedores vindos da aba "Pagamentos Diversos"). A C E J
+  // ELETRO LTDA ME/MJ PRIME) = R$456.431,83. Março a Julho/2026: CMV MJ PRIME + FRETE PRODUTOS +
+  // CMV BORBA + FRETE PRODUTOS, da aba "Ano 2026" do DRE_2026_-_MJ_PRIME__5.xlsx (confirmado pelo
+  // Ewerton como oficial) = R$378.038,12 (março), R$374.927,58 (abril), R$412.539,96 (maio),
+  // R$520.922,89 (junho) e R$614.450,30 (julho). Fevereiro e Outubro ainda são PROVISÓRIOS — soma
+  // das próprias linhas de CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor
+  // via caixa físico + resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40
+  // (fevereiro) e R$683.792,49 (outubro, já incluindo os R$547.252,57 de fornecedores vindos da
+  // aba "Pagamentos Diversos") — trocar pelo oficial assim que o Ewerton confirmar/enviar. A C E J
   // SERVIÇOS não entra em nenhum mês — confirmado com o Ewerton que ela não tem custo sobre
   // vendas (é serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar, 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul,
   // 8 = Set, 9 = Out.
-  cmvManual: [0, 217269.4, 387185.6, 432178.71, 292148.92, 410918.99, 445941.56, 0, 456431.83, 683792.49, 0, 0],
+  cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 683792.49, 0, 0],
 
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
