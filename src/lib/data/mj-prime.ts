@@ -29,7 +29,6 @@ export const mjPrimeData: ClientFinanceData = {
   // Pontos ainda sem confirmação do Ewerton (marcados na descrição de cada lançamento):
   // - Classificação de Faxina/Mercado/Almoço Montador/Gráfica/Ovos/Lanche/Sacolas pra lixo
   //   (caixa físico) — classificação automática por padrão de outros clientes.
-  // - Um pagamento à CONNECT de R$297,00 (25/09) sem confirmação de qual serviço é.
   // - O tributo de R$1.443,69 à Receita Federal (24/09) — presumido DAS da própria MJ Prime.
   // - "Recuperação de saldo para cancelamento" de R$5.302,20 (09/09, PagBank) — tratado como
   //   ajuste interno (não lançado), mesmo padrão da "Reserva de saldo para saque".
@@ -85,7 +84,7 @@ export const mjPrimeData: ClientFinanceData = {
   // CAIXA FISICO) — dessa vez deduplicado por data+valor exato (17 de 21 batem certinho); os 4
   // dias finais (26, 27, 29 e 30/06) só existem em DESPESAS CAIXA FISICO e foram mantidos como
   // CMV. Um lançamento de Pagamentos Diversos ficou ilegível na própria planilha do Ewerton
-  // ("?", R$2.590,00 em 23/06) — lançado como Despesas Administrativas genérico, confirme.
+  // ("?", R$2.590,00 em 23/06) — confirmado pelo Ewerton como fornecedor, lançado como CMV.
   // Bump 8 → 9: importado Julho/2026 real (mesma fonte/método, mês cheio — sem spillover de/para
   // agosto). Essa planilha não tem a aba "COMPRA SEM NF" preenchida — todas as compras da Fábrica
   // Arco Íris vieram só de "DESPESAS CAIXA FISICO" (21 lançamentos, todos CMV).
@@ -94,7 +93,13 @@ export const mjPrimeData: ClientFinanceData = {
   // (os dias 1 a 9 não aparecem em nenhuma aba) — sinalizar que falta detalhar o início do mês,
   // se existir. Com isso fecha a importação de Fevereiro a Julho/2026 pedida pelo Ewerton; Agosto
   // fica para depois, a partir dos documentos originais (mesmo método usado em setembro).
-  dataVersion: 10,
+  // Bump 10 → 11: 3 confirmações do Ewerton sobre os pontos em aberto —
+  // (1) os "buracos" de dados no início de fevereiro e maio: os valores lançados batem com o que
+  //     aparece no DRE, então ficam como estão, sem necessidade de completar os dias que faltam;
+  // (2) o pagamento de R$297,00 à Connect (25/09) é Contabilidade, não BPO Financeiro — corrigido;
+  // (3) o lançamento ilegível de 23/06 (R$2.590,00) é fornecedor — reclassificado de Despesas
+  //     Administrativas para CMV (refletido no cmvManual de junho).
+  dataVersion: 11,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -105,11 +110,11 @@ export const mjPrimeData: ClientFinanceData = {
   // ELETRO LTDA ME/MJ PRIME) = R$456.431,83. Fevereiro a Julho/2026: soma das próprias linhas de
   // CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor via caixa físico +
   // resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40 (fevereiro), R$387.185,60
-  // (março), R$432.178,71 (abril), R$292.148,92 (maio), R$408.328,99 (junho) e R$445.941,56
-  // (julho). A C E J SERVIÇOS não entra em nenhum mês — confirmado com o Ewerton que ela não tem
-  // custo sobre vendas (é serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar, 3 = Abr, 4 = Mai, 5 = Jun,
-  // 6 = Jul, 8 = Set.
-  cmvManual: [0, 217269.4, 387185.6, 432178.71, 292148.92, 408328.99, 445941.56, 0, 456431.83, 0, 0, 0],
+  // (março), R$432.178,71 (abril), R$292.148,92 (maio), R$410.918,99 (junho, já incluindo o
+  // fornecedor de 23/06 confirmado pelo Ewerton) e R$445.941,56 (julho). A C E J SERVIÇOS não
+  // entra em nenhum mês — confirmado com o Ewerton que ela não tem custo sobre vendas (é
+  // serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar, 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul, 8 = Set.
+  cmvManual: [0, 217269.4, 387185.6, 432178.71, 292148.92, 410918.99, 445941.56, 0, 456431.83, 0, 0, 0],
 
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
@@ -971,7 +976,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p430", favorecido: "IMCAL", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-24", valor: 3812.09, status: "pago", pagamento: "2026-09-24", descricao: "Fornecedor (extrato Bradesco, 24/09/2026)" },
   { id: "p431", favorecido: "HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-24", valor: 1582.59, status: "pago", pagamento: "2026-09-24", descricao: "Fornecedor (extrato Bradesco, 24/09/2026)" },
   { id: "p432", favorecido: "HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-24", valor: 3826.05, status: "pago", pagamento: "2026-09-24", descricao: "Fornecedor (extrato Bradesco, 24/09/2026)" },
-  { id: "p433", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "BPO Financeiro", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-25", valor: 297.0, status: "pago", pagamento: "2026-09-25", descricao: "Mensalidade Connect (extrato Bradesco, 25/09/2026) — não confirmado qual serviço é esse (R$297,00), confirme" },
+  { id: "p433", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-25", valor: 297.0, status: "pago", pagamento: "2026-09-25", descricao: "Mensalidade Connect — Contabilidade (extrato Bradesco, 25/09/2026)" },
   { id: "p434", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "BPO Financeiro", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-25", valor: 1621.0, status: "pago", pagamento: "2026-09-25", descricao: "Mensalidade Connect (extrato Bradesco, 25/09/2026)" },
   { id: "p435", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-25", valor: 1621.0, status: "pago", pagamento: "2026-09-25", descricao: "Mensalidade Connect (extrato Bradesco, 25/09/2026)" },
   { id: "p436", favorecido: "HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-25", valor: 1035.84, status: "pago", pagamento: "2026-09-25", descricao: "Fornecedor (extrato Bradesco, 25/09/2026)" },
@@ -1551,7 +1556,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1010", favorecido: "Bradesco", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-01", valor: 94.80, status: "pago", pagamento: "2026-06-01", descricao: "Tarifa bancária de 01/06/2026 (Fluxo de Caixa)" },
   { id: "p1011", favorecido: "Bradesco", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-25", valor: 9.80, status: "pago", pagamento: "2026-06-25", descricao: "Tarifa bancária de 25/06/2026 (Fluxo de Caixa)" },
   { id: "p1012", favorecido: "Bradesco", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-06-30", valor: 94.80, status: "pago", pagamento: "2026-06-30", descricao: "Tarifa bancária de 30/06/2026 (Fluxo de Caixa)" },
-  { id: "p1013", favorecido: "?", categoria: "Pagamentos Diversos", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-06-23", valor: 2590.0, status: "pago", pagamento: "2026-06-23", descricao: "? (Pagamentos Diversos, 23/06/2026) — classificação automática, confirme" },
+  { id: "p1013", favorecido: "Fornecedor (não identificado na planilha)", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-23", valor: 2590.0, status: "pago", pagamento: "2026-06-23", descricao: "Fornecedor — descrição ilegível na planilha original (Pagamentos Diversos, 23/06/2026), confirmado como fornecedor pelo Ewerton" },
   { id: "p1014", favorecido: "COMBUSTIVEIS", categoria: "Combustível", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-06-02", valor: 7720.0, status: "pago", pagamento: "2026-06-02", descricao: "COMBUSTIVEIS (Pagamentos Diversos, 02/06/2026)" },
   { id: "p1015", favorecido: "FRETE", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-03", valor: 568.93, status: "pago", pagamento: "2026-06-03", descricao: "FRETE (Pagamentos Diversos, 03/06/2026) — classificado como CMV (frete de mercadoria), a pedido do Ewerton" },
   { id: "p1016", favorecido: "FRETE", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-06-05", valor: 4143.22, status: "pago", pagamento: "2026-06-05", descricao: "FRETE (Pagamentos Diversos, 05/06/2026) — classificado como CMV (frete de mercadoria), a pedido do Ewerton" },
