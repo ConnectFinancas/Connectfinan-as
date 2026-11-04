@@ -55,10 +55,8 @@ export const connectEcommerceData: ClientFinanceData = {
   // "pendente" mas o Relatório de Recebimentos mostra que foi pago em 29/10 — corrigido pra
   // "recebido"; removida uma duplicata de VITRA COMERCIO DE VESTUARIO LTDA (o antigo r349, que
   // tinha o mesmo valor/vencimento do r350 mas com status "pendente" desatualizado); adicionado 1
-  // título de DR STORE LTDA de R$200,00 (30/10) que não tinha sido lançado. OLIMERC LTDA (ainda
-  // nos meses anteriores) pode ter sido renomeada pra JOHLY LTDA no IXC (mesmo e-mail cadastrado,
-  // olimerc73@gmail.com) — não renomeado ainda por falta de confirmação direta por título/ID,
-  // sinalizar ao Ewerton.
+  // título de DR STORE LTDA de R$200,00 (30/10) que não tinha sido lançado. OLIMERC LTDA foi
+  // renomeada pra JOHLY LTDA no IXC (confirmado pelo Ewerton) — renomeado em todos os meses.
   dataVersion: 3,
 
   ocultarCmv: true,
@@ -134,7 +132,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r22", cliente: "MIRIAN GIZELE DE ABREU ARRUDA - PE", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 810.5, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
   { id: "r23", cliente: "MIRIAN GIZELE DE ABREU ARRUDA - SP", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 810.5, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
   { id: "r24", cliente: "MONICA MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 297.0, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
-  { id: "r25", cliente: "OLIMERC LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 297.0, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
+  { id: "r25", cliente: "JOHLY LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 297.0, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
   { id: "r26", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 347.0, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
   { id: "r27", cliente: "STYLE POWER COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 347.0, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
   { id: "r28", cliente: "VISTA VIPE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-01-01", valor: 397.0, status: "recebido", recebimento: "2026-01-01", descricao: "Honorário mensal" },
@@ -167,7 +165,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r55", cliente: "MIRIAN GIZELE DE ABREU ARRUDA - PE", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 810.5, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
   { id: "r56", cliente: "MIRIAN GIZELE DE ABREU ARRUDA - SP", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 810.5, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
   { id: "r57", cliente: "MONICA MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 297.0, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
-  { id: "r58", cliente: "OLIMERC LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 297.0, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
+  { id: "r58", cliente: "JOHLY LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 297.0, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
   { id: "r59", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 347.0, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
   { id: "r60", cliente: "STRONG VAREJO E DISTRIBUICAO DE COSMETICOS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 1197.0, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
   { id: "r61", cliente: "STYLE POWER COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-02-01", valor: 347.0, status: "recebido", recebimento: "2026-02-01", descricao: "Honorário mensal" },
@@ -206,7 +204,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r94", cliente: "MIRIAN GIZELE DE ABREU ARRUDA - PE", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 810.5, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
   { id: "r95", cliente: "MIRIAN GIZELE DE ABREU ARRUDA - SP", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 810.5, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
   { id: "r96", cliente: "MONICA MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 297.0, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
-  { id: "r97", cliente: "OLIMERC LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 297.0, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
+  { id: "r97", cliente: "JOHLY LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 297.0, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
   { id: "r98", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 347.0, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
   { id: "r99", cliente: "STRONG VAREJO E DISTRIBUICAO DE COSMETICOS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 1197.0, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
   { id: "r100", cliente: "STYLE POWER COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-03-01", valor: 347.0, status: "recebido", recebimento: "2026-03-01", descricao: "Honorário mensal" },
@@ -242,7 +240,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r130", cliente: "MARIA JULIA SOUZA FRANCA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 297.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
   { id: "r131", cliente: "MEDEIROS SOLUCOES DIGITAIS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 347.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
   { id: "r132", cliente: "MONICA MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 297.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
-  { id: "r133", cliente: "OLIMERC LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 250.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
+  { id: "r133", cliente: "JOHLY LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 250.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
   { id: "r134", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 347.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
   { id: "r135", cliente: "STRONG VAREJO E DISTRIBUICAO DE COSMETICOS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 1197.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
   { id: "r136", cliente: "STYLE POWER COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-04-01", valor: 347.0, status: "recebido", recebimento: "2026-04-01", descricao: "Honorário mensal" },
@@ -278,7 +276,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r166", cliente: "MARIA JULIA SOUZA FRANCA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 297.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
   { id: "r167", cliente: "MEDEIROS SOLUCOES DIGITAIS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 347.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
   { id: "r168", cliente: "MONICA MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 297.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
-  { id: "r169", cliente: "OLIMERC LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 297.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
+  { id: "r169", cliente: "JOHLY LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 297.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
   { id: "r170", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 347.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
   { id: "r171", cliente: "STRONG VAREJO E DISTRIBUICAO DE COSMETICOS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 1197.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
   { id: "r172", cliente: "STYLE POWER COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-05-01", valor: 347.0, status: "recebido", recebimento: "2026-05-01", descricao: "Honorário mensal" },
