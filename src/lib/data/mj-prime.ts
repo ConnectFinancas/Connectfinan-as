@@ -156,7 +156,12 @@ export const mjPrimeData: ClientFinanceData = {
   // padrão já usado pro faturamento em cartão da própria MJ Prime vindo da Fluxo de Caixa —
   // cliente "Clientes da Loja" (venda de balcão, sem cliente identificado) com a empresa marcada
   // no início da descrição ([BORBA] / [C E J SERVIÇOS]).
-  dataVersion: 15,
+  // Bump 15 → 16: substituído o CMV provisório de Outubro pela parte oficial da MJ ELETRO
+  // LTDA ME/MJ PRIME (R$517.299,53, coluna "Custo" do relatório "Vendas por Produto" de
+  // outubro enviado pelo Ewerton) — de 683.792,49 (autocalculado) para 517.299,53. Falta ainda
+  // somar o relatório equivalente da BORBA MOVEIS LTDA de outubro (igual setembro, que somou os
+  // dois); outubro continua marcado como provisório em cmvManual até esse pedaço chegar.
+  dataVersion: 16,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -167,15 +172,17 @@ export const mjPrimeData: ClientFinanceData = {
   // ELETRO LTDA ME/MJ PRIME) = R$456.431,83. Março a Julho/2026: CMV MJ PRIME + FRETE PRODUTOS +
   // CMV BORBA + FRETE PRODUTOS, da aba "Ano 2026" do DRE_2026_-_MJ_PRIME__5.xlsx (confirmado pelo
   // Ewerton como oficial) = R$378.038,12 (março), R$374.927,58 (abril), R$412.539,96 (maio),
-  // R$520.922,89 (junho) e R$614.450,30 (julho). Fevereiro e Outubro ainda são PROVISÓRIOS — soma
-  // das próprias linhas de CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor
-  // via caixa físico + resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40
-  // (fevereiro) e R$683.792,49 (outubro, já incluindo os R$547.252,57 de fornecedores vindos da
-  // aba "Pagamentos Diversos") — trocar pelo oficial assim que o Ewerton confirmar/enviar. A C E J
-  // SERVIÇOS não entra em nenhum mês — confirmado com o Ewerton que ela não tem custo sobre
-  // vendas (é serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar, 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul,
-  // 8 = Set, 9 = Out.
-  cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 683792.49, 0, 0],
+  // R$520.922,89 (junho) e R$614.450,30 (julho). Outubro/2026: só a parte da MJ ELETRO LTDA
+  // ME/MJ PRIME confirmada — coluna "Custo" (linha "Total") do relatório "Vendas por Produto"
+  // de outubro = R$517.299,53. Falta ainda o relatório equivalente da BORBA MOVEIS LTDA de
+  // outubro (igual foi feito em setembro) — outubro continua PROVISÓRIO até esse pedaço chegar,
+  // provavelmente um pouco subestimado. Fevereiro ainda é PROVISÓRIO — soma das próprias linhas
+  // de CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor via caixa físico +
+  // resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40 — trocar pelo oficial assim
+  // que o Ewerton confirmar/enviar. A C E J SERVIÇOS não entra em nenhum mês — confirmado com o
+  // Ewerton que ela não tem custo sobre vendas (é serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar,
+  // 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul, 8 = Set, 9 = Out.
+  cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 517299.53, 0, 0],
 
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {
