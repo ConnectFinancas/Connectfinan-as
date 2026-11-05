@@ -167,7 +167,19 @@ export const mjPrimeData: ClientFinanceData = {
   // separado por empresa (março a julho) e dos valores já conhecidos (100% MJ Prime) pra
   // fevereiro, setembro e outubro. Não muda nenhum total do DRE — a soma de cada mês continua
   // batendo com cmvManual.
-  dataVersion: 17,
+  // Bump 17 → 18: (1) meses sem dado de uma empresa em cmvManualPorEmpresa viraram null em vez
+  // de 0 (aparecem em branco na tela, não como R$ 0,00/0,0%) — Fevereiro/Outubro (Borba) e
+  // Jan/Ago/Nov/Dez (as duas) ficaram em branco. (2) lançadas as saídas e o faturamento
+  // (Contas a Pagar/Receber) de BORBA e C E J SERVIÇOS de Outubro/2026, extraídas dos extratos
+  // PagBank — mesmo critério de agosto/setembro (fornecedores de móveis = CMV, Mariana Borba
+  // enviado = Pró-Labore/retirada, recebido excluído, Antonio De Moura Campos Neto = Serviço
+  // Terceirizado provisório, nomes não identificados = Salário com nota "confirme"). Dois pares
+  // "Cancelamento de venda" + revenda do mesmo valor no mesmo dia (Borba 14/10 e 19/10) se anulam
+  // e foram excluídos dos dois lados. (3) com isso, Borba de outubro deixou de ficar em branco em
+  // cmvManualPorEmpresa — ganhou um valor provisório (R$43.567,26, soma das linhas CMV que acabei
+  // de lançar), que também entrou em cmvManual (517.299,53 → 560.866,79) até a Borba mandar o
+  // relatório oficial "Vendas por Produto" de outubro (já foi pedido, aguardando).
+  dataVersion: 18,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -180,23 +192,31 @@ export const mjPrimeData: ClientFinanceData = {
   // Ewerton como oficial) = R$378.038,12 (março), R$374.927,58 (abril), R$412.539,96 (maio),
   // R$520.922,89 (junho) e R$614.450,30 (julho). Outubro/2026: só a parte da MJ ELETRO LTDA
   // ME/MJ PRIME confirmada — coluna "Custo" (linha "Total") do relatório "Vendas por Produto"
-  // de outubro = R$517.299,53. Falta ainda o relatório equivalente da BORBA MOVEIS LTDA de
-  // outubro (igual foi feito em setembro) — outubro continua PROVISÓRIO até esse pedaço chegar,
-  // provavelmente um pouco subestimado. Fevereiro ainda é PROVISÓRIO — soma das próprias linhas
-  // de CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor via caixa físico +
-  // resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40 — trocar pelo oficial assim
-  // que o Ewerton confirmar/enviar. A C E J SERVIÇOS não entra em nenhum mês — confirmado com o
-  // Ewerton que ela não tem custo sobre vendas (é serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar,
-  // 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul, 8 = Set, 9 = Out.
-  cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 517299.53, 0, 0],
+  // de outubro = R$517.299,53. A parte da BORBA MOVEIS LTDA de outubro ainda é PROVISÓRIA — soma
+  // das linhas de CMV/fornecedor já lançadas em Contas a Pagar a partir do extrato PagBank
+  // (R$43.567,26) — trocar pelo relatório oficial dela ("Vendas por Produto", igual setembro)
+  // assim que o Ewerton enviar (já foi pedido, aguardando). Fevereiro ainda é PROVISÓRIO — soma
+  // das próprias linhas de CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor
+  // via caixa físico + resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40 — trocar
+  // pelo oficial assim que o Ewerton confirmar/enviar. A C E J SERVIÇOS não entra em nenhum mês —
+  // confirmado com o Ewerton que ela não tem custo sobre vendas (é serviço). Índice 0 = Jan,
+  // 1 = Fev, 2 = Mar, 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul, 8 = Set, 9 = Out.
+  cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 560866.79, 0, 0],
   // Abre a linha "(-) CMV" do DRE em MJ Prime x Borba (só exibição/%, não muda nenhum total —
-  // a soma de cada mês bate exatamente com cmvManual acima). Março/Abril: só MJ Prime, porque a
-  // aba "Ano 2026" não tinha CMV BORBA preenchido nesses dois meses. Fevereiro e Outubro: 100%
-  // MJ Prime porque ainda não temos o relatório oficial da Borba desses meses (Ewerton já pediu
-  // o de outubro, aguardando).
+  // a soma dos meses com dado bate exatamente com cmvManual acima). null = ainda não temos o
+  // valor dessa empresa nesse mês (aparece em branco na tela, não como R$ 0,00/0,0% — não seria
+  // correto dizer que a empresa "teve CMV zero"). Março/Abril: Borba em branco porque a aba
+  // "Ano 2026" não tinha CMV BORBA preenchido nesses dois meses. Fevereiro: Borba em branco
+  // porque ainda não temos nenhum dado dela desse mês. Outubro: Borba já tem um valor (R$43.567,26)
+  // mas é PROVISÓRIO (ver comentário de cmvManual acima) — ainda assim aparece na tela, só que vai
+  // mudar quando o relatório oficial chegar. Jan/Ago/Nov/Dez: nenhuma das duas, ainda sem dado
+  // nenhum de CMV.
   cmvManualPorEmpresa: [
-    { label: "MJ Prime", valores: [0, 217269.4, 378038.12, 374927.58, 355980.75, 468979.44, 547044.03, 0, 427980.4, 517299.53, 0, 0] },
-    { label: "Borba", valores: [0, 0, 0, 0, 56559.21, 51943.45, 67406.27, 0, 28451.43, 0, 0, 0] },
+    {
+      label: "MJ Prime",
+      valores: [null, 217269.4, 378038.12, 374927.58, 355980.75, 468979.44, 547044.03, null, 427980.4, 517299.53, null, null],
+    },
+    { label: "Borba", valores: [null, null, null, null, 56559.21, 51943.45, 67406.27, null, 28451.43, 43567.26, null, null] },
   ],
 
   fluxoCaixaPeriodo: "—",
@@ -822,6 +842,38 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "r588", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-09-25", valor: 419.08, status: "recebido", recebimento: "2026-09-25", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 25/09/2026 — Cartões (extrato PagBank, faturamento bruto)" },
   { id: "r589", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-09-28", valor: 605.34, status: "recebido", recebimento: "2026-09-28", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 28/09/2026 — Cartões (extrato PagBank, faturamento bruto)" },
   { id: "r590", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-09-29", valor: 1153.48, status: "recebido", recebimento: "2026-09-29", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 29/09/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  // ---- BORBA_OUT: faturamento cartão, 24 dias, total R$ 83,620.92 ----
+  { id: "r591", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-01", valor: 1382.21, status: "recebido", recebimento: "2026-10-01", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 01/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r592", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-02", valor: 1878.48, status: "recebido", recebimento: "2026-10-02", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 02/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r593", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-03", valor: 4738.96, status: "recebido", recebimento: "2026-10-03", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 03/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r594", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-05", valor: 1247.51, status: "recebido", recebimento: "2026-10-05", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 05/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r595", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-06", valor: 989.83, status: "recebido", recebimento: "2026-10-06", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 06/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r596", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-07", valor: 8660.01, status: "recebido", recebimento: "2026-10-07", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 07/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r597", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-08", valor: 1994.87, status: "recebido", recebimento: "2026-10-08", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 08/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r598", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-10", valor: 2352.36, status: "recebido", recebimento: "2026-10-10", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 10/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r599", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-13", valor: 488.06, status: "recebido", recebimento: "2026-10-13", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 13/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r600", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-14", valor: 2347.82, status: "recebido", recebimento: "2026-10-14", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 14/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r601", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-15", valor: 4098.3, status: "recebido", recebimento: "2026-10-15", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 15/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r602", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-16", valor: 2908.49, status: "recebido", recebimento: "2026-10-16", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 16/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r603", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-17", valor: 6317.2, status: "recebido", recebimento: "2026-10-17", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 17/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r604", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-19", valor: 7523.58, status: "recebido", recebimento: "2026-10-19", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 19/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r605", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-20", valor: 6216.62, status: "recebido", recebimento: "2026-10-20", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 20/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r606", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-21", valor: 2421.05, status: "recebido", recebimento: "2026-10-21", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 21/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r607", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-22", valor: 4362.97, status: "recebido", recebimento: "2026-10-22", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 22/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r608", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-23", valor: 4332.93, status: "recebido", recebimento: "2026-10-23", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 23/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r609", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-26", valor: 1805.95, status: "recebido", recebimento: "2026-10-26", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 26/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r610", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-27", valor: 5375.96, status: "recebido", recebimento: "2026-10-27", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 27/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r611", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-28", valor: 1996.64, status: "recebido", recebimento: "2026-10-28", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 28/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r612", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-29", valor: 1907.02, status: "recebido", recebimento: "2026-10-29", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 29/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r613", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-30", valor: 5308.76, status: "recebido", recebimento: "2026-10-30", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 30/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r614", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-31", valor: 2965.34, status: "recebido", recebimento: "2026-10-31", formaRecebimento: "Cartão", descricao: "[BORBA] Receita de vendas de 31/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  // ---- CEJ_OUT: faturamento cartão, 6 dias, total R$ 11,171.97 ----
+  { id: "r615", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-02", valor: 877.4, status: "recebido", recebimento: "2026-10-02", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 02/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r616", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-03", valor: 1167.24, status: "recebido", recebimento: "2026-10-03", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 03/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r617", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-05", valor: 2594.27, status: "recebido", recebimento: "2026-10-05", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 05/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r618", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-13", valor: 3641.2, status: "recebido", recebimento: "2026-10-13", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 13/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r619", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-14", valor: 1732.52, status: "recebido", recebimento: "2026-10-14", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 14/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
+  { id: "r620", cliente: "Clientes da Loja", categoria: "Faturamento Geral", classificacao: "Faturamento", vencimento: "2026-10-23", valor: 1159.34, status: "recebido", recebimento: "2026-10-23", formaRecebimento: "Cartão", descricao: "[C E J SERVIÇOS] Receita de vendas de 23/10/2026 — Cartões (extrato PagBank, faturamento bruto)" },
   ],
 
   seedPayables: [
@@ -2538,6 +2590,76 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1763", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-28", valor: 727.42, status: "pago", pagamento: "2026-09-28", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
   { id: "p1764", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-29", valor: 726.5, status: "pago", pagamento: "2026-09-29", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
   { id: "p1765", favorecido: "AJM ACESSORIOS E BIJOUTERIAS", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-29", valor: 426.98, status: "pago", pagamento: "2026-09-29", descricao: "[C E J SERVIÇOS] Retirada de sócios (Mariana Borba)" },
+  // ---- BORBA_OUT (56 lançamentos) ----
+  { id: "p1766", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-01", valor: 343.27, status: "pago", pagamento: "2026-10-01", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1767", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-01", valor: 1038.94, status: "pago", pagamento: "2026-10-01", descricao: "[BORBA] Fornecedor" },
+  { id: "p1768", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-02", valor: 1703.6, status: "pago", pagamento: "2026-10-02", descricao: "[BORBA] Fornecedor" },
+  { id: "p1769", favorecido: "PAGSEGURO", categoria: "Seguro Conta", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-10-02", valor: 6.9, status: "pago", pagamento: "2026-10-02", descricao: "[BORBA]" },
+  { id: "p1770", favorecido: "PAGSEGURO", categoria: "Seguro Cartão Protegido", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-10-02", valor: 7.9, status: "pago", pagamento: "2026-10-02", descricao: "[BORBA]" },
+  { id: "p1771", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-05", valor: 268.25, status: "pago", pagamento: "2026-10-05", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1772", favorecido: "INDUSTRIA E COMERCIO DE MOVEIS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-05", valor: 1514.56, status: "pago", pagamento: "2026-10-05", descricao: "[BORBA] Fornecedor" },
+  { id: "p1773", favorecido: "MARANHAO COLCHOES LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-05", valor: 4363.74, status: "pago", pagamento: "2026-10-05", descricao: "[BORBA] Fornecedor" },
+  { id: "p1774", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-07", valor: 1774.18, status: "pago", pagamento: "2026-10-07", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1775", favorecido: "TRANSPORTADORA TREVO DA SORTE", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-07", valor: 7875.66, status: "pago", pagamento: "2026-10-07", descricao: "[BORBA]" },
+  { id: "p1776", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-08", valor: 240.97, status: "pago", pagamento: "2026-10-08", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1777", favorecido: "DJ IND E COM DE MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-08", valor: 1753.9, status: "pago", pagamento: "2026-10-08", descricao: "[BORBA] Fornecedor" },
+  { id: "p1778", favorecido: "KLELTON NASCIMENTO COSTA DE ALMEIDA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-12", valor: 1000.0, status: "pago", pagamento: "2026-10-12", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1779", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-13", valor: 1840.42, status: "pago", pagamento: "2026-10-13", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1780", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-14", valor: 2347.82, status: "pago", pagamento: "2026-10-14", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1781", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-15", valor: 1038.94, status: "pago", pagamento: "2026-10-15", descricao: "[BORBA] Fornecedor" },
+  { id: "p1782", favorecido: "J CONFORT FABRICAÇÃO DE MOVEIS E ESTOFADO", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-15", valor: 2860.0, status: "pago", pagamento: "2026-10-15", descricao: "[BORBA] Fornecedor" },
+  { id: "p1783", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-16", valor: 1547.1, status: "pago", pagamento: "2026-10-16", descricao: "[BORBA] Fornecedor" },
+  { id: "p1784", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-16", valor: 1547.1, status: "pago", pagamento: "2026-10-16", descricao: "[BORBA] Fornecedor" },
+  { id: "p1785", favorecido: "TCIL MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1129.89, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1786", favorecido: "BCI LOGÍSTICA LTDA", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-19", valor: 1136.57, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA]" },
+  { id: "p1787", favorecido: "INDUSTRIA E COMERCIO DE MOVEIS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 719.21, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1788", favorecido: "INDUSTRIA E COMERCIO DE MOVEIS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1247.29, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1789", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1114.0, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1790", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 586.25, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1791", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 586.25, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1792", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1018.32, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1793", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 563.63, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1794", favorecido: "MEL INDUSTRIA DE COLCHOES LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 750.0, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1795", favorecido: "CICERO MARISON FLOR MELO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-19", valor: 1000.0, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1796", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1070.09, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1797", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1148.68, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1798", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1713.57, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
+  { id: "p1799", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-20", valor: 3000.0, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA] Ver nota em 19/08 — valor alto e irregular, não identificado na lista de salários, confirme com o Ewerton" },
+  { id: "p1800", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-20", valor: 2556.73, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1801", favorecido: "SEDICIAS INFORMÁTICA", categoria: "Sistemas", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 285.0, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA]" },
+  { id: "p1802", favorecido: "CAIXA ECONÔMICA FEDERAL", categoria: "FGTS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-20", valor: 129.68, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA]" },
+  { id: "p1803", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-10-20", valor: 232.34, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA]" },
+  { id: "p1804", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-21", valor: 2500.0, status: "pago", pagamento: "2026-10-21", descricao: "[BORBA] Ver nota em 19/08" },
+  { id: "p1805", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-22", valor: 3500.0, status: "pago", pagamento: "2026-10-22", descricao: "[BORBA] Ver nota em 19/08" },
+  { id: "p1806", favorecido: "KLELTON NASCIMENTO COSTA DE ALMEIDA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-23", valor: 1000.0, status: "pago", pagamento: "2026-10-23", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1807", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-23", valor: 297.0, status: "pago", pagamento: "2026-10-23", descricao: "[BORBA]" },
+  { id: "p1808", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-23", valor: 585.0, status: "pago", pagamento: "2026-10-23", descricao: "[BORBA]" },
+  { id: "p1809", favorecido: "ERIBERTO QUINTANHAS DOS SANTOS", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-24", valor: 2000.0, status: "pago", pagamento: "2026-10-24", descricao: "[BORBA] Valor alto, ocorrência única — não identificado na lista de salários, confirme com o Ewerton" },
+  { id: "p1810", favorecido: "JOSE CLAUDIO SILVA DE LIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-25", valor: 279.5, status: "pago", pagamento: "2026-10-25", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1811", favorecido: "M DO SOCORRO GONÇALVES DE OLIVEIRA LTDA", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-10-25", valor: 213.0, status: "pago", pagamento: "2026-10-25", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1812", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-26", valor: 2012.56, status: "pago", pagamento: "2026-10-26", descricao: "[BORBA] Fornecedor" },
+  { id: "p1813", favorecido: "FACEBOOK SERVIÇOS ONLINE DO BRASIL LTDA", categoria: "Marketing", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-10-26", valor: 500.0, status: "pago", pagamento: "2026-10-26", descricao: "[BORBA] Anúncios" },
+  { id: "p1814", favorecido: "INDUSTRIA E COMERCIO DE MOVEIS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-27", valor: 5499.18, status: "pago", pagamento: "2026-10-27", descricao: "[BORBA] Fornecedor" },
+  { id: "p1815", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-28", valor: 1997.81, status: "pago", pagamento: "2026-10-28", descricao: "[BORBA] Retirada de sócios" },
+  { id: "p1816", favorecido: "DJ INDUSTRIA E COMERCIO DE MOV", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-29", valor: 1990.77, status: "pago", pagamento: "2026-10-29", descricao: "[BORBA] Fornecedor" },
+  { id: "p1817", favorecido: "ALEXSANDRO CANDIDO DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-30", valor: 200.0, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1818", favorecido: "MULTNET SERVIÇOS", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-30", valor: 60.0, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA]" },
+  { id: "p1819", favorecido: "DJ INDUSTRIA E COMERCIO DE MOV", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-30", valor: 830.09, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA] Fornecedor" },
+  { id: "p1820", favorecido: "LEIFIL MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-30", valor: 4219.6, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA] Fornecedor" },
+  { id: "p1821", favorecido: "LEANDRO DE LIMA FERREIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-31", valor: 2500.0, status: "pago", pagamento: "2026-10-31", descricao: "[BORBA]" },
+  // ---- CEJ_OUT (12 lançamentos) ----
+  { id: "p1822", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-02", valor: 877.4, status: "pago", pagamento: "2026-10-02", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
+  { id: "p1823", favorecido: "LAURA VIRGINIA OLIVEIRA DE ASSIS", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-03", valor: 70.9, status: "pago", pagamento: "2026-10-03", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
+  { id: "p1824", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-05", valor: 300.0, status: "pago", pagamento: "2026-10-05", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
+  { id: "p1825", favorecido: "J. SILVINO DA SILVA FILHO LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-05", valor: 2493.07, status: "pago", pagamento: "2026-10-05", descricao: "[C E J SERVIÇOS] Fornecedor" },
+  { id: "p1826", favorecido: "FELIPE ALEXANDRE DE MOURA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-05", valor: 878.05, status: "pago", pagamento: "2026-10-05", descricao: "[C E J SERVIÇOS]" },
+  { id: "p1827", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-13", valor: 3660.69, status: "pago", pagamento: "2026-10-13", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
+  { id: "p1828", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-14", valor: 1732.52, status: "pago", pagamento: "2026-10-14", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
+  { id: "p1829", favorecido: "PAGSEGURO", categoria: "Seguro Cartão Protegido", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-10-23", valor: 7.9, status: "pago", pagamento: "2026-10-23", descricao: "[C E J SERVIÇOS]" },
+  { id: "p1830", favorecido: "PAGSEGURO", categoria: "Seguro Conta", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-10-23", valor: 6.9, status: "pago", pagamento: "2026-10-23", descricao: "[C E J SERVIÇOS]" },
+  { id: "p1831", favorecido: "DJ INDUSTRIA E COMERCIO DE MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-29", valor: 979.52, status: "pago", pagamento: "2026-10-29", descricao: "[C E J SERVIÇOS] Fornecedor" },
+  { id: "p1832", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-30", valor: 150.0, status: "pago", pagamento: "2026-10-30", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
+  { id: "p1833", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-31", valor: 15.02, status: "pago", pagamento: "2026-10-31", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
   ],
 
   seedCategoriasPagar: [

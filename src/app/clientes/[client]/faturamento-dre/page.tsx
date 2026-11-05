@@ -453,7 +453,7 @@ export default function FaturamentoDrePage() {
                           <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{empresaRow.label}</td>
                           {mesesExibidos.map((i) => (
                             <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
-                              {formatCurrencyPrecise(empresaRow.values[i])}
+                              {empresaRow.values[i] === null ? "—" : formatCurrencyPrecise(empresaRow.values[i]!)}
                             </td>
                           ))}
                           {mesFiltro === null && (
@@ -462,7 +462,9 @@ export default function FaturamentoDrePage() {
                             </td>
                           )}
                           <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
-                            {formatPct(pctReceita(empresaRow))}
+                            {mesFiltro !== null && empresaRow.values[mesFiltro] === null
+                              ? "—"
+                              : formatPct(pctReceita({ values: empresaRow.values.map((v) => v ?? 0), acumulado: empresaRow.acumulado }))}
                           </td>
                         </tr>
                       ))}

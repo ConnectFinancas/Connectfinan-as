@@ -212,7 +212,9 @@ export type ClientFinanceData = {
   // cada uma só pra exibição/drill-down, com a % de representação sobre a receita total. A soma
   // dos "valores" de cada empresa, mês a mês, deve bater exatamente com cmvManual (mais o que já
   // vem de Contas a Pagar/marketplace) — não altera nenhum total do DRE, só detalha de onde vem.
-  cmvManualPorEmpresa?: { label: string; valores: number[] }[];
+  // Um mês sem valor pra essa empresa é null (ainda não temos o dado), não 0 — 0 significaria
+  // "confirmado que essa empresa não teve CMV nesse mês", o que normalmente não é o caso.
+  cmvManualPorEmpresa?: { label: string; valores: (number | null)[] }[];
   // Classificações de Contas a Pagar que NÃO entram no DRE (nem em despesa nem em CMV) — usado
   // quando esse custo já está representado de outra forma (ex.: CMV informado por marketplace).
   classificacoesForaDoDre?: string[];

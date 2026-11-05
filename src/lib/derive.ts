@@ -84,12 +84,14 @@ export function cmvMarketplacePorCanal(marketplaceManual: Record<MarketplaceCana
 }
 
 // Drill-down da linha "(-) CMV" por empresa do grupo (ver ClientFinanceData.cmvManualPorEmpresa)
-// — só exibição, a % é sobre a receita total (mesma base da linha-mãe "(-) CMV").
-export function cmvPorEmpresaRows(cmvManualPorEmpresa: { label: string; valores: number[] }[] | undefined) {
+// — só exibição, a % é sobre a receita total (mesma base da linha-mãe "(-) CMV"). Um mês null
+// (dado ainda não recebido dessa empresa) fica de fora da soma, mas aparece em branco na tabela
+// em vez de "R$ 0,00"/"0,0%" — ver uso em faturamento-dre/page.tsx.
+export function cmvPorEmpresaRows(cmvManualPorEmpresa: { label: string; valores: (number | null)[] }[] | undefined) {
   return (cmvManualPorEmpresa ?? [])
     .map((empresa) => {
-      const values = empresa.valores.map(round2);
-      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      const values = empresa.valores.map((v) => (v === null || v === undefined ? null : round2(v)));
+      const acumulado = round2(values.reduce((a: number, v) => a + (v ?? 0), 0));
       return { label: empresa.label, values, acumulado };
     })
     .filter((row) => row.acumulado > 0)
