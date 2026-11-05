@@ -208,6 +208,11 @@ export type ClientFinanceData = {
   // pagamentos a fornecedor em Contas a Pagar. Índice 0 = Jan, 11 = Dez. Ainda pendente de
   // preenchimento com valores reais para a maioria dos clientes.
   cmvManual?: number[];
+  // Abre a linha "(-) CMV" do DRE em sub-linhas por empresa do grupo (ex.: MJ Prime, Borba) —
+  // cada uma só pra exibição/drill-down, com a % de representação sobre a receita total. A soma
+  // dos "valores" de cada empresa, mês a mês, deve bater exatamente com cmvManual (mais o que já
+  // vem de Contas a Pagar/marketplace) — não altera nenhum total do DRE, só detalha de onde vem.
+  cmvManualPorEmpresa?: { label: string; valores: number[] }[];
   // Classificações de Contas a Pagar que NÃO entram no DRE (nem em despesa nem em CMV) — usado
   // quando esse custo já está representado de outra forma (ex.: CMV informado por marketplace).
   classificacoesForaDoDre?: string[];

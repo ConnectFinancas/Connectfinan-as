@@ -7,7 +7,7 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { DetalhamentoMesModal } from "@/components/client/DetalhamentoMesModal";
 import { dreMonths } from "@/lib/constants";
 import { useFinance } from "@/lib/store/FinanceContext";
-import { cmvMarketplacePorCanal, comissaoMarketplacePorCanal, receitaMarketplacePorCanal, receitaPorFormaRecebimento } from "@/lib/derive";
+import { cmvMarketplacePorCanal, cmvPorEmpresaRows, comissaoMarketplacePorCanal, receitaMarketplacePorCanal, receitaPorFormaRecebimento } from "@/lib/derive";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 import { DreGridRow, MarketplaceCanal, Payable } from "@/lib/types";
@@ -73,7 +73,8 @@ function formatPct(pct: number | null) {
 }
 
 export default function FaturamentoDrePage() {
-  const { summary, payables, receivables, marketplaceManual, classificacoesNoCmv, categoriasForaDoDre, client } = useFinance();
+  const { summary, payables, receivables, marketplaceManual, classificacoesNoCmv, cmvManualPorEmpresa, categoriasForaDoDre, client } =
+    useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
   const [detalhamentoAberto, setDetalhamentoAberto] = useState(false);
   const [classAberta, setClassAberta] = useState<string | null>(null);
@@ -442,6 +443,26 @@ export default function FaturamentoDrePage() {
                           )}
                           <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
                             {formatPct(pctCanal(canalRow.canal, canalRow))}
+                          </td>
+                        </tr>
+                      ))}
+                    {isOpen &&
+                      isCmvRow &&
+                      cmvPorEmpresaRows(cmvManualPorEmpresa).map((empresaRow) => (
+                        <tr key={empresaRow.label} className="border-b border-border-subtle bg-client-accent/[0.06]">
+                          <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{empresaRow.label}</td>
+                          {mesesExibidos.map((i) => (
+                            <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(empresaRow.values[i])}
+                            </td>
+                          ))}
+                          {mesFiltro === null && (
+                            <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
+                              {formatCurrencyPrecise(empresaRow.acumulado)}
+                            </td>
+                          )}
+                          <td className="py-2 pl-3 pr-5 text-right text-xs font-medium tabular-nums text-brand-700 whitespace-nowrap">
+                            {formatPct(pctReceita(empresaRow))}
                           </td>
                         </tr>
                       ))}

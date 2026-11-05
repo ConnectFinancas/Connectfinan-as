@@ -161,7 +161,13 @@ export const mjPrimeData: ClientFinanceData = {
   // outubro enviado pelo Ewerton) — de 683.792,49 (autocalculado) para 517.299,53. Falta ainda
   // somar o relatório equivalente da BORBA MOVEIS LTDA de outubro (igual setembro, que somou os
   // dois); outubro continua marcado como provisório em cmvManual até esse pedaço chegar.
-  dataVersion: 16,
+  // Bump 16 → 17: adicionado cmvManualPorEmpresa — abre a linha "(-) CMV" do DRE em sub-linhas
+  // MJ Prime x Borba (só exibição, com % sobre a receita total), reconstruído a partir da aba
+  // "Ano 2026" (CMV MJ PRIME + FRETE vs CMV BORBA + FRETE, mês a mês) pros meses com dado
+  // separado por empresa (março a julho) e dos valores já conhecidos (100% MJ Prime) pra
+  // fevereiro, setembro e outubro. Não muda nenhum total do DRE — a soma de cada mês continua
+  // batendo com cmvManual.
+  dataVersion: 17,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -183,6 +189,15 @@ export const mjPrimeData: ClientFinanceData = {
   // Ewerton que ela não tem custo sobre vendas (é serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar,
   // 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul, 8 = Set, 9 = Out.
   cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 517299.53, 0, 0],
+  // Abre a linha "(-) CMV" do DRE em MJ Prime x Borba (só exibição/%, não muda nenhum total —
+  // a soma de cada mês bate exatamente com cmvManual acima). Março/Abril: só MJ Prime, porque a
+  // aba "Ano 2026" não tinha CMV BORBA preenchido nesses dois meses. Fevereiro e Outubro: 100%
+  // MJ Prime porque ainda não temos o relatório oficial da Borba desses meses (Ewerton já pediu
+  // o de outubro, aguardando).
+  cmvManualPorEmpresa: [
+    { label: "MJ Prime", valores: [0, 217269.4, 378038.12, 374927.58, 355980.75, 468979.44, 547044.03, 0, 427980.4, 517299.53, 0, 0] },
+    { label: "Borba", valores: [0, 0, 0, 0, 56559.21, 51943.45, 67406.27, 0, 28451.43, 0, 0, 0] },
+  ],
 
   fluxoCaixaPeriodo: "—",
   fluxoCaixaKpis: {

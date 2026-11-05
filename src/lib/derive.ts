@@ -83,6 +83,19 @@ export function cmvMarketplacePorCanal(marketplaceManual: Record<MarketplaceCana
     .sort((a, b) => b.acumulado - a.acumulado);
 }
 
+// Drill-down da linha "(-) CMV" por empresa do grupo (ver ClientFinanceData.cmvManualPorEmpresa)
+// — só exibição, a % é sobre a receita total (mesma base da linha-mãe "(-) CMV").
+export function cmvPorEmpresaRows(cmvManualPorEmpresa: { label: string; valores: number[] }[] | undefined) {
+  return (cmvManualPorEmpresa ?? [])
+    .map((empresa) => {
+      const values = empresa.valores.map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { label: empresa.label, values, acumulado };
+    })
+    .filter((row) => row.acumulado > 0)
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 export function emptyMarketplaceManual(): Record<MarketplaceCanal, MarketplaceMensal> {
   const canal = (): MarketplaceMensal => ({
     receita: Array(12).fill(0),
