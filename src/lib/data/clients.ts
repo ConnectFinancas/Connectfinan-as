@@ -91,8 +91,8 @@ export const clients: Client[] = [
   {
     slug: "connect",
     name: "Connect",
-    legalName: "Connect Contabilidade Ltda.",
-    cnpj: "—",
+    legalName: "Connect Soluções Contábeis LTDA",
+    cnpj: "61.286.351/0001-03",
     segment: "Serviços Contábeis e BPO Financeiro",
     monogram: "CN",
     accent: "#d4af37",
