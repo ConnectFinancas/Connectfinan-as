@@ -159,7 +159,31 @@ export const storePlussData: ClientFinanceData = {
   // ADMINISTRATIVAS). marketplaceManual de outubro ainda não preenchido — falta o relatório de
   // cada plataforma; RECEITA do DRE aparece zerada até isso chegar (mesmo processo incremental já
   // usado em setembro).
-  dataVersion: 34,
+  // Bump 34 → 35: Outubro/2026 fechado — resto do mês (16-31) de Contas a Pagar/Receber + as 4
+  // plataformas de marketplaceManual.
+  // - Contas a Pagar: 66 lançamentos novos (R$249.325,64, ids p1553-p1618), mesma fonte/critério
+  //   de antes. Removidas as 4 provisões "pendente" que ainda restavam de 16 a 31/10 (p915, p924,
+  //   p925, p926), substituídas pelos lançamentos reais.
+  // - Contas a Receber: 16 lançamentos novos (R$333.785,87, ids r286-r301). Diferente dos dias
+  //   1-15, esse relatório veio SEM nome de cliente — a classificação por canal (STORE PLUSS /
+  //   BLAIMP-TIKTOK / BLAIMP-SHOPEE) foi inferida pela conta bancária (regra majoritária histórica:
+  //   ITAU-BLAIMP→Tiktok, C6-BLAIMP→Shopee, Nubank/Itau St/Inter St→Store Pluss), marcada "confirme"
+  //   na descrição — não é tão confiável quanto a identificação por cliente que tínhamos antes
+  //   (ex.: a conta C6-BLAIMP historicamente já apareceu nos 3 canais diferentes).
+  // - marketplaceManual (índice 9): Mercado Livre (relatório Mercado Turbo, a pedido do Ewerton,
+  //   não a fatura oficial do ML — ver nota em mercadoLivre abaixo), Shein (23 camisas × R$10,50 =
+  //   CMV R$241,50, informado direto pelo Ewerton), Tiktok (DRE Simplificado do GestorSeller, ver
+  //   nota em tiktok abaixo). Shopee segue zerada — nenhum relatório enviado.
+  // - Novo lançamento Contas a Pagar: "Afiliados Tiktok" de outubro (R$21.149,03, id p1619, mesmo
+  //   padrão de Jun/Jul/Set).
+  // - Nova categoria "Vigilância e Segurança Patrimonial" (DESPESAS ADMINISTRATIVAS) — 1 lançamento
+  //   (R$225,67, "sistema de câmeras").
+  // Pendências que ficaram de fora, sinalizadas ao Ewerton: (1) Imposto retido pelo Mercado Livre
+  // sobre vendas (R$53.844,41) e pelo Tiktok (R$36.387,98) — sem campo correspondente em
+  // marketplaceManual, e o padrão histórico sugere que esse valor nunca entrou no DRE por nenhum
+  // canal; (2) Ads TiktokShops (R$11.650,00, "Despesas operacionais" do DRE Simplificado, diferente
+  // de Afiliados) — sem lugar estabelecido ainda, parece ser a primeira vez que aparece.
+  dataVersion: 35,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -188,10 +212,20 @@ export const storePlussData: ClientFinanceData = {
   // classificacoesNoCmv acima) assim que os lançamentos desses meses forem importados.
   marketplaceManual: {
     mercadoLivre: {
-      receita: [0, 0, 0, 986206.55, 1130083.33, 1435690.35, 1031264.96, 840780.34, 717316.38, 0, 0, 0],
-      cmv: [0, 0, 0, 392940.14, 442756.6, 583944.9, 494594.0, 402180.0, 330367.0, 0, 0, 0],
-      comissao: [0, 0, 0, 162758.59, 169738.49, 188871.7, 85081.5, 56197.83, 79654.63, 0, 0, 0],
-      freteDescontado: [0, 0, 0, 167818.31, 181548.4, 211377.6, 139541.96, 114865.02, 104395.35, 0, 0, 0],
+      // Outubro/2026: relatório "Resumo Financeiro" do Mercado Turbo (01/10-31/10), a pedido do
+      // Ewerton (em vez da fatura oficial do ML, que fecha por ciclo de cobrança e não bate com o
+      // período de vendas). receita = Vendas Aprovadas (R$555.020,16); cmv = Custo (R$258.585,90,
+      // SEM o Imposto retido R$53.844,41 — ratio bate com o histórico, ver nota abaixo); comissao
+      // = Tarifa de Venda (R$65.947,36); freteDescontado = só Frete Vendedor (R$77.883,20, NÃO o
+      // Frete Total R$110.497,61 — exclui Frete Comprador, que o comprador paga à parte e não sai
+      // da receita do vendedor; ratio sobre a receita bate com Ago/Set).
+      // Imposto retido pelo ML sobre vendas (R$53.844,41) ainda SEM lugar no DRE — marketplaceManual
+      // não tem campo de imposto por canal, e o padrão histórico (cmv/comissao de meses anteriores)
+      // sugere que esse valor nunca entrou. Fica de fora por ora, sinalizado ao Ewerton.
+      receita: [0, 0, 0, 986206.55, 1130083.33, 1435690.35, 1031264.96, 840780.34, 717316.38, 555020.16, 0, 0],
+      cmv: [0, 0, 0, 392940.14, 442756.6, 583944.9, 494594.0, 402180.0, 330367.0, 258585.9, 0, 0],
+      comissao: [0, 0, 0, 162758.59, 169738.49, 188871.7, 85081.5, 56197.83, 79654.63, 65947.36, 0, 0],
+      freteDescontado: [0, 0, 0, 167818.31, 181548.4, 211377.6, 139541.96, 114865.02, 104395.35, 77883.2, 0, 0],
       // Agosto/2026 de Afiliados Mercado Livre ainda não informado — o Ewerton confirmou que quer
       // incluir, mas falta o valor. Preencher assim que ele mandar (índice 7).
       ads: Array(12).fill(0),
@@ -208,17 +242,33 @@ export const storePlussData: ClientFinanceData = {
       ads: [0, 0, 0, 0, 0, 0, 0, 0, 5088.05, 0, 0, 0],
     },
     shein: {
-      receita: [0, 0, 0, 0, 1885.28, 2343.28, 1394.55, 588.81, 433.86, 0, 0, 0],
-      cmv: [0, 0, 0, 0, 588.0, 798.0, 367.05, 199.5, 147.0, 0, 0, 0],
+      // Outubro/2026: 23 camisas vendidas, informado direto pelo Ewerton (sem relatório) — receita
+      // R$712,77, CMV R$10,50/camisa × 23 = R$241,50. Comissão não informada, mantida 0 (mesmo
+      // padrão de Ago/Set, que também ficaram zeradas).
+      receita: [0, 0, 0, 0, 1885.28, 2343.28, 1394.55, 588.81, 433.86, 712.77, 0, 0],
+      cmv: [0, 0, 0, 0, 588.0, 798.0, 367.05, 199.5, 147.0, 241.5, 0, 0],
       comissao: [0, 0, 0, 0, 301.65, 374.9248, 223.128, 0, 0, 0, 0, 0],
       freteDescontado: Array(12).fill(0),
       ads: Array(12).fill(0),
     },
     tiktok: {
-      receita: [0, 0, 0, 35564.37, 59357.68, 75469.33, 47552.63, 105339.24, 123064.49, 0, 0, 0],
-      cmv: [0, 0, 0, 9930.7, 7927.5, 38826.0, 23619.8, 51561.0, 58131.0, 0, 0, 0],
-      comissao: [0, 0, 0, 7829.38, 7122.92, 4636.92, 6147.79, 29926.1, 29647.74, 0, 0, 0],
-      freteDescontado: [0, 0, 0, 0, 0, 7120.73, 1983.96, 0, 0, 0, 0, 0],
+      // Outubro/2026: "DRE Simplificado" do GestorSeller. receita = Faturamento (R$330.568,79).
+      // freteDescontado = Frete Pago pelo vendedor + Frete de amostras (R$3.406,57 + R$131,48 =
+      // R$3.538,05). comissao = Comissão + Taxa de Serviço + Taxa por item vendido - Desconto do
+      // Tiktok Shop - Compensações do Tiktok Shop (R$29.141,56 + R$21.111,15 + R$33.530,00 -
+      // R$21.510,12 - R$3.116,56 = R$59.156,03) — exclui a "Comissão de afiliados" (R$21.149,03),
+      // que entra à parte em Contas a Pagar (categoria "Afiliados Tiktok", id p1619), mesmo padrão
+      // de Jun/Jul/Set. cmv = Custo dos produtos + reembolsados + extras + extras reembolsados +
+      // extraviados + amostras + outros custos de liquidação (R$138.941,00 + R$6.462,00 +
+      // R$7.373,00 + R$375,50 + R$1.023,50 + R$407,00 + R$2.523,79 = R$157.105,79) — ratio sobre a
+      // receita (47,5%) bate com Jun-Set (47-51%), confirma que exclui o Imposto certo.
+      // Imposto retido (R$36.387,98) e Ads TiktokShops (R$11.650,00, "Despesas operacionais" —
+      // diferente de afiliados) ficam de fora por ora, sem lugar certo no DRE — sinalizados ao
+      // Ewerton.
+      receita: [0, 0, 0, 35564.37, 59357.68, 75469.33, 47552.63, 105339.24, 123064.49, 330568.79, 0, 0],
+      cmv: [0, 0, 0, 9930.7, 7927.5, 38826.0, 23619.8, 51561.0, 58131.0, 157105.79, 0, 0],
+      comissao: [0, 0, 0, 7829.38, 7122.92, 4636.92, 6147.79, 29926.1, 29647.74, 59156.03, 0, 0],
+      freteDescontado: [0, 0, 0, 0, 0, 7120.73, 1983.96, 0, 0, 3538.05, 0, 0],
       ads: Array(12).fill(0),
     },
   },
@@ -675,6 +725,22 @@ export const storePlussData: ClientFinanceData = {
     { id: "r283", cliente: "Shein", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-13", valor: 102.05, status: "recebido", recebimento: "2026-10-13", formaRecebimento: "Cartão", descricao: "Crédito domicílio cartão - Cartão De Débito - Shein", conta: "Inter St" },
     { id: "r284", cliente: "Store Pluss Ltda", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-13", valor: 45000.0, status: "recebido", recebimento: "2026-10-13", formaRecebimento: "Pix", descricao: "Pix recebido - Store Pluss Ltda", conta: "Inter St" },
     { id: "r285", cliente: "Transferência recebida - Moda Mundial Brasil Intermediacao D", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUS (OUTROS)", vencimento: "2026-10-13", valor: 40.82, status: "recebido", recebimento: "2026-10-13", formaRecebimento: "Transferência", descricao: "Transferência recebida - Moda Mundial Brasil Intermediacao D", conta: "Inter St" },
+    { id: "r286", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-16", valor: 23.5, status: "recebido", recebimento: "2026-10-16", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Itau St, 16/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Itau St" },
+    { id: "r287", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-19", valor: 49000.0, status: "recebido", recebimento: "2026-10-19", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Inter St, 19/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Inter St" },
+    { id: "r288", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-19", valor: 81.64, status: "recebido", recebimento: "2026-10-19", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Inter St, 19/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Inter St" },
+    { id: "r289", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - BLAIMP (TIKTOK)", vencimento: "2026-10-19", valor: 40008.39, status: "recebido", recebimento: "2026-10-19", formaRecebimento: "Outro", descricao: "Receitas de Vendas (ITAU - BLAIMP, 19/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "ITAU - BLAIMP" },
+    { id: "r290", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-19", valor: 48000.0, status: "recebido", recebimento: "2026-10-19", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Itau St, 19/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Itau St" },
+    { id: "r291", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-20", valor: 40.82, status: "recebido", recebimento: "2026-10-20", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Inter St, 20/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Inter St" },
+    { id: "r292", cliente: "—", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-22", valor: 5000.0, status: "recebido", recebimento: "2026-10-22", formaRecebimento: "Outro", descricao: "Receitas de Serviços (Nubank St, 22/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Nubank St" },
+    { id: "r293", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-26", valor: 81.64, status: "recebido", recebimento: "2026-10-26", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Inter St, 26/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Inter St" },
+    { id: "r294", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - BLAIMP (TIKTOK)", vencimento: "2026-10-26", valor: 40993.08, status: "recebido", recebimento: "2026-10-26", formaRecebimento: "Outro", descricao: "Receitas de Vendas (ITAU - BLAIMP, 26/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "ITAU - BLAIMP" },
+    { id: "r295", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-27", valor: 40.82, status: "recebido", recebimento: "2026-10-27", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Inter St, 27/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Inter St" },
+    { id: "r296", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-27", valor: 45.98, status: "recebido", recebimento: "2026-10-27", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Itau St, 27/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Itau St" },
+    { id: "r297", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-28", valor: 20000.0, status: "recebido", recebimento: "2026-10-28", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Inter St, 28/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Inter St" },
+    { id: "r298", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-28", valor: 45000.0, status: "recebido", recebimento: "2026-10-28", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Itau St, 28/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Itau St" },
+    { id: "r299", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-28", valor: 48000.0, status: "recebido", recebimento: "2026-10-28", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Itau St, 28/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Itau St" },
+    { id: "r300", cliente: "—", categoria: "Receitas de Vendas", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-30", valor: 32470.0, status: "recebido", recebimento: "2026-10-30", formaRecebimento: "Outro", descricao: "Receitas de Vendas (Itau St, 30/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Itau St" },
+    { id: "r301", cliente: "—", categoria: "Receitas de Serviços", classificacao: "RECEITA DE VENDAS - STORE PLUSS", vencimento: "2026-10-30", valor: 5000.0, status: "recebido", recebimento: "2026-10-30", formaRecebimento: "Outro", descricao: "Receitas de Serviços (Nubank St, 30/10/2026) — cliente não informado no relatório, classificação por canal inferida pela conta bancária, confirme", conta: "Nubank St" },
   ],
 
   seedPayables: [
@@ -1690,10 +1756,73 @@ export const storePlussData: ClientFinanceData = {
     { id: "p1550", favorecido: "Marcelo Ferreira Borges", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-15", valor: 35.0, status: "pago", pagamento: "2026-10-15", descricao: "Transferência enviada pelo Pix|Marcelo Ferreira Borges", conta: "Nubank St" },
     { id: "p1551", favorecido: "TRIBUTOS FEDERAIS DARF NUMERADO", categoria: "Multas pagas", classificacao: "IMPOSTOS", vencimento: "2026-10-15", valor: 221.13, status: "pago", pagamento: "2026-10-15", descricao: "TRIBUTOS FEDERAIS DARF NUMERADO", conta: "C6 - BLAIMP" },
     { id: "p1552", favorecido: "54.254.075 WILLIAM DE CARVALHO VALE", categoria: "Software / Licença de Uso", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-15", valor: 190.0, status: "pago", pagamento: "2026-10-15", descricao: "Pix enviado para 54.254.075 WILLIAM DE CARVALHO VALE", conta: "C6 - BLAIMP" },
-    { id: "p915", favorecido: "MERCADO TURBO SOLUÇÕES WEB", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-17", valor: 719.99, status: "pendente", descricao: "Pago de 07 a 10 (abr: 619,99)" },
-    { id: "p924", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 1655.03, status: "pendente", descricao: "Valor de julho. Pago de 20 a 23" },
-    { id: "p925", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "BPO FINANCEIRO", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 1655.03, status: "pendente", descricao: "Valor de julho. Pago de 20 a 23" },
-    { id: "p926", favorecido: "ONE GESTÃO DE NEGÓCIOS", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 140.0, status: "pendente", descricao: "Mensal" },
+    { id: "p1553", favorecido: "PIX ENVIADO LUCIANA DE F", categoria: "Outros", classificacao: "COMPRA DE PRODUTOS", vencimento: "2026-10-16", valor: 50000.0, status: "pago", pagamento: "2026-10-16", descricao: "PIX ENVIADO LUCIANA DE F", conta: "Itau St" },
+    { id: "p1554", favorecido: "Elaine Cristina Menezes Ramos", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-16", valor: 300.0, status: "pago", pagamento: "2026-10-16", descricao: "Transferência enviada pelo Pix|Elaine Cristina Menezes Ramos", conta: "Nubank St" },
+    { id: "p1555", favorecido: "Pagamento Boleto CORA SOCIEDADE DE CRÉDITO, FINANCIAMENTO E INVESTIMENTO S.A.", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-16", valor: 357.69, status: "pago", pagamento: "2026-10-16", descricao: "Pagamento Boleto CORA SOCIEDADE DE CRÉDITO, FINANCIAMENTO E INVESTIMENTO S.A.", conta: "C6 - BLAIMP" },
+    { id: "p1556", favorecido: "SILVANIA MARIA DE OLIVEIRA SILVA VITOR", categoria: "Costura - Confecção", classificacao: "Confecção", vencimento: "2026-10-17", valor: 738.0, status: "pago", pagamento: "2026-10-17", descricao: "Transferência enviada pelo Pix|SILVANIA MARIA DE OLIVEIRA SILVA VITOR", conta: "Nubank St" },
+    { id: "p1557", favorecido: "ALEXANDRE FERREIRA DE ARAUJO", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-17", valor: 100.0, status: "pago", pagamento: "2026-10-17", descricao: "Transferência enviada pelo Pix|ALEXANDRE FERREIRA DE ARAUJO", conta: "Nubank St" },
+    { id: "p1558", favorecido: "J & J MINIMERCADO LTDA", categoria: "Uso e Consumo / Colaboradores - Socios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-19", valor: 26.9, status: "pago", pagamento: "2026-10-19", descricao: "Transferência enviada pelo Pix|J & J MINIMERCADO LTDA", conta: "Nubank St" },
+    { id: "p1559", favorecido: "Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-19", valor: 900.0, status: "pago", pagamento: "2026-10-19", descricao: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", conta: "Nubank St" },
+    { id: "p1560", favorecido: "UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-19", valor: 22.96, status: "pago", pagamento: "2026-10-19", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
+    { id: "p1561", favorecido: "Roberto de Sousa Pedreiro", categoria: "Estacionamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 30.0, status: "pago", pagamento: "2026-10-20", descricao: "Transferência enviada pelo Pix|Roberto de Sousa Pedreiro", conta: "Nubank St" },
+    { id: "p1562", favorecido: "Anderson De Franca Ferreira", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-20", valor: 45.0, status: "pago", pagamento: "2026-10-20", descricao: "Transferência enviada pelo Pix|Anderson De Franca Ferreira", conta: "Nubank St" },
+    { id: "p1563", favorecido: "UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-20", valor: 37.95, status: "pago", pagamento: "2026-10-20", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
+    { id: "p1564", favorecido: "Rosiana Gomes Barroso", categoria: "Costura - Confecção", classificacao: "Confecção", vencimento: "2026-10-20", valor: 7669.1, status: "pago", pagamento: "2026-10-20", descricao: "Pix enviado - Rosiana Gomes Barroso", conta: "Inter St" },
+    { id: "p1565", favorecido: "ESFIHA DO ZE", categoria: "Lanches e Refeições", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-20", valor: 102.5, status: "pago", pagamento: "2026-10-20", descricao: "Pix enviado para ESFIHA DO ZE", conta: "C6 - BLAIMP" },
+    { id: "p1566", favorecido: "SABESP", categoria: "Água e Saneamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 245.2, status: "pago", pagamento: "2026-10-20", descricao: "SABESP", conta: "Nubank St" },
+    { id: "p1567", favorecido: "Vitom Log", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-21", valor: 8935.53, status: "pago", pagamento: "2026-10-21", descricao: "Pix enviado - Vitom Log", conta: "Inter St" },
+    { id: "p1568", favorecido: "Adriana Pereira De Jesus", categoria: "Costura - Confecção", classificacao: "Confecção", vencimento: "2026-10-21", valor: 4312.5, status: "pago", pagamento: "2026-10-21", descricao: "Pix enviado - Adriana Pereira De Jesus", conta: "Inter St" },
+    { id: "p1569", favorecido: "UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-21", valor: 33.94, status: "pago", pagamento: "2026-10-21", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
+    { id: "p1570", favorecido: "UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-21", valor: 52.98, status: "pago", pagamento: "2026-10-21", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
+    { id: "p1571", favorecido: "KAIO FELIPE DE PAULA", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-21", valor: 55.0, status: "pago", pagamento: "2026-10-21", descricao: "Transferência enviada pelo Pix|KAIO FELIPE DE PAULA", conta: "Nubank St" },
+    { id: "p1572", favorecido: "Panther Textil Ltda", categoria: "Tecido - Confecção", classificacao: "Confecção", vencimento: "2026-10-21", valor: 8752.0, status: "pago", pagamento: "2026-10-21", descricao: "Pix enviado - Panther Textil Ltda", conta: "Inter St" },
+    { id: "p1573", favorecido: "AVANT PRO - FERRAMENTO DE ANALISE", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-21", valor: 129.7, status: "pago", pagamento: "2026-10-21", descricao: "AVANT PRO - FERRAMENTO DE ANALISE", conta: "C6 - BLAIMP" },
+    { id: "p1574", favorecido: "PRINTNODE - SISTEMA DE IMPRESSAO DE ETIQUETAS", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-21", valor: 49.96, status: "pago", pagamento: "2026-10-21", descricao: "PRINTNODE - SISTEMA DE IMPRESSAO DE ETIQUETAS", conta: "C6 - BLAIMP" },
+    { id: "p1575", favorecido: "CANVA - SOFTWAR PARA EDIÇÃO DE IMAGEM", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-21", valor: 34.9, status: "pago", pagamento: "2026-10-21", descricao: "CANVA - SOFTWAR PARA EDIÇÃO DE IMAGEM", conta: "C6 - BLAIMP" },
+    { id: "p1576", favorecido: "CHAT GPT", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-21", valor: 113.73, status: "pago", pagamento: "2026-10-21", descricao: "CHAT GPT", conta: "C6 - BLAIMP" },
+    { id: "p1577", favorecido: "SISTEMA DE CAMERAS", categoria: "Vigilância e Segurança Patrimonial", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-21", valor: 225.67, status: "pago", pagamento: "2026-10-21", descricao: "SISTEMA DE CAMERAS", conta: "C6 - BLAIMP" },
+    { id: "p1578", favorecido: "Ac Express Logistica Ltda", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-21", valor: 732.79, status: "pago", pagamento: "2026-10-21", descricao: "Pix enviado - Ac Express Logistica Ltda", conta: "Inter St" },
+    { id: "p1579", favorecido: "PANIFICADORA E CONFEITARIA A CHARMOSA DO CARRAO LTDA", categoria: "Lanches e Refeições", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-22", valor: 92.0, status: "pago", pagamento: "2026-10-22", descricao: "Pix enviado para PANIFICADORA E CONFEITARIA A CHARMOSA DO CARRAO LTDA", conta: "C6 - BLAIMP" },
+    { id: "p1580", favorecido: "40.189.894 FABIO MAXIMO DOS SANTOS", categoria: "Frete Confecção", classificacao: "Confecção", vencimento: "2026-10-22", valor: 100.0, status: "pago", pagamento: "2026-10-22", descricao: "Transferência enviada pelo Pix|40.189.894 FABIO MAXIMO DOS SANTOS", conta: "Nubank St" },
+    { id: "p1581", favorecido: "Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-22", valor: 400.0, status: "pago", pagamento: "2026-10-22", descricao: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", conta: "Nubank St" },
+    { id: "p1582", favorecido: "UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-22", valor: 54.99, status: "pago", pagamento: "2026-10-22", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
+    { id: "p1583", favorecido: "BIANCA LUCENA SOCIEDADE INDIVIDUAL DE ADVOCACIA", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-10-22", valor: 1225.0, status: "pago", pagamento: "2026-10-22", descricao: "Transferência enviada pelo Pix|BIANCA LUCENA SOCIEDADE INDIVIDUAL DE ADVOCACIA", conta: "Nubank St" },
+    { id: "p1584", favorecido: "J. C. SOLUCAO EQUIPAMENTOS", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-22", valor: 500.0, status: "pago", pagamento: "2026-10-22", descricao: "Transferência enviada pelo Pix|J. C. SOLUCAO EQUIPAMENTOS", conta: "Nubank St" },
+    { id: "p1585", favorecido: "ARMARINHOS FERNANDO LTDA", categoria: "Uso e Consumo / Colaboradores - Socios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-23", valor: 77.98, status: "pago", pagamento: "2026-10-23", descricao: "Transferência enviada pelo Pix|ARMARINHOS FERNANDO LTDA", conta: "Nubank St" },
+    { id: "p1586", favorecido: "Valter Willian da Cunha", categoria: "Estacionamento", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-23", valor: 30.0, status: "pago", pagamento: "2026-10-23", descricao: "Transferência enviada pelo Pix|Valter Willian da Cunha", conta: "Nubank St" },
+    { id: "p1587", favorecido: "BALANCAS BONETTI LTDA", categoria: "Uso e Consumo / Colaboradores - Socios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-23", valor: 407.5, status: "pago", pagamento: "2026-10-23", descricao: "Transferência enviada pelo Pix|BALANCAS BONETTI LTDA", conta: "Nubank St" },
+    { id: "p1588", favorecido: "58.867.279 MARCELA DOS SANTOS PAUFERRO", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-10-23", valor: 349.0, status: "pago", pagamento: "2026-10-23", descricao: "Transferência enviada pelo Pix|58.867.279 MARCELA DOS SANTOS PAUFERRO", conta: "Nubank St" },
+    { id: "p1589", favorecido: "Connect Solucoes Contabeis", categoria: "CONTABILIDADE", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-23", valor: 3842.0, status: "pago", pagamento: "2026-10-23", descricao: "Pix enviado - Connect Solucoes Contabeis", conta: "Inter St" },
+    { id: "p1590", favorecido: "27.371.664 WELBERTON ROCHA DOS SANTOS", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-10-23", valor: 64.0, status: "pago", pagamento: "2026-10-23", descricao: "Transferência enviada pelo Pix|27.371.664 WELBERTON ROCHA DOS SANTOS", conta: "Nubank St" },
+    { id: "p1591", favorecido: "Elaine Cristina Menezes Ramos", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-23", valor: 350.0, status: "pago", pagamento: "2026-10-23", descricao: "Transferência enviada pelo Pix|Elaine Cristina Menezes Ramos", conta: "Nubank St" },
+    { id: "p1592", favorecido: "PIX Marketplace", categoria: "Materiais de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-23", valor: 83.9, status: "pago", pagamento: "2026-10-23", descricao: "Transferência enviada pelo Pix|PIX Marketplace", conta: "Nubank St" },
+    { id: "p1593", favorecido: "UBER DO BRASIL TECNOLOGIA LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-26", valor: 57.97, status: "pago", pagamento: "2026-10-26", descricao: "Transferência enviada pelo Pix|UBER DO BRASIL TECNOLOGIA LTDA.", conta: "Nubank St" },
+    { id: "p1594", favorecido: "40.189.894 FABIO MAXIMO DOS SANTOS", categoria: "Frete Confecção", classificacao: "Confecção", vencimento: "2026-10-26", valor: 200.0, status: "pago", pagamento: "2026-10-26", descricao: "Transferência enviada pelo Pix|40.189.894 FABIO MAXIMO DOS SANTOS", conta: "Nubank St" },
+    { id: "p1595", favorecido: "PIX Marketplace", categoria: "Materiais de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-26", valor: 297.0, status: "pago", pagamento: "2026-10-26", descricao: "Transferência enviada pelo Pix|PIX Marketplace", conta: "Nubank St" },
+    { id: "p1596", favorecido: "40.189.894 FABIO MAXIMO DOS SANTOS", categoria: "Frete Confecção", classificacao: "Confecção", vencimento: "2026-10-26", valor: 100.0, status: "pago", pagamento: "2026-10-26", descricao: "Transferência enviada pelo Pix|40.189.894 FABIO MAXIMO DOS SANTOS", conta: "Nubank St" },
+    { id: "p1597", favorecido: "SEGURO CONTA C6", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-10-27", valor: 20.0, status: "pago", pagamento: "2026-10-27", descricao: "SEGURO CONTA C6", conta: "C6 - BLAIMP" },
+    { id: "p1598", favorecido: "Manoel Ferreira Bananeira", categoria: "Pagamento para Manoel", classificacao: "COMPRA DE PRODUTOS", vencimento: "2026-10-27", valor: 100000.0, status: "pago", pagamento: "2026-10-27", descricao: "PIX ENVIADO MANOEL FERRE", conta: "Itau St" },
+    { id: "p1599", favorecido: "58.867.279 MARCELA DOS SANTOS PAUFERRO", categoria: "Materiais Aplicados na Prestação de Serviços", classificacao: "INSUMOS", vencimento: "2026-10-27", valor: 120.0, status: "pago", pagamento: "2026-10-27", descricao: "Transferência enviada pelo Pix|58.867.279 MARCELA DOS SANTOS PAUFERRO", conta: "Nubank St" },
+    { id: "p1600", favorecido: "Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-27", valor: 300.0, status: "pago", pagamento: "2026-10-27", descricao: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", conta: "Nubank St" },
+    { id: "p1601", favorecido: "KALUNGA SA", categoria: "Materiais de Escritório", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-27", valor: 89.0, status: "pago", pagamento: "2026-10-27", descricao: "Transferência enviada pelo Pix|KALUNGA SA", conta: "Nubank St" },
+    { id: "p1602", favorecido: "FABIANO SILVA DOS SANTOS", categoria: "Uso e Consumo / Colaboradores - Socios", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-27", valor: 15.0, status: "pago", pagamento: "2026-10-27", descricao: "Transferência enviada pelo Pix|FABIANO SILVA DOS SANTOS", conta: "Nubank St" },
+    { id: "p1603", favorecido: "ISRAEL VIANA DE BRITO", categoria: "Lanches e Refeições", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-28", valor: 128.0, status: "pago", pagamento: "2026-10-28", descricao: "Pix enviado para ISRAEL VIANA DE BRITO", conta: "C6 - BLAIMP" },
+    { id: "p1604", favorecido: "PIX ENVIADO PANTHER TEXT", categoria: "Tecido - Confecção", classificacao: "Confecção", vencimento: "2026-10-28", valor: 23136.0, status: "pago", pagamento: "2026-10-28", descricao: "PIX ENVIADO PANTHER TEXT", conta: "Itau St" },
+    { id: "p1605", favorecido: "40.189.894 FABIO MAXIMO DOS SANTOS", categoria: "Frete Confecção", classificacao: "Confecção", vencimento: "2026-10-29", valor: 100.0, status: "pago", pagamento: "2026-10-29", descricao: "Transferência enviada pelo Pix|40.189.894 FABIO MAXIMO DOS SANTOS", conta: "Nubank St" },
+    { id: "p1606", favorecido: "Carini Assis Macedo", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-30", valor: 75.0, status: "pago", pagamento: "2026-10-30", descricao: "Pix enviado para Carini Assis Macedo", conta: "C6 - BLAIMP" },
+    { id: "p1607", favorecido: "Pagamento Boleto SIMPLES NACIONAL", categoria: "Impostos sobre Aplicações", classificacao: "IMPOSTOS", vencimento: "2026-10-30", valor: 2042.0, status: "pago", pagamento: "2026-10-30", descricao: "Pagamento Boleto SIMPLES NACIONAL", conta: "C6 - BLAIMP" },
+    { id: "p1608", favorecido: "PIX ENVIADO PANTHER TEXT", categoria: "Tecido - Confecção", classificacao: "Confecção", vencimento: "2026-10-30", valor: 27425.0, status: "pago", pagamento: "2026-10-30", descricao: "PIX ENVIADO PANTHER TEXT", conta: "Itau St" },
+    { id: "p1609", favorecido: "40.189.894 FABIO MAXIMO DOS SANTOS", categoria: "Frete Confecção", classificacao: "Confecção", vencimento: "2026-10-30", valor: 315.0, status: "pago", pagamento: "2026-10-30", descricao: "Transferência enviada pelo Pix|40.189.894 FABIO MAXIMO DOS SANTOS", conta: "Nubank St" },
+    { id: "p1610", favorecido: "Elaine Cristina Menezes Ramos", categoria: "Diaristas - Freelances", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-30", valor: 250.0, status: "pago", pagamento: "2026-10-30", descricao: "Transferência enviada pelo Pix|Elaine Cristina Menezes Ramos", conta: "Nubank St" },
+    { id: "p1611", favorecido: "Jusinete Cabral da Silva", categoria: "Fretes pagos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-30", valor: 1000.0, status: "pago", pagamento: "2026-10-30", descricao: "Transferência enviada pelo Pix|Jusinete Cabral da Silva", conta: "Nubank St" },
+    { id: "p1612", favorecido: "LALAMOVE TECNOLOGIA (BRASIL) LTDA.", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-30", valor: 216.3, status: "pago", pagamento: "2026-10-30", descricao: "Transferência enviada pelo Pix|LALAMOVE TECNOLOGIA (BRASIL) LTDA.", conta: "Nubank St" },
+    { id: "p1613", favorecido: "TODO CARTOES LTDA", categoria: "Vale-Alimentação", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-30", valor: 200.0, status: "pago", pagamento: "2026-10-30", descricao: "Transferência enviada pelo Pix|TODO CARTOES LTDA", conta: "Nubank St" },
+    { id: "p1614", favorecido: "CONTROLID IND COM DE H E S T", categoria: "Sistemas (ERPs e Etc)", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-30", valor: 51.0, status: "pago", pagamento: "2026-10-30", descricao: "Pagamento efetuado|CONTROLID IND COM DE H E S T", conta: "Nubank St" },
+    { id: "p1615", favorecido: "Gabriel Echeverria da Silva", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-30", valor: 50.0, status: "pago", pagamento: "2026-10-30", descricao: "Transferência enviada pelo Pix|Gabriel Echeverria da Silva", conta: "Nubank St" },
+    { id: "p1616", favorecido: "JULIO CEZAR DO NASCIMENTO CUSTODIO", categoria: "Frete Sobre Vendas", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-10-30", valor: 50.0, status: "pago", pagamento: "2026-10-30", descricao: "Transferência enviada pelo Pix|JULIO CEZAR DO NASCIMENTO CUSTODIO", conta: "Nubank St" },
+    { id: "p1617", favorecido: "ISRAEL VIANA DE BRITO", categoria: "Lanches e Refeições", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-10-30", valor: 94.0, status: "pago", pagamento: "2026-10-30", descricao: "Pix enviado para ISRAEL VIANA DE BRITO", conta: "C6 - BLAIMP" },
+    { id: "p1618", favorecido: "SILVANIA MARIA DE OLIVEIRA SILVA VITOR", categoria: "Costura - Confecção", classificacao: "Confecção", vencimento: "2026-10-31", valor: 1414.0, status: "pago", pagamento: "2026-10-31", descricao: "Transferência enviada pelo Pix|SILVANIA MARIA DE OLIVEIRA SILVA VITOR", conta: "Nubank St" },
+    { id: "p1619", favorecido: "Tiktok", categoria: "Afiliados Tiktok", classificacao: "DESPESAS COMERCIAIS / MARKETING", vencimento: "2026-10-31", valor: 21149.03, status: "pago", pagamento: "2026-10-31", descricao: "Comissão de afiliados Tiktok - outubro/2026 (relatório Financeiro - DRE Simplificado)" },
     { id: "p1016", favorecido: "CLARO", categoria: "Telefonia Móvel", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-06", valor: 142.89, status: "pendente", descricao: "Fatura Claro consolidada em um único lançamento (a pedido do Ewerton)" },
     { id: "p931", favorecido: "ELETROPAULO (ENEL SP)", categoria: "Energia Elétrica", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-11-01", valor: 94.61, status: "pendente", descricao: "Unidade 2. Valor de julho (entre 24 e 95). Pago de 01 a 14" },
     { id: "p1015", favorecido: "Folha de Pagamento (Equipe)", categoria: "Salários", classificacao: "DESPESAS C/ PESSOAL", vencimento: "2026-11-01", valor: 11867.6, status: "pendente", descricao: "Salário + Vale-Transporte de toda a equipe, consolidado em um único lançamento (a pedido do Ewerton)" },
