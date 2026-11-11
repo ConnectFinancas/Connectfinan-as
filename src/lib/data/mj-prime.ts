@@ -244,7 +244,23 @@ export const mjPrimeData: ClientFinanceData = {
   // todo mundo já confirmado como Salário/Diarista em qualquer mês do arquivo (inclusive o
   // roster usado nas projeções de Nov/Dez): nenhum bateu — todos os 27 seguem genuinamente não
   // identificados, análise pessoa a pessoa ainda pendente.
-  dataVersion: 23,
+  // Bump 23 → 24: o Ewerton mandou a listagem oficial de colaboradores da MJ Prime/Borba/C&J.
+  // Cruzado contra os 27 nomes não identificados, 4 pessoas bateram (7 lançamentos) e tiveram a
+  // ressalva "confirme" removida:
+  // - MARCONE JOSE DA SILVA (4 lançamentos) = MARCONE JOSÉ DA SILVA do roster;
+  // - LEONARDO SOUZA DA SILVA (1) = LEONARDO SOUZA DA SILVA do roster (nome idêntico);
+  // - ALEXSANDRO CANDIDO DA SILVA (1) = ALEXANDRE CANDIDO do roster (grafia "Alexsandro" no
+  //   extrato, mas sobrenome "Candido" bate);
+  // - GIVANILSON ANDRADE DE LIMA (1) = GILVANILSON DE ANDRADE do roster (grafia "Givanilson" no
+  //   extrato, nome e sobrenome bem próximos).
+  // Os outros 23 nomes seguem sem bater com o roster enviado — incluindo CICERO MARISON FLOR
+  // MELO, que é quem mais recebe entre os não identificados (6 lançamentos, R$6.400,00 no total)
+  // e não aparece no roster de jeito nenhum. Dois pares do roster ficaram parecidos demais com
+  // nomes da lista de não identificados pra eu decidir sozinho (sinalizar ao Ewerton se quiser
+  // confirmar): "ANTONIO ALEXANDRE DUARTE DA SILVA JUNIOR" vs. "ALEXANDRE CANDIDO" (só o primeiro
+  // nome bate, sobrenome bem diferente) e "WELLITA MARIA BARBOSA FONSECA" vs. "WELITON CARLOS"
+  // (nomes de gênero diferente, improvável ser a mesma pessoa).
+  dataVersion: 24,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -2523,8 +2539,8 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1575", favorecido: "CICERO MARISON FLOR MELO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-07", valor: 1000.0, status: "pago", pagamento: "2026-08-07", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
   { id: "p1576", favorecido: "GIVANILDO SILVA DE FREITAS", categoria: "Diarista", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-07", valor: 53.0, status: "pago", pagamento: "2026-08-07", descricao: "[C E J SERVIÇOS]" },
   { id: "p1577", favorecido: "PAGAR.ME PAGAMENTOS", categoria: "Tarifas de Maquininhas", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-08-08", valor: 38.0, status: "pago", pagamento: "2026-08-08", descricao: "[C E J SERVIÇOS]" },
-  { id: "p1578", favorecido: "GIVANILSON ANDRADE DE LIMA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-08", valor: 270.0, status: "pago", pagamento: "2026-08-08", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
-  { id: "p1579", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-08", valor: 320.0, status: "pago", pagamento: "2026-08-08", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
+  { id: "p1578", favorecido: "GIVANILSON ANDRADE DE LIMA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-08", valor: 270.0, status: "pago", pagamento: "2026-08-08", descricao: "[C E J SERVIÇOS] — confirmado: colaborador GILVANILSON DE ANDRADE (roster oficial — grafia 'Givanilson' no extrato)" },
+  { id: "p1579", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-08", valor: 320.0, status: "pago", pagamento: "2026-08-08", descricao: "[C E J SERVIÇOS] — confirmado: colaborador MARCONE JOSÉ DA SILVA (roster oficial)" },
   { id: "p1580", favorecido: "ERNILDO DA SILVA FERREIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-08", valor: 320.0, status: "pago", pagamento: "2026-08-08", descricao: "[C E J SERVIÇOS]" },
   { id: "p1581", favorecido: "TEREZINHA PAULO DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-08", valor: 260.0, status: "pago", pagamento: "2026-08-08", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
   { id: "p1582", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-10", valor: 1630.0, status: "pago", pagamento: "2026-08-10", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
@@ -2597,12 +2613,12 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1649", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-26", valor: 1099.8, status: "pago", pagamento: "2026-08-26", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
   { id: "p1650", favorecido: "JOÃO SEVERINO DA SILVA ANDRADE", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-26", valor: 200.0, status: "pago", pagamento: "2026-08-26", descricao: "[C E J SERVIÇOS]" },
   { id: "p1651", favorecido: "ALMIR DE OLIVEIRA DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-26", valor: 400.0, status: "pago", pagamento: "2026-08-26", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
-  { id: "p1652", favorecido: "LEONARDO SOUZA DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-27", valor: 200.0, status: "pago", pagamento: "2026-08-27", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
+  { id: "p1652", favorecido: "LEONARDO SOUZA DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-27", valor: 200.0, status: "pago", pagamento: "2026-08-27", descricao: "[C E J SERVIÇOS] — confirmado: colaborador LEONARDO SOUZA DA SILVA (roster oficial, nome idêntico)" },
   { id: "p1653", favorecido: "CASARINI", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-27", valor: 3000.0, status: "pago", pagamento: "2026-08-27", descricao: "[C E J SERVIÇOS] Fornecedor (marca de móveis)" },
   { id: "p1654", favorecido: "JOSIANE MARIA DA SILVA ANDRADE", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-28", valor: 1000.0, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
   { id: "p1655", favorecido: "EDUARDO MOURA DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-28", valor: 1000.0, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS]" },
   { id: "p1656", favorecido: "LEANDRO AUGUSTO DE FREITAS", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-28", valor: 1000.0, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS]" },
-  { id: "p1657", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-28", valor: 850.0, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
+  { id: "p1657", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-28", valor: 850.0, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS] — confirmado: colaborador MARCONE JOSÉ DA SILVA (roster oficial)" },
   { id: "p1658", favorecido: "FÁBIO SOUZA DE OLIVEIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-28", valor: 1000.0, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS]" },
   { id: "p1659", favorecido: "CICERO MARISON FLOR MELO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-28", valor: 1000.0, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
   { id: "p1660", favorecido: "DJ INDUSTRIA E COMERCIO DE MOVEIS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-28", valor: 881.16, status: "pago", pagamento: "2026-08-28", descricao: "[C E J SERVIÇOS] Fornecedor" },
@@ -2641,7 +2657,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1692", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-15", valor: 840.0, status: "pago", pagamento: "2026-09-15", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1693", favorecido: "LUCICLEIDE SILVA DE LIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-15", valor: 750.0, status: "pago", pagamento: "2026-09-15", descricao: "[BORBA]" },
   { id: "p1694", favorecido: "ERNILDO DA SILVA FERREIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-15", valor: 750.0, status: "pago", pagamento: "2026-09-15", descricao: "[BORBA]" },
-  { id: "p1695", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-15", valor: 850.0, status: "pago", pagamento: "2026-09-15", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1695", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-15", valor: 850.0, status: "pago", pagamento: "2026-09-15", descricao: "[BORBA] — confirmado: colaborador MARCONE JOSÉ DA SILVA (roster oficial)" },
   { id: "p1696", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-16", valor: 343.64, status: "pago", pagamento: "2026-09-16", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1697", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-16", valor: 1225.03, status: "pago", pagamento: "2026-09-16", descricao: "[BORBA] Fornecedor" },
   { id: "p1698", favorecido: "JOSE REGINALDO DE SOUZA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-17", valor: 2283.0, status: "pago", pagamento: "2026-09-17", descricao: "[BORBA] Ver nota em 01/08 — Salário" },
@@ -2681,7 +2697,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1731", favorecido: "LUCIELMA FERREIRA DA SILVA", categoria: "Diarista", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-09", valor: 150.0, status: "pago", pagamento: "2026-09-09", descricao: "[C E J SERVIÇOS]" },
   { id: "p1732", favorecido: "SEADI KITECENTER", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-09", valor: 1165.0, status: "pago", pagamento: "2026-09-09", descricao: "[C E J SERVIÇOS] Retirada de sócios (Mariana Borba)" },
   { id: "p1733", favorecido: "JOÃO SEVERINO DA SILVA ANDRADE", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-09", valor: 400.0, status: "pago", pagamento: "2026-09-09", descricao: "[C E J SERVIÇOS]" },
-  { id: "p1734", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-09", valor: 150.0, status: "pago", pagamento: "2026-09-09", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
+  { id: "p1734", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-09", valor: 150.0, status: "pago", pagamento: "2026-09-09", descricao: "[C E J SERVIÇOS] — confirmado: colaborador MARCONE JOSÉ DA SILVA (roster oficial)" },
   { id: "p1735", favorecido: "MULTI PRIME", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-09-09", valor: 65.0, status: "pago", pagamento: "2026-09-09", descricao: "[C E J SERVIÇOS]" },
   { id: "p1736", favorecido: "MULTI PRIME", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-09-09", valor: 260.0, status: "pago", pagamento: "2026-09-09", descricao: "[C E J SERVIÇOS]" },
   { id: "p1737", favorecido: "SEFAZ", categoria: "Multas / Taxas", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-09-10", valor: 322.8, status: "pago", pagamento: "2026-09-10", descricao: "[C E J SERVIÇOS] IPVA" },
@@ -2765,7 +2781,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1814", favorecido: "INDUSTRIA E COMERCIO DE MOVEIS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-27", valor: 5499.18, status: "pago", pagamento: "2026-10-27", descricao: "[BORBA] Fornecedor" },
   { id: "p1815", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-28", valor: 1997.81, status: "pago", pagamento: "2026-10-28", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1816", favorecido: "DJ INDUSTRIA E COMERCIO DE MOV", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-29", valor: 1990.77, status: "pago", pagamento: "2026-10-29", descricao: "[BORBA] Fornecedor" },
-  { id: "p1817", favorecido: "ALEXSANDRO CANDIDO DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-30", valor: 200.0, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA] — classificação automática, confirme" },
+  { id: "p1817", favorecido: "ALEXSANDRO CANDIDO DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-30", valor: 200.0, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA] — confirmado: colaborador ALEXANDRE CANDIDO (roster oficial — grafia 'Alexsandro' no extrato)" },
   { id: "p1818", favorecido: "MULTNET SERVIÇOS", categoria: "Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-30", valor: 60.0, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA]" },
   { id: "p1819", favorecido: "DJ INDUSTRIA E COMERCIO DE MOV", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-30", valor: 830.09, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA] Fornecedor" },
   { id: "p1820", favorecido: "LEIFIL MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-30", valor: 4219.6, status: "pago", pagamento: "2026-10-30", descricao: "[BORBA] Fornecedor" },
