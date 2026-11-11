@@ -198,7 +198,14 @@ export const mjPrimeData: ClientFinanceData = {
   // (4) o tributo de R$1.443,69 à Receita Federal (24/09) confirmado como imposto — já estava
   //     classificado corretamente como "Imposto (Simples Nacional)"/IMPOSTOS, só tirada a
   //     ressalva "presumido, confirme" da descrição.
-  dataVersion: 20,
+  // Bump 20 → 21: 2 esclarecimentos do Ewerton sobre o que falta no grupo —
+  // (1) Janeiro/Fevereiro: confirmado que Borba e C&J não entram nesses dois meses por motivo
+  //     estrutural (não eram contabilizadas junto com a MJ Prime ainda), não por falta de dado —
+  //     deixam de ser tratados como pendência, ficam só como base/referência (ver nota em
+  //     cmvManualPorEmpresa);
+  // (2) Novembro/Dezembro: ainda não são pendência — são meses futuros, ainda não fechados (só a
+  //     projeção original de despesas recorrentes existe neles).
+  dataVersion: 21,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -220,13 +227,17 @@ export const mjPrimeData: ClientFinanceData = {
   // 8 = Set, 9 = Out.
   cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 560454.68, 0, 0],
   // Abre a linha "(-) CMV" do DRE em MJ Prime x Borba (só exibição/%, não muda nenhum total —
-  // a soma dos meses com dado bate exatamente com cmvManual acima). null = ainda não temos o
-  // valor dessa empresa nesse mês (aparece em branco na tela, não como R$ 0,00/0,0% — não seria
-  // correto dizer que a empresa "teve CMV zero"). Março/Abril: Borba em branco porque a aba
-  // "Ano 2026" não tinha CMV BORBA preenchido nesses dois meses. Fevereiro: Borba em branco
-  // porque ainda não temos nenhum dado dela desse mês. Outubro: Borba já com o valor OFICIAL
-  // (R$43.155,15, ver comentário de cmvManual acima). Jan/Ago/Nov/Dez: nenhuma das duas, ainda
-  // sem dado nenhum de CMV. C E J SERVIÇOS nunca aparece aqui (confirmado: não tem CMV).
+  // a soma dos meses com dado bate exatamente com cmvManual acima). null = em branco na tela (não
+  // como R$ 0,00/0,0%), por dois motivos bem diferentes:
+  // (a) dado pendente, ainda vamos atrás — caso de Março/Abril (a aba "Ano 2026" não tinha CMV
+  //     BORBA preenchido nesses dois meses) e de Agosto/Novembro/Dezembro (nenhuma das duas);
+  // (b) estrutural, não é "falta buscar" — Janeiro e Fevereiro/2026 ficam SEMPRE em branco pra
+  //     Borba (e C&J) porque, confirmado com o Ewerton, essas empresas ainda não eram
+  //     contabilizadas junto com a MJ Prime nesse período — não existe (nem vai existir) dado
+  //     delas nesses dois meses pra consolidar; MJ Prime sozinha nesses meses é só uma base de
+  //     referência, não o grupo todo, e não deve ser comparada 1:1 com os meses já consolidados.
+  // Outubro: Borba já com o valor OFICIAL (R$43.155,15, ver comentário de cmvManual acima).
+  // C E J SERVIÇOS nunca aparece aqui (confirmado: não tem CMV).
   cmvManualPorEmpresa: [
     {
       label: "MJ Prime",
