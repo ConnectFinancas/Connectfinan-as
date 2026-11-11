@@ -179,7 +179,26 @@ export const mjPrimeData: ClientFinanceData = {
   // cmvManualPorEmpresa — ganhou um valor provisório (R$43.567,26, soma das linhas CMV que acabei
   // de lançar), que também entrou em cmvManual (517.299,53 → 560.866,79) até a Borba mandar o
   // relatório oficial "Vendas por Produto" de outubro (já foi pedido, aguardando).
-  dataVersion: 18,
+  // Bump 18 → 19: substituído o CMV provisório de Outubro da BORBA MOVEIS LTDA pelo oficial —
+  // relatório "Vendas por Produto" de outubro enviado pelo Ewerton, coluna "Custo" (linha
+  // "Total") = R$43.155,15 (de R$43.567,26 autocalculado). cmvManual de outubro: 560.866,79 →
+  // 560.454,68 (517.299,53 MJ Prime + 43.155,15 Borba). Com isso, Outubro/2026 fecha 100% oficial
+  // pras duas empresas — não fica mais nenhum mês provisório nesse grupo, só Fevereiro.
+  // Bump 19 → 20: 4 confirmações do Ewerton sobre pontos que estavam marcados "confirme" —
+  // (1) "ANTONIO DE MOURA CAMPOS NETO" (8 lançamentos, Borba e C&J, Ago-Out) não é Serviço
+  //     Terceirizado — é pagamento de Simples Nacional/DAS; reclassificado de "Serviço
+  //     Terceirizado"/DESPESAS C/ PESSOAS pra "Imposto (Simples Nacional)"/IMPOSTOS;
+  // (2) "JOSE REGINALDO DE SOUZA" (3 lançamentos, só Borba, Ago-Set) é Salário, não Pró-Labore —
+  //     reclassificado de "Pró-Labore" pra "Salário" (mesma classificacao DESPESAS C/ PESSOAS;
+  //     não havia nenhum mês dele já lançado como Salário, então não houve inconsistência entre
+  //     meses pra corrigir, só a categoria errada repetida nos 3);
+  // (3) o lançamento de R$2.900,00 (01/10, caixa físico, sem descrição na planilha original) é
+  //     fornecedor — reclassificado de "Uso e Consumo"/DESPESAS EVENTUAIS pra "Custo sobre
+  //     Mercadorias Vendidas"/CMV;
+  // (4) o tributo de R$1.443,69 à Receita Federal (24/09) confirmado como imposto — já estava
+  //     classificado corretamente como "Imposto (Simples Nacional)"/IMPOSTOS, só tirada a
+  //     ressalva "presumido, confirme" da descrição.
+  dataVersion: 20,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -190,33 +209,30 @@ export const mjPrimeData: ClientFinanceData = {
   // ELETRO LTDA ME/MJ PRIME) = R$456.431,83. Março a Julho/2026: CMV MJ PRIME + FRETE PRODUTOS +
   // CMV BORBA + FRETE PRODUTOS, da aba "Ano 2026" do DRE_2026_-_MJ_PRIME__5.xlsx (confirmado pelo
   // Ewerton como oficial) = R$378.038,12 (março), R$374.927,58 (abril), R$412.539,96 (maio),
-  // R$520.922,89 (junho) e R$614.450,30 (julho). Outubro/2026: só a parte da MJ ELETRO LTDA
-  // ME/MJ PRIME confirmada — coluna "Custo" (linha "Total") do relatório "Vendas por Produto"
-  // de outubro = R$517.299,53. A parte da BORBA MOVEIS LTDA de outubro ainda é PROVISÓRIA — soma
-  // das linhas de CMV/fornecedor já lançadas em Contas a Pagar a partir do extrato PagBank
-  // (R$43.567,26) — trocar pelo relatório oficial dela ("Vendas por Produto", igual setembro)
-  // assim que o Ewerton enviar (já foi pedido, aguardando). Fevereiro ainda é PROVISÓRIO — soma
-  // das próprias linhas de CMV já lançadas em Contas a Pagar (compras sem NF + frete + fornecedor
-  // via caixa físico + resíduo de fornecedores Bradesco sem detalhamento) = R$217.269,40 — trocar
-  // pelo oficial assim que o Ewerton confirmar/enviar. A C E J SERVIÇOS não entra em nenhum mês —
-  // confirmado com o Ewerton que ela não tem custo sobre vendas (é serviço). Índice 0 = Jan,
-  // 1 = Fev, 2 = Mar, 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul, 8 = Set, 9 = Out.
-  cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 560866.79, 0, 0],
+  // R$520.922,89 (junho) e R$614.450,30 (julho). Outubro/2026: coluna "Custo" (linha "Total") do
+  // relatório "Vendas por Produto" de cada empresa — R$517.299,53 (MJ ELETRO LTDA ME/MJ PRIME) +
+  // R$43.155,15 (BORBA MOVEIS LTDA) = R$560.454,68 — já 100% oficial, as duas partes confirmadas.
+  // Fevereiro ainda é PROVISÓRIO — soma das próprias linhas de CMV já lançadas em Contas a Pagar
+  // (compras sem NF + frete + fornecedor via caixa físico + resíduo de fornecedores Bradesco sem
+  // detalhamento) = R$217.269,40 — trocar pelo oficial assim que o Ewerton confirmar/enviar. A
+  // C E J SERVIÇOS não entra em nenhum mês — confirmado com o Ewerton que ela não tem custo sobre
+  // vendas (é serviço). Índice 0 = Jan, 1 = Fev, 2 = Mar, 3 = Abr, 4 = Mai, 5 = Jun, 6 = Jul,
+  // 8 = Set, 9 = Out.
+  cmvManual: [0, 217269.4, 378038.12, 374927.58, 412539.96, 520922.89, 614450.3, 0, 456431.83, 560454.68, 0, 0],
   // Abre a linha "(-) CMV" do DRE em MJ Prime x Borba (só exibição/%, não muda nenhum total —
   // a soma dos meses com dado bate exatamente com cmvManual acima). null = ainda não temos o
   // valor dessa empresa nesse mês (aparece em branco na tela, não como R$ 0,00/0,0% — não seria
   // correto dizer que a empresa "teve CMV zero"). Março/Abril: Borba em branco porque a aba
   // "Ano 2026" não tinha CMV BORBA preenchido nesses dois meses. Fevereiro: Borba em branco
-  // porque ainda não temos nenhum dado dela desse mês. Outubro: Borba já tem um valor (R$43.567,26)
-  // mas é PROVISÓRIO (ver comentário de cmvManual acima) — ainda assim aparece na tela, só que vai
-  // mudar quando o relatório oficial chegar. Jan/Ago/Nov/Dez: nenhuma das duas, ainda sem dado
-  // nenhum de CMV.
+  // porque ainda não temos nenhum dado dela desse mês. Outubro: Borba já com o valor OFICIAL
+  // (R$43.155,15, ver comentário de cmvManual acima). Jan/Ago/Nov/Dez: nenhuma das duas, ainda
+  // sem dado nenhum de CMV. C E J SERVIÇOS nunca aparece aqui (confirmado: não tem CMV).
   cmvManualPorEmpresa: [
     {
       label: "MJ Prime",
       valores: [null, 217269.4, 378038.12, 374927.58, 355980.75, 468979.44, 547044.03, null, 427980.4, 517299.53, null, null],
     },
-    { label: "Borba", valores: [null, null, null, null, 56559.21, 51943.45, 67406.27, null, 28451.43, 43567.26, null, null] },
+    { label: "Borba", valores: [null, null, null, null, 56559.21, 51943.45, 67406.27, null, 28451.43, 43155.15, null, null] },
   ],
 
   fluxoCaixaPeriodo: "—",
@@ -1286,7 +1302,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p463", favorecido: "CAIXA ECONOMICA FEDERAL", categoria: "FGTS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-18", valor: 1564.40, status: "pago", pagamento: "2026-09-18", descricao: "Pix QR Code (extrato Bradesco, 18/09/2026)" },
   { id: "p464", favorecido: "MINISTERIO DA FAZENDA", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-09-18", valor: 94.91, status: "pago", pagamento: "2026-09-18", descricao: "[BORBA] DAS — Pix QR Code (extrato Bradesco, 18/09/2026)" },
   { id: "p465", favorecido: "MINISTERIO DA FAZENDA", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-09-18", valor: 437.18, status: "pago", pagamento: "2026-09-18", descricao: "[C E J SERVIÇOS] DAS — Pix QR Code (extrato Bradesco, 18/09/2026)" },
-  { id: "p466", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-09-24", valor: 1443.69, status: "pago", pagamento: "2026-09-24", descricao: "[MJ PRIME] DAS — presumido, confirme (extrato Bradesco, 24/09/2026)" },
+  { id: "p466", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-09-24", valor: 1443.69, status: "pago", pagamento: "2026-09-24", descricao: "[MJ PRIME] DAS — confirmado com o Ewerton (extrato Bradesco, 24/09/2026)" },
   { id: "p467", favorecido: "BRADESCO", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-09-01", valor: 94.80, status: "pago", pagamento: "2026-09-01", descricao: "Tarifa ContaMobile (extrato Bradesco, 01/09/2026)" },
   { id: "p468", favorecido: "BRADESCO", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-09-24", valor: 9.80, status: "pago", pagamento: "2026-09-24", descricao: "Tarifa transferência Pix (extrato Bradesco, 24/09/2026)" },
   { id: "p469", favorecido: "MARTINS ESTOFADOS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-03-02", valor: 6943.58, status: "pago", pagamento: "2026-03-02", descricao: "Compra sem NF — MARTINS ESTOFADOS (pago via BRADESCO, 02/03/2026)" },
@@ -2091,7 +2107,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1268", favorecido: "FÁBRICA ARCO-ÍRIS", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-31", valor: 900.0, status: "pago", pagamento: "2026-10-31", descricao: "Compra sem NF — FÁBRICA ARCO-ÍRIS (pago via CAIXA, 31/10/2026)" },
   { id: "p1269", favorecido: "DIÁRIA FAXINEIRA", categoria: "Diarista", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-01", valor: 100.0, status: "pago", pagamento: "2026-10-01", descricao: "DIÁRIA FAXINEIRA (caixa físico, 01/10/2026)" },
   { id: "p1270", favorecido: "GRÁFICA", categoria: "Material de Escritório", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-10-01", valor: 20.0, status: "pago", pagamento: "2026-10-01", descricao: "GRÁFICA (caixa físico, 01/10/2026)" },
-  { id: "p1271", favorecido: "(SEM DESCRIÇÃO)", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-10-01", valor: 2900.0, status: "pago", pagamento: "2026-10-01", descricao: "(sem descrição) (caixa físico, 01/10/2026) — classificação automática, confirme" },
+  { id: "p1271", favorecido: "(SEM DESCRIÇÃO)", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-01", valor: 2900.0, status: "pago", pagamento: "2026-10-01", descricao: "(sem descrição na planilha original — confirmado com o Ewerton: fornecedor) (caixa físico, 01/10/2026)" },
   { id: "p1272", favorecido: "MERCADO", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-10-02", valor: 35.50, status: "pago", pagamento: "2026-10-02", descricao: "MERCADO (caixa físico, 02/10/2026)" },
   { id: "p1273", favorecido: "MERCADO", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-10-03", valor: 40.0, status: "pago", pagamento: "2026-10-03", descricao: "MERCADO (caixa físico, 03/10/2026)" },
   { id: "p1274", favorecido: "MARCOS JOSE LUCIANO DA SILVA JUNIOR", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-03", valor: 200.0, status: "pago", pagamento: "2026-10-03", descricao: "Retirada de sócios em espécie (caixa físico — MARCOS JUNIOR, 03/10/2026)" },
@@ -2344,7 +2360,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1521", favorecido: "Fornecedores Diversos (Bradesco)", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-31", valor: 13839.02, status: "pago", pagamento: "2026-10-31", descricao: "Pagamentos a fornecedores via Bradesco no mês sem detalhamento item a item no Fluxo de Caixa — lançado em valor cheio no último dia do mês, confirme" },
   { id: "p1522", favorecido: "Despesas em Espécie Diversas", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-10-31", valor: 47170.0, status: "pago", pagamento: "2026-10-31", descricao: "Pagamentos em espécie no mês sem detalhamento item a item no Fluxo de Caixa — lançado em valor cheio no último dia do mês, confirme" },
   // ---- BORBA_AGO (34 lançamentos) ----
-  { id: "p1523", favorecido: "JOSE REGINALDO DE SOUZA", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-01", valor: 4340.0, status: "pago", pagamento: "2026-08-01", descricao: "[BORBA] Pix recorrente mensal, valor não identificado na planilha — lançado provisoriamente como retirada/pró-labore; confirme com o Ewerton" },
+  { id: "p1523", favorecido: "JOSE REGINALDO DE SOUZA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-01", valor: 4340.0, status: "pago", pagamento: "2026-08-01", descricao: "[BORBA] Pix recorrente mensal — confirmado com o Ewerton: Salário" },
   { id: "p1524", favorecido: "ANA CELIA QUEIROZ FARIAS MIRANDA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-01", valor: 409.5, status: "pago", pagamento: "2026-08-01", descricao: "[BORBA] — classificação automática, confirme" },
   { id: "p1525", favorecido: "PAGAR.ME PAGAMENTOS", categoria: "Tarifas de Maquininhas", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-08-02", valor: 150.7, status: "pago", pagamento: "2026-08-02", descricao: "[BORBA]" },
   { id: "p1526", favorecido: "PAGSEGURO", categoria: "Seguro Conta", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-08-02", valor: 6.9, status: "pago", pagamento: "2026-08-02", descricao: "[BORBA]" },
@@ -2364,7 +2380,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1540", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-17", valor: 4367.13, status: "pago", pagamento: "2026-08-17", descricao: "[BORBA] Fornecedor" },
   { id: "p1541", favorecido: "GIVANILDO SILVA DE FREITAS", categoria: "Diarista", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-17", valor: 130.0, status: "pago", pagamento: "2026-08-17", descricao: "[BORBA]" },
   { id: "p1542", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-19", valor: 1018.32, status: "pago", pagamento: "2026-08-19", descricao: "[BORBA] Fornecedor" },
-  { id: "p1543", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-19", valor: 1500.0, status: "pago", pagamento: "2026-08-19", descricao: "[BORBA] Pix recorrente em ambas as contas (Borba e C&J), valor alto e irregular — não identificado na lista de salários; lançado provisoriamente como serviço terceirizado, confirme com o Ewerton" },
+  { id: "p1543", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-08-19", valor: 1500.0, status: "pago", pagamento: "2026-08-19", descricao: "[BORBA] Pix recorrente em ambas as contas (Borba e C&J) — confirmado com o Ewerton: pagamento de Simples Nacional/DAS" },
   { id: "p1544", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-21", valor: 397.54, status: "pago", pagamento: "2026-08-21", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1545", favorecido: "ELIAS JOSE DE LIRA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-21", valor: 6785.33, status: "pago", pagamento: "2026-08-21", descricao: "[BORBA] Fornecedor" },
   { id: "p1546", favorecido: "A.V.P. TRANSPORTES LTDA", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-08-24", valor: 3046.49, status: "pago", pagamento: "2026-08-24", descricao: "[BORBA]" },
@@ -2379,7 +2395,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1555", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-31", valor: 4223.22, status: "pago", pagamento: "2026-08-31", descricao: "[BORBA] Fornecedor" },
   { id: "p1556", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-31", valor: 4223.22, status: "pago", pagamento: "2026-08-31", descricao: "[BORBA] Fornecedor" },
   // ---- CEJ_AGO (112 lançamentos) ----
-  { id: "p1557", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-03", valor: 5000.0, status: "pago", pagamento: "2026-08-03", descricao: "[C E J SERVIÇOS] Pix recorrente em ambas as contas (Borba e C&J), valor alto e irregular — não identificado na lista de salários; lançado provisoriamente como serviço terceirizado, confirme com o Ewerton" },
+  { id: "p1557", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-08-03", valor: 5000.0, status: "pago", pagamento: "2026-08-03", descricao: "[C E J SERVIÇOS] Pix recorrente em ambas as contas (Borba e C&J) — confirmado com o Ewerton: pagamento de Simples Nacional/DAS" },
   { id: "p1558", favorecido: "CAROLINA MILCA NASCIMENTO DE SOUZA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-03", valor: 2000.0, status: "pago", pagamento: "2026-08-03", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
   { id: "p1559", favorecido: "LEANDRO DE LIMA FERREIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-03", valor: 2681.0, status: "pago", pagamento: "2026-08-03", descricao: "[C E J SERVIÇOS]" },
   { id: "p1560", favorecido: "JOÃO SEVERINO DA SILVA ANDRADE", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-03", valor: 300.0, status: "pago", pagamento: "2026-08-03", descricao: "[C E J SERVIÇOS]" },
@@ -2393,7 +2409,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1568", favorecido: "DM INDUSTRIA LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-08-05", valor: 5000.0, status: "pago", pagamento: "2026-08-05", descricao: "[C E J SERVIÇOS] Fornecedor" },
   { id: "p1569", favorecido: "CICERO MARISON FLOR MELO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-05", valor: 1000.0, status: "pago", pagamento: "2026-08-05", descricao: "[C E J SERVIÇOS] — classificação automática, confirme" },
   { id: "p1570", favorecido: "JOSÉ WAGNER DE MELO E SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-06", valor: 1100.0, status: "pago", pagamento: "2026-08-06", descricao: "[C E J SERVIÇOS]" },
-  { id: "p1571", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-06", valor: 605.0, status: "pago", pagamento: "2026-08-06", descricao: "[C E J SERVIÇOS] Ver nota em 03/08" },
+  { id: "p1571", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-08-06", valor: 605.0, status: "pago", pagamento: "2026-08-06", descricao: "[C E J SERVIÇOS] Ver nota em 03/08 — Simples Nacional/DAS" },
   { id: "p1572", favorecido: "SUPERMERCADO LOPES & ASSIS LTDA", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-08-06", valor: 142.73, status: "pago", pagamento: "2026-08-06", descricao: "[C E J SERVIÇOS]" },
   { id: "p1573", favorecido: "WMB SUPERMERCADOS DO BRASIL LTDA", categoria: "Uso e Consumo", classificacao: "DESPESAS EVENTUAIS", vencimento: "2026-08-07", valor: 1792.63, status: "pago", pagamento: "2026-08-07", descricao: "[C E J SERVIÇOS]" },
   { id: "p1574", favorecido: "JOÃO SEVERINO DA SILVA ANDRADE", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-08-07", valor: 400.0, status: "pago", pagamento: "2026-08-07", descricao: "[C E J SERVIÇOS]" },
@@ -2497,11 +2513,11 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1671", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-01", valor: 500.0, status: "pago", pagamento: "2026-09-01", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1672", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-02", valor: 532.08, status: "pago", pagamento: "2026-09-02", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1673", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-02", valor: 800.0, status: "pago", pagamento: "2026-09-02", descricao: "[BORBA] Retirada de sócios" },
-  { id: "p1674", favorecido: "JOSE REGINALDO DE SOUZA", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-02", valor: 4533.0, status: "pago", pagamento: "2026-09-02", descricao: "[BORBA] Ver nota em 01/08 — valor não identificado na planilha, confirme com o Ewerton" },
+  { id: "p1674", favorecido: "JOSE REGINALDO DE SOUZA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-02", valor: 4533.0, status: "pago", pagamento: "2026-09-02", descricao: "[BORBA] Ver nota em 01/08 — Salário" },
   { id: "p1675", favorecido: "PAGSEGURO", categoria: "Seguro Conta", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-09-02", valor: 6.9, status: "pago", pagamento: "2026-09-02", descricao: "[BORBA]" },
   { id: "p1676", favorecido: "PAGSEGURO", categoria: "Seguro Cartão Protegido", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-09-02", valor: 7.9, status: "pago", pagamento: "2026-09-02", descricao: "[BORBA]" },
   { id: "p1677", favorecido: "COMPESA", categoria: "Água e Esgoto", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-09-03", valor: 121.48, status: "pago", pagamento: "2026-09-03", descricao: "[BORBA]" },
-  { id: "p1678", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-03", valor: 3000.0, status: "pago", pagamento: "2026-09-03", descricao: "[BORBA] Ver nota em 19/08" },
+  { id: "p1678", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-09-03", valor: 3000.0, status: "pago", pagamento: "2026-09-03", descricao: "[BORBA] Ver nota em 19/08 — Simples Nacional/DAS" },
   { id: "p1679", favorecido: "TRANSPORTADORA TREVO DA SORTE", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-09-03", valor: 4932.53, status: "pago", pagamento: "2026-09-03", descricao: "[BORBA]" },
   { id: "p1680", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-04", valor: 274.33, status: "pago", pagamento: "2026-09-04", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1681", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-04", valor: 523.48, status: "pago", pagamento: "2026-09-04", descricao: "[BORBA] Fornecedor" },
@@ -2521,7 +2537,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1695", favorecido: "MARCONE JOSE DA SILVA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-15", valor: 850.0, status: "pago", pagamento: "2026-09-15", descricao: "[BORBA] — classificação automática, confirme" },
   { id: "p1696", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-16", valor: 343.64, status: "pago", pagamento: "2026-09-16", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1697", favorecido: "INDUSTRIA DE MOVEIS HENN", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-16", valor: 1225.03, status: "pago", pagamento: "2026-09-16", descricao: "[BORBA] Fornecedor" },
-  { id: "p1698", favorecido: "JOSE REGINALDO DE SOUZA", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-17", valor: 2283.0, status: "pago", pagamento: "2026-09-17", descricao: "[BORBA] Ver nota em 01/08 — valor não identificado na planilha, confirme com o Ewerton" },
+  { id: "p1698", favorecido: "JOSE REGINALDO DE SOUZA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-17", valor: 2283.0, status: "pago", pagamento: "2026-09-17", descricao: "[BORBA] Ver nota em 01/08 — Salário" },
   { id: "p1699", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-18", valor: 5001.5, status: "pago", pagamento: "2026-09-18", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1700", favorecido: "IMCAL INDUSTRIA DE MOVEIS CANEIRA LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-21", valor: 551.01, status: "pago", pagamento: "2026-09-21", descricao: "[BORBA] Fornecedor" },
   { id: "p1701", favorecido: "MATIC INDUSTRIA DE MOVEIS LTDA ME", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-09-21", valor: 2032.09, status: "pago", pagamento: "2026-09-21", descricao: "[BORBA] Fornecedor" },
@@ -2540,7 +2556,7 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1713", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-01", valor: 2200.0, status: "pago", pagamento: "2026-09-01", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
   { id: "p1714", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-02", valor: 1015.23, status: "pago", pagamento: "2026-09-02", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
   { id: "p1715", favorecido: "LEANDRO DE LIMA FERREIRA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-02", valor: 2855.0, status: "pago", pagamento: "2026-09-02", descricao: "[C E J SERVIÇOS]" },
-  { id: "p1716", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-03", valor: 3500.0, status: "pago", pagamento: "2026-09-03", descricao: "[C E J SERVIÇOS] Ver nota em 03/08" },
+  { id: "p1716", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-09-03", valor: 3500.0, status: "pago", pagamento: "2026-09-03", descricao: "[C E J SERVIÇOS] Ver nota em 03/08 — Simples Nacional/DAS" },
   { id: "p1717", favorecido: "ELYTON CARLOS FARIAS DE MELO", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-03", valor: 1000.0, status: "pago", pagamento: "2026-09-03", descricao: "[C E J SERVIÇOS]" },
   { id: "p1718", favorecido: "JOÃO SEVERINO DA SILVA ANDRADE", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-09-03", valor: 400.0, status: "pago", pagamento: "2026-09-03", descricao: "[C E J SERVIÇOS]" },
   { id: "p1719", favorecido: "BCI LOGÍSTICA LTDA", categoria: "Frete", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-09-04", valor: 526.81, status: "pago", pagamento: "2026-09-04", descricao: "[C E J SERVIÇOS]" },
@@ -2624,13 +2640,13 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1796", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1070.09, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
   { id: "p1797", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1148.68, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
   { id: "p1798", favorecido: "L. J. MOVEIS LTDA", categoria: "Custo sobre Mercadorias Vendidas", classificacao: "CMV", vencimento: "2026-10-19", valor: 1713.57, status: "pago", pagamento: "2026-10-19", descricao: "[BORBA] Fornecedor" },
-  { id: "p1799", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-20", valor: 3000.0, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA] Ver nota em 19/08 — valor alto e irregular, não identificado na lista de salários, confirme com o Ewerton" },
+  { id: "p1799", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-10-20", valor: 3000.0, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA] Ver nota em 19/08 — Simples Nacional/DAS" },
   { id: "p1800", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-20", valor: 2556.73, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA] Retirada de sócios" },
   { id: "p1801", favorecido: "SEDICIAS INFORMÁTICA", categoria: "Sistemas", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-20", valor: 285.0, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA]" },
   { id: "p1802", favorecido: "CAIXA ECONÔMICA FEDERAL", categoria: "FGTS", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-20", valor: 129.68, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA]" },
   { id: "p1803", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-10-20", valor: 232.34, status: "pago", pagamento: "2026-10-20", descricao: "[BORBA]" },
-  { id: "p1804", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-21", valor: 2500.0, status: "pago", pagamento: "2026-10-21", descricao: "[BORBA] Ver nota em 19/08" },
-  { id: "p1805", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Serviço Terceirizado", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-22", valor: 3500.0, status: "pago", pagamento: "2026-10-22", descricao: "[BORBA] Ver nota em 19/08" },
+  { id: "p1804", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-10-21", valor: 2500.0, status: "pago", pagamento: "2026-10-21", descricao: "[BORBA] Ver nota em 19/08 — Simples Nacional/DAS" },
+  { id: "p1805", favorecido: "ANTONIO DE MOURA CAMPOS NETO", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-10-22", valor: 3500.0, status: "pago", pagamento: "2026-10-22", descricao: "[BORBA] Ver nota em 19/08 — Simples Nacional/DAS" },
   { id: "p1806", favorecido: "KLELTON NASCIMENTO COSTA DE ALMEIDA", categoria: "Salário", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-23", valor: 1000.0, status: "pago", pagamento: "2026-10-23", descricao: "[BORBA] — classificação automática, confirme" },
   { id: "p1807", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-23", valor: 297.0, status: "pago", pagamento: "2026-10-23", descricao: "[BORBA]" },
   { id: "p1808", favorecido: "CONNECT SOLUÇÕES CONTÁBEIS", categoria: "Contabilidade", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-10-23", valor: 585.0, status: "pago", pagamento: "2026-10-23", descricao: "[BORBA]" },
