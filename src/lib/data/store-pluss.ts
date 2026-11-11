@@ -178,12 +178,16 @@ export const storePlussData: ClientFinanceData = {
   //   padrão de Jun/Jul/Set).
   // - Nova categoria "Vigilância e Segurança Patrimonial" (DESPESAS ADMINISTRATIVAS) — 1 lançamento
   //   (R$225,67, "sistema de câmeras").
-  // Pendências que ficaram de fora, sinalizadas ao Ewerton: (1) Imposto retido pelo Mercado Livre
-  // sobre vendas (R$53.844,41) e pelo Tiktok (R$36.387,98) — sem campo correspondente em
+  // Pendência que ficou de fora, sinalizada ao Ewerton: Imposto retido pelo Mercado Livre sobre
+  // vendas (R$53.844,41) e pelo Tiktok (R$36.387,98) — sem campo correspondente em
   // marketplaceManual, e o padrão histórico sugere que esse valor nunca entrou no DRE por nenhum
-  // canal; (2) Ads TiktokShops (R$11.650,00, "Despesas operacionais" do DRE Simplificado, diferente
-  // de Afiliados) — sem lugar estabelecido ainda, parece ser a primeira vez que aparece.
-  dataVersion: 35,
+  // canal.
+  // Bump 35 → 36: Ads Tiktok (R$11.650,00, "Despesas operacionais" do DRE Simplificado, diferente
+  // de "Comissão de afiliados") ganhou tratamento igual ao Ads Shopee — nova linha de destaque
+  // "Ads Tiktok" em linhasDestaqueDre (marketplaceCampo tiktok/ads, dentro de "Deduções de Receita
+  // Ligadas à Venda", logo depois de Afiliados Tiktok) e adicionada em custosVariaveisDre.
+  // tiktok.ads[9] preenchido com R$11.650,00 — primeira vez que esse campo é usado pro Tiktok.
+  dataVersion: 36,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -262,14 +266,15 @@ export const storePlussData: ClientFinanceData = {
       // extraviados + amostras + outros custos de liquidação (R$138.941,00 + R$6.462,00 +
       // R$7.373,00 + R$375,50 + R$1.023,50 + R$407,00 + R$2.523,79 = R$157.105,79) — ratio sobre a
       // receita (47,5%) bate com Jun-Set (47-51%), confirma que exclui o Imposto certo.
-      // Imposto retido (R$36.387,98) e Ads TiktokShops (R$11.650,00, "Despesas operacionais" —
-      // diferente de afiliados) ficam de fora por ora, sem lugar certo no DRE — sinalizados ao
-      // Ewerton.
+      // Imposto retido (R$36.387,98) fica de fora por ora, sem lugar certo no DRE — sinalizado ao
+      // Ewerton. Ads TiktokShops (R$11.650,00, "Despesas operacionais" do DRE Simplificado,
+      // diferente de afiliados) ganhou linha própria "Ads Tiktok" em linhasDestaqueDre (mesmo
+      // padrão do Ads Shopee) — primeira vez que esse canal tem ads preenchido.
       receita: [0, 0, 0, 35564.37, 59357.68, 75469.33, 47552.63, 105339.24, 123064.49, 330568.79, 0, 0],
       cmv: [0, 0, 0, 9930.7, 7927.5, 38826.0, 23619.8, 51561.0, 58131.0, 157105.79, 0, 0],
       comissao: [0, 0, 0, 7829.38, 7122.92, 4636.92, 6147.79, 29926.1, 29647.74, 59156.03, 0, 0],
       freteDescontado: [0, 0, 0, 0, 0, 7120.73, 1983.96, 0, 0, 3538.05, 0, 0],
-      ads: Array(12).fill(0),
+      ads: [0, 0, 0, 0, 0, 0, 0, 0, 0, 11650.0, 0, 0],
     },
   },
 
@@ -330,6 +335,10 @@ export const storePlussData: ClientFinanceData = {
       categorias: [{ classificacao: "DESPESAS COMERCIAIS / MARKETING", categoria: "Afiliados Tiktok" }],
       grupo: "Deduções de Receita Ligadas à Venda",
     },
+    // Mesmo padrão do Ads Shopee: digitado manualmente na aba Informações do DRE (sem lançamento
+    // em Contas a Pagar), a partir de outubro/2026 (primeira vez que aparece — "Despesas
+    // operacionais" do DRE Simplificado do GestorSeller, diferente de "Comissão de afiliados").
+    { rotulo: "Ads Tiktok", marketplaceCampo: { canal: "tiktok", campo: "ads" }, grupo: "Deduções de Receita Ligadas à Venda" },
     // "Frete Descontado pela Shopee" removido do DRE a pedido do Ewerton (não deve mais ser
     // considerado nessa análise). Ads Shopee digitado manualmente na aba Informações do DRE (sem
     // relatório automático) — agosto fica de fora porque já está lançada em Contas a Pagar (ver
@@ -364,6 +373,7 @@ export const storePlussData: ClientFinanceData = {
     "Afiliados Mercado Livre",
     "Ads Shopee",
     "Afiliados Tiktok",
+    "Ads Tiktok",
   ],
 
   // NÃO soma COMPRA DE PRODUTOS aqui (mecanismo de custosFixosClassificacoesExtras existe em
