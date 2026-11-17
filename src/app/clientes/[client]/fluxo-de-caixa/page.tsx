@@ -203,41 +203,73 @@ export default function FluxoDeCaixaPage() {
     return (refValorComp(row) / base) * 100;
   }
 
-  // Exportação em Excel da "DRE de Caixa" (classificação + detalhamento por categoria dentro de
-  // cada saída), respeitando o filtro de mês atual — mesma ideia da exportação da aba Faturamento
-  // & DRE.
+  // Exportação em Excel da "DRE de Caixa": uma aba "Resumo" com o ano inteiro (igual à tela) e
+  // uma aba por mês já com o detalhamento por categoria aberto dentro de cada saída — mesmo
+  // formato dos DRE's mensais que o cliente manda, em vez de uma tabela só "crua" com 12 colunas.
   async function handleExportExcelCaixa() {
     const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
     const colunasMes = mesesExibidos.map((i) => `${dreMonths[i].toUpperCase()}/${summary.anoCorrente}`);
-    const header = ["Conta", ...colunasMes, mesFiltro === null ? "Acumulado" : "Acum. ano", "%"];
-    const aoa: (string | number)[][] = [header];
 
-    const linhaValores = (label: string, values: number[], acumulado: number, pct: number | null, indent = 0) => {
-      aoa.push([
-        "  ".repeat(indent) + label,
-        ...mesesExibidos.map((i) => Math.round((values[i] ?? 0) * 100) / 100),
-        Math.round(acumulado * 100) / 100,
-        pct === null ? "—" : `${pct.toFixed(1)}%`,
-      ]);
-    };
+    function pctCaixaMes(row: { values: number[] }, mIdx: number): number | null {
+      if (!totalEntradasCaixaRow) return null;
+      const base = totalEntradasCaixaRow.values[mIdx];
+      if (!base) return null;
+      return (row.values[mIdx] / base) * 100;
+    }
 
-    dreCaixaGrid.forEach((row) => {
-      if (row.isSection) {
-        aoa.push([row.label]);
-        return;
-      }
-      linhaValores(row.label, row.values, row.acumulado, pctCaixa(row));
-      if (row.negative) {
-        categoriaRowsForCaixa(payables, row.label).forEach((catRow) =>
-          linhaValores(catRow.categoria, catRow.values, catRow.acumulado, pctCaixa(catRow), 1)
-        );
-      }
+    function addAba(titulo: string, aoa: (string | number)[][], colsExtra: number) {
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = [{ wch: 36 }, ...Array(colsExtra).fill({ wch: 14 }), { wch: 8 }];
+      XLSX.utils.book_append_sheet(wb, ws, titulo);
+    }
+
+    if (mesesExibidos.length > 1) {
+      const header = ["Conta", ...colunasMes, "Acumulado", "%"];
+      const aoa: (string | number)[][] = [header];
+      const linhaValores = (label: string, values: number[], acumulado: number, pct: number | null, indent = 0) => {
+        aoa.push([
+          "  ".repeat(indent) + label,
+          ...mesesExibidos.map((i) => Math.round((values[i] ?? 0) * 100) / 100),
+          Math.round(acumulado * 100) / 100,
+          pct === null ? "—" : `${pct.toFixed(1)}%`,
+        ]);
+      };
+      dreCaixaGrid.forEach((row) => {
+        if (row.isSection) {
+          aoa.push([row.label]);
+          return;
+        }
+        linhaValores(row.label, row.values, row.acumulado, pctCaixa(row));
+        if (row.negative) {
+          categoriaRowsForCaixa(payables, row.label).forEach((catRow) =>
+            linhaValores(catRow.categoria, catRow.values, catRow.acumulado, pctCaixa(catRow), 1)
+          );
+        }
+      });
+      addAba("Resumo", aoa, colunasMes.length + 1);
+    }
+
+    mesesExibidos.forEach((mIdx) => {
+      const aoa: (string | number)[][] = [["Conta", "Valor", "%"]];
+      const linha = (label: string, valor: number, pct: number | null, indent = 0) => {
+        aoa.push(["  ".repeat(indent) + label, Math.round((valor ?? 0) * 100) / 100, pct === null ? "—" : `${pct.toFixed(1)}%`]);
+      };
+      dreCaixaGrid.forEach((row) => {
+        if (row.isSection) {
+          aoa.push([row.label]);
+          return;
+        }
+        linha(row.label, row.values[mIdx], pctCaixaMes(row, mIdx));
+        if (row.negative) {
+          categoriaRowsForCaixa(payables, row.label).forEach((catRow) =>
+            linha(catRow.categoria, catRow.values[mIdx], pctCaixaMes(catRow, mIdx), 1)
+          );
+        }
+      });
+      addAba(`${dreMonths[mIdx]}-${String(summary.anoCorrente).slice(-2)}`, aoa, 1);
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 36 }, ...colunasMes.map(() => ({ wch: 14 })), { wch: 14 }, { wch: 8 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "DRE de Caixa");
     const nomeArquivo = `Fluxo_de_Caixa_${client.name.replace(/\s+/g, "_")}_${
       mesFiltro !== null ? colunasMes[0].replace("/", "-") : summary.anoCorrente
     }.xlsx`;

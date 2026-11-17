@@ -161,61 +161,107 @@ export default function FaturamentoDrePage() {
     return (refValor(row) / base) * 100;
   }
 
-  // Exportação em Excel: mesma tabela da tela (classificação + detalhamento por categoria dentro
-  // de cada grupo de despesas), respeitando o filtro de mês atual (um mês só, ou o ano inteiro
-  // com a coluna de acumulado).
+  // Exportação em Excel: uma aba "Resumo" com o ano inteiro (igual à tela, com a coluna de
+  // acumulado já líquida dos meses só-projeção) e, junto, uma aba por mês já com o detalhamento
+  // por categoria aberto dentro de cada classificação — mesmo formato dos DRE's mensais que o
+  // cliente manda, em vez de uma tabela só "crua" com 12 colunas.
   async function handleExportExcel() {
     const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
     const colunasMes = mesesExibidos.map((i) => `${dreMonths[i].toUpperCase()}/${anoCorrente}`);
-    const header = ["Conta", ...colunasMes, ...(mesFiltro === null ? [`Acum. ${anoCorrente}`] : []), "%"];
-    const aoa: (string | number)[][] = [header];
 
-    const linhaValores = (
-      label: string,
-      values: number[],
-      acumulado: number,
-      pct: number | null,
-      indent = 0
-    ) => {
-      aoa.push([
-        "  ".repeat(indent) + label,
-        ...mesesExibidos.map((i) => Math.round((values[i] ?? 0) * 100) / 100),
-        ...(mesFiltro === null ? [Math.round(acumulado * 100) / 100] : []),
-        pct === null ? "—" : `${pct.toFixed(1)}%`,
-      ]);
-    };
+    function pctLinhaMes(row: DreGridRow, idx: number, mIdx: number): number | null {
+      if (!receitaRow) return null;
+      const baseRow = valorAGastarRow && idx > valorAGastarIdx ? valorAGastarRow : receitaRow;
+      const base = baseRow.values[mIdx];
+      if (!base) return null;
+      return (row.values[mIdx] / base) * 100;
+    }
+    function pctReceitaMes(row: { values: number[] }, mIdx: number): number | null {
+      if (!receitaRow) return null;
+      const base = receitaRow.values[mIdx];
+      if (!base) return null;
+      return (row.values[mIdx] / base) * 100;
+    }
+    function pctValorAGastarMes(row: { values: number[] }, mIdx: number): number | null {
+      if (!valorAGastarRow) return null;
+      const base = valorAGastarRow.values[mIdx];
+      if (!base) return null;
+      return (row.values[mIdx] / base) * 100;
+    }
 
-    dreGrid.forEach((row, idx) => {
-      if (row.isSection) {
-        aoa.push([row.label]);
-        return;
-      }
-      const isComissaoRow = row.label === "(-) Comissões de Marketplace";
-      const isCmvRow = row.label === "(-) CMV";
-      const isReceitaRow = row.label === "RECEITA" && temReceitaExpandivel;
-      const isGrupoDestaqueRow = !!row.children && row.children.length > 0;
-      const isClassRow =
-        !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow && !isGrupoDestaqueRow;
+    function addAba(titulo: string, aoa: (string | number)[][], colsExtra: number) {
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = [{ wch: 36 }, ...Array(colsExtra).fill({ wch: 14 }), { wch: 8 }];
+      XLSX.utils.book_append_sheet(wb, ws, titulo);
+    }
 
-      linhaValores(row.label, row.values, row.acumulado, pctLinha(row, idx));
+    // Aba "Resumo": ano inteiro, uma coluna por mês + acumulado — igual à tabela da tela.
+    if (mesesExibidos.length > 1) {
+      const header = ["Conta", ...colunasMes, `Acum. ${anoCorrente}`, "%"];
+      const aoa: (string | number)[][] = [header];
+      const linhaValores = (label: string, values: number[], acumulado: number, pct: number | null, indent = 0) => {
+        aoa.push([
+          "  ".repeat(indent) + label,
+          ...mesesExibidos.map((i) => Math.round((values[i] ?? 0) * 100) / 100),
+          Math.round(acumulado * 100) / 100,
+          pct === null ? "—" : `${pct.toFixed(1)}%`,
+        ]);
+      };
+      dreGrid.forEach((row, idx) => {
+        if (row.isSection) {
+          aoa.push([row.label]);
+          return;
+        }
+        const isComissaoRow = row.label === "(-) Comissões de Marketplace";
+        const isCmvRow = row.label === "(-) CMV";
+        const isReceitaRow = row.label === "RECEITA" && temReceitaExpandivel;
+        const isGrupoDestaqueRow = !!row.children && row.children.length > 0;
+        const isClassRow =
+          !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow && !isGrupoDestaqueRow;
 
-      if (isReceitaRow) {
-        receitaDrillRows.forEach((r) => linhaValores(r.label, r.values, r.acumulado, pctReceita(r), 1));
-      }
-      if (isGrupoDestaqueRow) {
-        row.children!.forEach((c) => linhaValores(c.label, c.values, c.acumulado, pctValorAGastar(c), 1));
-      }
-      if (isClassRow) {
-        categoriaRowsFor(payables, row.label, categoriasForaDoDre).forEach((catRow) =>
-          linhaValores(catRow.categoria, catRow.values, catRow.acumulado, pctValorAGastar(catRow), 1)
-        );
-      }
+        linhaValores(row.label, row.values, row.acumulado, pctLinha(row, idx));
+        if (isReceitaRow) receitaDrillRows.forEach((r) => linhaValores(r.label, r.values, r.acumulado, pctReceita(r), 1));
+        if (isGrupoDestaqueRow) row.children!.forEach((c) => linhaValores(c.label, c.values, c.acumulado, pctValorAGastar(c), 1));
+        if (isClassRow) {
+          categoriaRowsFor(payables, row.label, categoriasForaDoDre).forEach((catRow) =>
+            linhaValores(catRow.categoria, catRow.values, catRow.acumulado, pctValorAGastar(catRow), 1)
+          );
+        }
+      });
+      addAba("Resumo", aoa, colunasMes.length + 1);
+    }
+
+    // Uma aba por mês: valor único + % já com o detalhamento de categoria aberto.
+    mesesExibidos.forEach((mIdx) => {
+      const aoa: (string | number)[][] = [["Conta", "Valor", "%"]];
+      const linha = (label: string, valor: number, pct: number | null, indent = 0) => {
+        aoa.push(["  ".repeat(indent) + label, Math.round((valor ?? 0) * 100) / 100, pct === null ? "—" : `${pct.toFixed(1)}%`]);
+      };
+      dreGrid.forEach((row, idx) => {
+        if (row.isSection) {
+          aoa.push([row.label]);
+          return;
+        }
+        const isComissaoRow = row.label === "(-) Comissões de Marketplace";
+        const isCmvRow = row.label === "(-) CMV";
+        const isReceitaRow = row.label === "RECEITA" && temReceitaExpandivel;
+        const isGrupoDestaqueRow = !!row.children && row.children.length > 0;
+        const isClassRow =
+          !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow && !isGrupoDestaqueRow;
+
+        linha(row.label, row.values[mIdx], pctLinhaMes(row, idx, mIdx));
+        if (isReceitaRow) receitaDrillRows.forEach((r) => linha(r.label, r.values[mIdx], pctReceitaMes(r, mIdx), 1));
+        if (isGrupoDestaqueRow) row.children!.forEach((c) => linha(c.label, c.values[mIdx], pctValorAGastarMes(c, mIdx), 1));
+        if (isClassRow) {
+          categoriaRowsFor(payables, row.label, categoriasForaDoDre).forEach((catRow) =>
+            linha(catRow.categoria, catRow.values[mIdx], pctValorAGastarMes(catRow, mIdx), 1)
+          );
+        }
+      });
+      addAba(`${dreMonths[mIdx]}-${String(anoCorrente).slice(-2)}`, aoa, 1);
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 36 }, ...colunasMes.map(() => ({ wch: 14 })), ...(mesFiltro === null ? [{ wch: 14 }] : []), { wch: 8 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "DRE");
     const nomeArquivo = `DRE_${client.name.replace(/\s+/g, "_")}_${mesFiltro !== null ? colunasMes[0].replace("/", "-") : anoCorrente}.xlsx`;
     XLSX.writeFile(wb, nomeArquivo);
   }
