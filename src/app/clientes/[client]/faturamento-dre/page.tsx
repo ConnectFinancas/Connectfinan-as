@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import dynamic from "next/dynamic";
-import { ChevronRight, Download, Info } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight, Download, Info } from "lucide-react";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { DetalhamentoMesModal } from "@/components/client/DetalhamentoMesModal";
 import { dreMonths } from "@/lib/constants";
@@ -289,16 +289,37 @@ export default function FaturamentoDrePage() {
                           {row.label}
                         </span>
                       </td>
-                      {mesesExibidos.map((i) => (
-                        <td
-                          key={i}
-                          className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
-                            row.isTotal ? (row.values[i] >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
-                          }`}
-                        >
-                          {formatCurrencyPrecise(row.values[i])}
-                        </td>
-                      ))}
+                      {mesesExibidos.map((i) => {
+                        // Comparação com o mês anterior: só faz sentido com 1 mês selecionado (e
+                        // não no primeiro mês do array, que não tem "mês anterior" pra comparar).
+                        // Seta vermelha pra cima = valor desse mês foi MAIOR que o anterior; seta
+                        // verde pra baixo = foi MENOR — é só a direção da variação, não um
+                        // julgamento de "bom"/"ruim" (que dependeria da linha ser receita ou despesa).
+                        const temComparacao = mesFiltro !== null && mesFiltro > 0;
+                        const valorAnterior = temComparacao ? row.values[mesFiltro - 1] : null;
+                        const variacao = temComparacao && valorAnterior !== null ? row.values[i] - valorAnterior : 0;
+                        return (
+                          <td
+                            key={i}
+                            className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${
+                              row.isTotal ? (row.values[i] >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
+                            }`}
+                          >
+                            <span className="inline-flex items-center justify-end gap-1">
+                              {temComparacao && variacao !== 0 && (
+                                <span title={`Mês anterior: ${formatCurrencyPrecise(valorAnterior!)}`}>
+                                  {variacao > 0 ? (
+                                    <ArrowUp size={12} className="text-danger-500" />
+                                  ) : (
+                                    <ArrowDown size={12} className="text-accent-500" />
+                                  )}
+                                </span>
+                              )}
+                              {formatCurrencyPrecise(row.values[i])}
+                            </span>
+                          </td>
+                        );
+                      })}
                       {mesFiltro === null && (
                         <td className={`py-2.5 pl-3 pr-3 text-right tabular-nums whitespace-nowrap font-semibold ${acumColor}`}>
                           {formatCurrencyPrecise(row.acumulado)}
