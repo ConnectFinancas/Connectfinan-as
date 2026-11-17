@@ -308,19 +308,27 @@ export function computeDreGrid(
   const noCmv = new Set(dreConfig.classificacoesNoCmv ?? []);
   const temMarketplace = !!dreConfig.marketplaceManual;
 
+  // Meses "reais": tem pelo menos um lançamento de Contas a Pagar/Receber com status diferente de
+  // "pendente" (projeção recorrente ainda não confirmada). Usado pra tirar meses futuros (ex.:
+  // Novembro/Dezembro só com projeção) do Total do Ano e da Média Mensal — eles continuam
+  // aparecendo normalmente na coluna do próprio mês, só não entram no acumulado/média. Assim que
+  // viram dado real (status "pago"/"recebido"), voltam a contar sozinhos, sem precisar mexer aqui.
+  const mesReal = Array(12).fill(false);
+  for (const p of payables) if (p.status !== "pendente") mesReal[monthIndex(p.vencimento)] = true;
+  for (const r of receivables) if (r.status !== "pendente") mesReal[monthIndex(r.vencimento)] = true;
+  const sumReal = (vals: number[]) => round2(vals.reduce((a, v, i) => a + (mesReal[i] ? v : 0), 0));
+
   // Receita: quando o cliente informa receita por marketplace, o DRE usa SÓ esse valor — Contas
   // a Receber desse cliente existe pro Fluxo de Caixa, mas não entra no DRE (evita contar a
   // mesma venda duas vezes). Sem marketplace configurado, a receita continua vindo normalmente
   // de Contas a Receber, como em todo cliente.
   const receitaExtra = somarMarketplace(dreConfig.marketplaceManual, "receita");
   const receitaBruta = temMarketplace ? receitaExtra.map(round2) : receitaBrutaBase.map((v, i) => round2(v + receitaExtra[i]));
-  const acumReceita = temMarketplace
-    ? round2(receitaExtra.reduce((a, v) => a + v, 0))
-    : round2(acumReceitaBase + receitaExtra.reduce((a, v) => a + v, 0));
+  const acumReceita = sumReal(receitaBruta);
 
   // Comissão de marketplace: linha própria de dedução, só aparece pra clientes com esse dado.
   const comissaoValues = somarMarketplace(dreConfig.marketplaceManual, "comissao").map(round2);
-  const acumComissao = round2(comissaoValues.reduce((a, v) => a + v, 0));
+  const acumComissao = sumReal(comissaoValues);
   const receitaAposComissao = receitaBruta.map((v, i) => round2(v - comissaoValues[i]));
   const acumReceitaAposComissao = round2(acumReceita - acumComissao);
 
@@ -334,7 +342,7 @@ export function computeDreGrid(
   const noCmvValues = monthTotals(payables.filter((p) => noCmv.has(p.classificacao)));
   const cmvExtra = somarMarketplace(dreConfig.marketplaceManual, "cmv");
   const cmvValues = csvAutoValues.map((v, i) => round2(v + (cmvManual[i] ?? 0) + noCmvValues[i] + cmvExtra[i]));
-  const acumCmv = round2(cmvValues.reduce((a, v) => a + v, 0));
+  const acumCmv = sumReal(cmvValues);
 
   const receitaLiquida = receitaAposComissao.map((v, i) => v - cmvValues[i]);
   const acumReceitaLiquida = round2(acumReceitaAposComissao - acumCmv);
@@ -345,7 +353,7 @@ export function computeDreGrid(
   const linhasDestaque = dreConfig.linhasDestaqueDre ?? [];
   const destaqueRowsFlat = linhasDestaque.map((linha) => {
     const values = valoresDestaque(payables, receivables, dreConfig.marketplaceManual, linha).map(round2);
-    const acumulado = round2(values.reduce((a, v) => a + v, 0));
+    const acumulado = sumReal(values);
     return { label: linha.rotulo, values, acumulado, negative: true, grupo: linha.grupo };
   });
   const totalDestaqueValues = Array(12).fill(0);
@@ -403,7 +411,7 @@ export function computeDreGrid(
           (p) => p.classificacao === c.classificacao && !categoriasForaDoDre.has(`${p.classificacao}|${p.categoria}`)
         )
       );
-      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      const acumulado = sumReal(values);
       return { label: c.classificacao, values: values.map(round2), acumulado, negative: true, expandable: true };
     })
     .filter((row) => row.acumulado > 0 || categorias.find((c) => c.classificacao === row.label)?.padrao);
@@ -441,6 +449,10 @@ export function computeDreGrid(
     ...classRows,
     { label: "= Despesas totais", values: despesasTotaisValues.map(round2), acumulado: acumDespesasTotais, isSubtotal: true, negative: true },
     { label: "= Geração de caixa", values: resultadoValues, acumulado: acumResultado, isTotal: true },
+    // Média mensal da Geração de caixa, só sobre os meses reais (mesmo critério do Total do
+    // Ano acima) — divide pelo número de meses com dado de verdade, ajusta sozinha conforme mais
+    // meses forem fechando ao longo do ano.
+    { label: "Média Mensal", values: Array(12).fill(0), acumulado: mesReal.filter(Boolean).length > 0 ? round2(acumResultado / mesReal.filter(Boolean).length) : 0, isSubtotal: true },
   ];
 
   return rows;
