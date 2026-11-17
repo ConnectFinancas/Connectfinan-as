@@ -161,6 +161,65 @@ export default function FaturamentoDrePage() {
     return (refValor(row) / base) * 100;
   }
 
+  // Exportação em Excel: mesma tabela da tela (classificação + detalhamento por categoria dentro
+  // de cada grupo de despesas), respeitando o filtro de mês atual (um mês só, ou o ano inteiro
+  // com a coluna de acumulado).
+  async function handleExportExcel() {
+    const XLSX = await import("xlsx");
+    const colunasMes = mesesExibidos.map((i) => `${dreMonths[i].toUpperCase()}/${anoCorrente}`);
+    const header = ["Conta", ...colunasMes, ...(mesFiltro === null ? [`Acum. ${anoCorrente}`] : []), "%"];
+    const aoa: (string | number)[][] = [header];
+
+    const linhaValores = (
+      label: string,
+      values: number[],
+      acumulado: number,
+      pct: number | null,
+      indent = 0
+    ) => {
+      aoa.push([
+        "  ".repeat(indent) + label,
+        ...mesesExibidos.map((i) => Math.round((values[i] ?? 0) * 100) / 100),
+        ...(mesFiltro === null ? [Math.round(acumulado * 100) / 100] : []),
+        pct === null ? "—" : `${pct.toFixed(1)}%`,
+      ]);
+    };
+
+    dreGrid.forEach((row, idx) => {
+      if (row.isSection) {
+        aoa.push([row.label]);
+        return;
+      }
+      const isComissaoRow = row.label === "(-) Comissões de Marketplace";
+      const isCmvRow = row.label === "(-) CMV";
+      const isReceitaRow = row.label === "RECEITA" && temReceitaExpandivel;
+      const isGrupoDestaqueRow = !!row.children && row.children.length > 0;
+      const isClassRow =
+        !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow && !isGrupoDestaqueRow;
+
+      linhaValores(row.label, row.values, row.acumulado, pctLinha(row, idx));
+
+      if (isReceitaRow) {
+        receitaDrillRows.forEach((r) => linhaValores(r.label, r.values, r.acumulado, pctReceita(r), 1));
+      }
+      if (isGrupoDestaqueRow) {
+        row.children!.forEach((c) => linhaValores(c.label, c.values, c.acumulado, pctValorAGastar(c), 1));
+      }
+      if (isClassRow) {
+        categoriaRowsFor(payables, row.label, categoriasForaDoDre).forEach((catRow) =>
+          linhaValores(catRow.categoria, catRow.values, catRow.acumulado, pctValorAGastar(catRow), 1)
+        );
+      }
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 36 }, ...colunasMes.map(() => ({ wch: 14 })), ...(mesFiltro === null ? [{ wch: 14 }] : []), { wch: 8 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "DRE");
+    const nomeArquivo = `DRE_${client.name.replace(/\s+/g, "_")}_${mesFiltro !== null ? colunasMes[0].replace("/", "-") : anoCorrente}.xlsx`;
+    XLSX.writeFile(wb, nomeArquivo);
+  }
+
   // rótulo + meses + (acumulado do ano, só quando "ano inteiro" está selecionado) + %
   const colSpanTotal = mesesExibidos.length + (mesFiltro === null ? 3 : 2);
 
@@ -200,7 +259,10 @@ export default function FaturamentoDrePage() {
           >
             Detalhamento por mês
           </button>
-          <button className="mt-4 flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors">
+          <button
+            onClick={handleExportExcel}
+            className="mt-4 flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
+          >
             <Download size={13} />
             Exportar Excel
           </button>
