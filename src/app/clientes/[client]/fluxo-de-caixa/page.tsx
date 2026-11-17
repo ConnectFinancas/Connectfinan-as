@@ -114,6 +114,7 @@ function formatPct(pct: number | null) {
 
 export default function FluxoDeCaixaPage() {
   const {
+    client,
     fluxoDiario,
     destaquesPeriodo,
     resumoExecutivo,
@@ -200,6 +201,47 @@ export default function FluxoDeCaixaPage() {
     const base = mesFiltro !== null ? receitaCanal[mesFiltro] : receitaCanal.reduce((a, v) => a + v, 0);
     if (!base) return null;
     return (refValorComp(row) / base) * 100;
+  }
+
+  // Exportação em Excel da "DRE de Caixa" (classificação + detalhamento por categoria dentro de
+  // cada saída), respeitando o filtro de mês atual — mesma ideia da exportação da aba Faturamento
+  // & DRE.
+  async function handleExportExcelCaixa() {
+    const XLSX = await import("xlsx");
+    const colunasMes = mesesExibidos.map((i) => `${dreMonths[i].toUpperCase()}/${summary.anoCorrente}`);
+    const header = ["Conta", ...colunasMes, mesFiltro === null ? "Acumulado" : "Acum. ano", "%"];
+    const aoa: (string | number)[][] = [header];
+
+    const linhaValores = (label: string, values: number[], acumulado: number, pct: number | null, indent = 0) => {
+      aoa.push([
+        "  ".repeat(indent) + label,
+        ...mesesExibidos.map((i) => Math.round((values[i] ?? 0) * 100) / 100),
+        Math.round(acumulado * 100) / 100,
+        pct === null ? "—" : `${pct.toFixed(1)}%`,
+      ]);
+    };
+
+    dreCaixaGrid.forEach((row) => {
+      if (row.isSection) {
+        aoa.push([row.label]);
+        return;
+      }
+      linhaValores(row.label, row.values, row.acumulado, pctCaixa(row));
+      if (row.negative) {
+        categoriaRowsForCaixa(payables, row.label).forEach((catRow) =>
+          linhaValores(catRow.categoria, catRow.values, catRow.acumulado, pctCaixa(catRow), 1)
+        );
+      }
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 36 }, ...colunasMes.map(() => ({ wch: 14 })), { wch: 14 }, { wch: 8 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "DRE de Caixa");
+    const nomeArquivo = `Fluxo_de_Caixa_${client.name.replace(/\s+/g, "_")}_${
+      mesFiltro !== null ? colunasMes[0].replace("/", "-") : summary.anoCorrente
+    }.xlsx`;
+    XLSX.writeFile(wb, nomeArquivo);
   }
   const margemEPontoEquilibrio = computeMargemEPontoEquilibrio(
     summary.dreGrid,
@@ -291,7 +333,10 @@ export default function FluxoDeCaixaPage() {
           <button className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors">
             Mês atual
           </button>
-          <button className="flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors">
+          <button
+            onClick={handleExportExcelCaixa}
+            className="flex items-center gap-1.5 rounded-lg bg-client-accent px-3 py-2 text-xs font-semibold text-white hover:bg-client-accent-dark transition-colors"
+          >
             <Download size={13} />
             Exportar Excel
           </button>
