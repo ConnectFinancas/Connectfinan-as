@@ -104,6 +104,31 @@ export default function FaturamentoDrePage() {
   function refValor(row: { values: number[]; acumulado: number }) {
     return mesFiltro !== null ? row.values[mesFiltro] : row.acumulado;
   }
+  // Seta de variação mês a mês: só aparece abaixo da "Margem de Contribuição" (Lucro Bruto ou
+  // Valor a Gastar) — ali pra baixo são despesas (e o resultado final), onde faz sentido
+  // acompanhar mês a mês; acima disso (Receita/Comissão/CMV) fica sem seta. Em despesas, mais =
+  // ruim (vermelho, pra cima); menos = bom (verde, pra baixo). No resultado final (Geração de
+  // caixa) é o oposto: mais geração de caixa é bom (verde, pra cima), menos é ruim (vermelho, pra
+  // baixo) — "invertido".
+  function SetaVariacao({ atual, anterior, invertido, size = 16 }: { atual: number; anterior: number; invertido: boolean; size?: number }) {
+    const diff = Math.round((atual - anterior) * 100) / 100;
+    if (diff === 0) return null;
+    const aumentou = diff > 0;
+    const cor = invertido
+      ? aumentou
+        ? "text-accent-500"
+        : "text-danger-500"
+      : aumentou
+        ? "text-danger-500"
+        : "text-accent-500";
+    const Icone = aumentou ? ArrowUp : ArrowDown;
+    return (
+      <span title={`Mês anterior: ${formatCurrencyPrecise(anterior)}`} className="inline-flex shrink-0">
+        <Icone size={size} strokeWidth={3} className={cor} />
+      </span>
+    );
+  }
+
   function pctLinha(row: DreGridRow, idx: number): number | null {
     if (!receitaRow) return null;
     const baseRow = valorAGastarRow && idx > valorAGastarIdx ? valorAGastarRow : receitaRow;
@@ -290,14 +315,11 @@ export default function FaturamentoDrePage() {
                         </span>
                       </td>
                       {mesesExibidos.map((i) => {
-                        // Comparação com o mês anterior: só faz sentido com 1 mês selecionado (e
-                        // não no primeiro mês do array, que não tem "mês anterior" pra comparar).
-                        // Seta vermelha pra cima = valor desse mês foi MAIOR que o anterior; seta
-                        // verde pra baixo = foi MENOR — é só a direção da variação, não um
-                        // julgamento de "bom"/"ruim" (que dependeria da linha ser receita ou despesa).
-                        const temComparacao = mesFiltro !== null && mesFiltro > 0;
-                        const valorAnterior = temComparacao ? row.values[mesFiltro - 1] : null;
-                        const variacao = temComparacao && valorAnterior !== null ? row.values[i] - valorAnterior : 0;
+                        // Seta só abaixo da Margem de Contribuição (Lucro Bruto/Valor a Gastar) —
+                        // só faz sentido com 1 mês selecionado e não no primeiro mês do array (sem
+                        // "mês anterior" pra comparar).
+                        const mostraSeta = mesFiltro !== null && mesFiltro > 0 && valorAGastarIdx >= 0 && idx > valorAGastarIdx;
+                        const valorAnterior = mostraSeta ? row.values[mesFiltro! - 1] : null;
                         return (
                           <td
                             key={i}
@@ -305,15 +327,9 @@ export default function FaturamentoDrePage() {
                               row.isTotal ? (row.values[i] >= 0 ? "text-accent-500" : "text-danger-500") : rowColor
                             }`}
                           >
-                            <span className="inline-flex items-center justify-end gap-1">
-                              {temComparacao && variacao !== 0 && (
-                                <span title={`Mês anterior: ${formatCurrencyPrecise(valorAnterior!)}`}>
-                                  {variacao > 0 ? (
-                                    <ArrowUp size={12} className="text-danger-500" />
-                                  ) : (
-                                    <ArrowDown size={12} className="text-accent-500" />
-                                  )}
-                                </span>
+                            <span className="inline-flex items-center justify-end gap-1.5">
+                              {mostraSeta && valorAnterior !== null && (
+                                <SetaVariacao atual={row.values[i]} anterior={valorAnterior} invertido={!!row.isTotal} />
                               )}
                               {formatCurrencyPrecise(row.values[i])}
                             </span>
@@ -387,11 +403,20 @@ export default function FaturamentoDrePage() {
                                   {catRow.categoria}
                                 </span>
                               </td>
-                              {mesesExibidos.map((i) => (
-                                <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
-                                  {formatCurrencyPrecise(catRow.values[i])}
-                                </td>
-                              ))}
+                              {mesesExibidos.map((i) => {
+                                const mostraSeta = mesFiltro !== null && mesFiltro > 0;
+                                const valorAnterior = mostraSeta ? catRow.values[mesFiltro! - 1] : null;
+                                return (
+                                  <td key={i} className="py-2 px-3 text-right text-xs tabular-nums text-muted whitespace-nowrap">
+                                    <span className="inline-flex items-center justify-end gap-1.5">
+                                      {mostraSeta && valorAnterior !== null && (
+                                        <SetaVariacao atual={catRow.values[i]} anterior={valorAnterior} invertido={false} size={13} />
+                                      )}
+                                      {formatCurrencyPrecise(catRow.values[i])}
+                                    </span>
+                                  </td>
+                                );
+                              })}
                               {mesFiltro === null && (
                                 <td className="py-2 pl-3 pr-3 text-right text-xs font-medium tabular-nums text-muted whitespace-nowrap">
                                   {formatCurrencyPrecise(catRow.acumulado)}
