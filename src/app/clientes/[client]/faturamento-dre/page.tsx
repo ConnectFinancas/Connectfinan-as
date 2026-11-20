@@ -11,6 +11,7 @@ import { cmvMarketplacePorCanal, cmvPorEmpresaRows, comissaoMarketplacePorCanal,
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 import { DreGridRow, MarketplaceCanal, Payable } from "@/lib/types";
+import type { DreSheetRow, DreSheetRowKind } from "@/lib/excel-dre";
 
 const RevenueExpenseChart = dynamic(() => import("@/components/charts/RevenueExpenseChart").then((m) => m.RevenueExpenseChart), {
   ssr: false,
@@ -161,13 +162,13 @@ export default function FaturamentoDrePage() {
     return (refValor(row) / base) * 100;
   }
 
-  // Exportação em Excel: uma aba "Resumo" com o ano inteiro (igual à tela, com a coluna de
-  // acumulado já líquida dos meses só-projeção) e, junto, uma aba por mês já com o detalhamento
-  // por categoria aberto dentro de cada classificação — mesmo formato dos DRE's mensais que o
-  // cliente manda, em vez de uma tabela só "crua" com 12 colunas.
+  // Exportação em Excel: mesmo visual da tela (cabeçalho, seções, subtotais/total em negrito,
+  // despesas em tom âmbar, resultado final em verde/vermelho). Uma aba "Resumo" com o ano inteiro
+  // (coluna de acumulado já líquida dos meses só-projeção) e, junto, uma aba por mês já com o
+  // detalhamento por categoria aberto dentro de cada classificação.
   async function handleExportExcel() {
-    const XLSX = await import("xlsx");
-    const wb = XLSX.utils.book_new();
+    const [{ Workbook }, { buildStyledSheet, downloadWorkbook }] = await Promise.all([import("exceljs"), import("@/lib/excel-dre")]);
+    const wb = new Workbook();
     const colunasMes = mesesExibidos.map((i) => `${dreMonths[i].toUpperCase()}/${anoCorrente}`);
 
     function pctLinhaMes(row: DreGridRow, idx: number, mIdx: number): number | null {
@@ -189,28 +190,19 @@ export default function FaturamentoDrePage() {
       if (!base) return null;
       return (row.values[mIdx] / base) * 100;
     }
-
-    function addAba(titulo: string, aoa: (string | number)[][], colsExtra: number) {
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-      ws["!cols"] = [{ wch: 36 }, ...Array(colsExtra).fill({ wch: 14 }), { wch: 8 }];
-      XLSX.utils.book_append_sheet(wb, ws, titulo);
+    function kindOf(row: DreGridRow): DreSheetRowKind {
+      if (row.isTotal) return "total";
+      if (row.isSubtotal) return "subtotal";
+      if (row.isHeader) return "header";
+      return "normal";
     }
 
     // Aba "Resumo": ano inteiro, uma coluna por mês + acumulado — igual à tabela da tela.
     if (mesesExibidos.length > 1) {
-      const header = ["Conta", ...colunasMes, `Acum. ${anoCorrente}`, "%"];
-      const aoa: (string | number)[][] = [header];
-      const linhaValores = (label: string, values: number[], acumulado: number, pct: number | null, indent = 0) => {
-        aoa.push([
-          "  ".repeat(indent) + label,
-          ...mesesExibidos.map((i) => Math.round((values[i] ?? 0) * 100) / 100),
-          Math.round(acumulado * 100) / 100,
-          pct === null ? "—" : `${pct.toFixed(1)}%`,
-        ]);
-      };
+      const linhas: DreSheetRow[] = [];
       dreGrid.forEach((row, idx) => {
         if (row.isSection) {
-          aoa.push([row.label]);
+          linhas.push({ label: row.label, kind: "section", values: [], pct: null });
           return;
         }
         const isComissaoRow = row.label === "(-) Comissões de Marketplace";
@@ -220,27 +212,56 @@ export default function FaturamentoDrePage() {
         const isClassRow =
           !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow && !isGrupoDestaqueRow;
 
-        linhaValores(row.label, row.values, row.acumulado, pctLinha(row, idx));
-        if (isReceitaRow) receitaDrillRows.forEach((r) => linhaValores(r.label, r.values, r.acumulado, pctReceita(r), 1));
-        if (isGrupoDestaqueRow) row.children!.forEach((c) => linhaValores(c.label, c.values, c.acumulado, pctValorAGastar(c), 1));
+        linhas.push({
+          label: row.label,
+          kind: kindOf(row),
+          negative: row.negative,
+          values: mesesExibidos.map((i) => row.values[i]).concat(row.acumulado),
+          pct: pctLinha(row, idx),
+        });
+        if (isReceitaRow) {
+          receitaDrillRows.forEach((r) =>
+            linhas.push({
+              label: r.label,
+              kind: "detail",
+              indent: 1,
+              values: mesesExibidos.map((i) => r.values[i]).concat(r.acumulado),
+              pct: pctReceita(r),
+            })
+          );
+        }
+        if (isGrupoDestaqueRow) {
+          row.children!.forEach((c) =>
+            linhas.push({
+              label: c.label,
+              kind: "detail",
+              indent: 1,
+              values: mesesExibidos.map((i) => c.values[i]).concat(c.acumulado),
+              pct: pctValorAGastar(c),
+            })
+          );
+        }
         if (isClassRow) {
           categoriaRowsFor(payables, row.label, categoriasForaDoDre).forEach((catRow) =>
-            linhaValores(catRow.categoria, catRow.values, catRow.acumulado, pctValorAGastar(catRow), 1)
+            linhas.push({
+              label: catRow.categoria,
+              kind: "detail",
+              indent: 1,
+              values: mesesExibidos.map((i) => catRow.values[i]).concat(catRow.acumulado),
+              pct: pctValorAGastar(catRow),
+            })
           );
         }
       });
-      addAba("Resumo", aoa, colunasMes.length + 1);
+      buildStyledSheet(wb, "Resumo", ["Conta", ...colunasMes, `Acum. ${anoCorrente}`, "%"], linhas, colunasMes.length + 1);
     }
 
     // Uma aba por mês: valor único + % já com o detalhamento de categoria aberto.
     mesesExibidos.forEach((mIdx) => {
-      const aoa: (string | number)[][] = [["Conta", "Valor", "%"]];
-      const linha = (label: string, valor: number, pct: number | null, indent = 0) => {
-        aoa.push(["  ".repeat(indent) + label, Math.round((valor ?? 0) * 100) / 100, pct === null ? "—" : `${pct.toFixed(1)}%`]);
-      };
+      const linhas: DreSheetRow[] = [];
       dreGrid.forEach((row, idx) => {
         if (row.isSection) {
-          aoa.push([row.label]);
+          linhas.push({ label: row.label, kind: "section", values: [], pct: null });
           return;
         }
         const isComissaoRow = row.label === "(-) Comissões de Marketplace";
@@ -250,20 +271,34 @@ export default function FaturamentoDrePage() {
         const isClassRow =
           !!row.expandable && !row.isHeader && !row.isSubtotal && !row.isTotal && !isComissaoRow && !isCmvRow && !isReceitaRow && !isGrupoDestaqueRow;
 
-        linha(row.label, row.values[mIdx], pctLinhaMes(row, idx, mIdx));
-        if (isReceitaRow) receitaDrillRows.forEach((r) => linha(r.label, r.values[mIdx], pctReceitaMes(r, mIdx), 1));
-        if (isGrupoDestaqueRow) row.children!.forEach((c) => linha(c.label, c.values[mIdx], pctValorAGastarMes(c, mIdx), 1));
+        linhas.push({
+          label: row.label,
+          kind: kindOf(row),
+          negative: row.negative,
+          values: [row.values[mIdx]],
+          pct: pctLinhaMes(row, idx, mIdx),
+        });
+        if (isReceitaRow) {
+          receitaDrillRows.forEach((r) =>
+            linhas.push({ label: r.label, kind: "detail", indent: 1, values: [r.values[mIdx]], pct: pctReceitaMes(r, mIdx) })
+          );
+        }
+        if (isGrupoDestaqueRow) {
+          row.children!.forEach((c) =>
+            linhas.push({ label: c.label, kind: "detail", indent: 1, values: [c.values[mIdx]], pct: pctValorAGastarMes(c, mIdx) })
+          );
+        }
         if (isClassRow) {
           categoriaRowsFor(payables, row.label, categoriasForaDoDre).forEach((catRow) =>
-            linha(catRow.categoria, catRow.values[mIdx], pctValorAGastarMes(catRow, mIdx), 1)
+            linhas.push({ label: catRow.categoria, kind: "detail", indent: 1, values: [catRow.values[mIdx]], pct: pctValorAGastarMes(catRow, mIdx) })
           );
         }
       });
-      addAba(`${dreMonths[mIdx]}-${String(anoCorrente).slice(-2)}`, aoa, 1);
+      buildStyledSheet(wb, `${dreMonths[mIdx]}-${String(anoCorrente).slice(-2)}`, ["Conta", "Valor", "%"], linhas, 1);
     });
 
     const nomeArquivo = `DRE_${client.name.replace(/\s+/g, "_")}_${mesFiltro !== null ? colunasMes[0].replace("/", "-") : anoCorrente}.xlsx`;
-    XLSX.writeFile(wb, nomeArquivo);
+    await downloadWorkbook(wb, nomeArquivo);
   }
 
   // rótulo + meses + (acumulado do ano, só quando "ano inteiro" está selecionado) + %
