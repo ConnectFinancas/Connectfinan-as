@@ -1757,7 +1757,7 @@ export const connectData: ClientFinanceData = {
   { id: "cs299", favorecido: "M4 PREP CENTER", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-07-20", valor: 216.0, status: "pago", pagamento: "2026-07-20", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 984 PRO-LABORE (RETIRADA DOS SOCIOS)" },
   { id: "cs300", favorecido: "ELTON TAVARES RIBEIRO", categoria: "Compra | Ativos Mobilizados", classificacao: "INVESTIMENTO", vencimento: "2026-07-21", valor: 267.03, status: "pago", pagamento: "2026-07-21", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 47 Maquinas e equipamentos" },
   { id: "cs301", favorecido: "SICOOB CENTRO NORDESTE", categoria: "Tarifas Bancárias", classificacao: "DESPESAS FINANCEIRAS", vencimento: "2026-07-21", valor: 17.5, status: "pago", pagamento: "2026-07-21", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 240 Despesas com Taxas Bancárias" },
-  { id: "cs302", favorecido: "ALEXANDRO NEVES", categoria: "Manutenção de Veículos", classificacao: "DESPESAS LOGISTICAS", vencimento: "2026-07-21", valor: 70.0, status: "pago", pagamento: "2026-07-21", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 395 Despesas Manutenção de veículos" },
+  { id: "cs302", favorecido: "ALEXANDRO NEVES", categoria: "Manutenção de Veículos", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-07-21", valor: 70.0, status: "pago", pagamento: "2026-07-21", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 395 Despesas Manutenção de veículos" },
   { id: "cs303", favorecido: "TELEFONICA BRASIL S.A.", categoria: "Telefonia e Internet", classificacao: "DESPESAS ADMINISTRATIVAS", vencimento: "2026-07-21", valor: 281.75, status: "pago", pagamento: "2026-07-21", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 424 DESPESAS TELEFONE E INTERNET" },
   { id: "cs304", favorecido: "JUNTA COMERCIAL DO ESTADO DA PARAÍBA - JUCEPB", categoria: "CSV (Custos sobre Serviços)", classificacao: "CMV", vencimento: "2026-07-21", valor: 273.55, status: "pago", pagamento: "2026-07-21", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 536 CUSTO SOBRE SERVIÇOS" },
   { id: "cs305", favorecido: "M4 PREP CENTER", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-07-21", valor: 30.0, status: "pago", pagamento: "2026-07-21", descricao: "Contas a pagar de Julho/2026 (Relatório de planejamento analítico, Connect Soluções Contábeis) — cód. 984 PRO-LABORE (RETIRADA DOS SOCIOS)" },
@@ -2426,6 +2426,7 @@ export const connectData: ClientFinanceData = {
         { nome: "Advogado / Jurídico", padrao: true },
         { nome: "IPTU", padrao: true },
         { nome: "Material de Escritório", padrao: true },
+        { nome: "Manutenção de Veículos", padrao: true },
       ],
     },
     {
@@ -2458,25 +2459,6 @@ export const connectData: ClientFinanceData = {
       categorias: [
         { nome: "Imposto (Simples Nacional)", padrao: true },
         { nome: "ICMS", padrao: true },
-      ],
-    },
-    {
-      classificacao: "DESPESAS LOGISTICAS",
-      color: "#38bdf8",
-      padrao: true,
-      categorias: [
-        { nome: "Frete", padrao: true },
-        { nome: "Combustível", padrao: true },
-        { nome: "Manutenção de Veículos", padrao: true },
-      ],
-    },
-    {
-      classificacao: "DESPESAS COMERCIAIS / MARKETING",
-      color: "#f472b6",
-      padrao: true,
-      categorias: [
-        { nome: "Marketing", padrao: true },
-        { nome: "Comercial", padrao: true },
       ],
     },
     {
