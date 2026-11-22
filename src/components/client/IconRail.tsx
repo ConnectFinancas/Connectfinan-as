@@ -8,8 +8,8 @@ import { Client } from "@/lib/types";
 import { visibleNavItems } from "@/lib/nav";
 
 // Rail fixo da esquerda. No modo padrão é só ícones (logo, monograma do cliente, voltar). No
-// modo navLayout: "sidebar" (ex.: LA Modas) fica mais largo e ganha o menu do cliente empilhado
-// logo abaixo do monograma, tudo numa coluna só — em vez de uma segunda coluna branca separada.
+// modo navLayout: "sidebar" fica mais largo e ganha o menu do cliente empilhado logo abaixo do
+// monograma, tudo numa coluna só — em vez de uma segunda coluna branca separada.
 export function IconRail({ client }: { client: Client }) {
   const pathname = usePathname();
   const sidebar = client.navLayout === "sidebar";
