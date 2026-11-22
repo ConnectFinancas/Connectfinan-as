@@ -7,7 +7,14 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { DetalhamentoMesModal } from "@/components/client/DetalhamentoMesModal";
 import { dreMonths } from "@/lib/constants";
 import { useFinance } from "@/lib/store/FinanceContext";
-import { cmvMarketplacePorCanal, cmvPorEmpresaRows, comissaoMarketplacePorCanal, receitaMarketplacePorCanal, receitaPorFormaRecebimento } from "@/lib/derive";
+import {
+  cmvMarketplacePorCanal,
+  cmvPorEmpresaRows,
+  comissaoMarketplacePorCanal,
+  receitaMarketplacePorCanal,
+  receitaPorClassificacao,
+  receitaPorFormaRecebimento,
+} from "@/lib/derive";
 import { formatCurrencyPrecise } from "@/lib/format";
 import { formatDateBR } from "@/lib/today";
 import { DreGridRow, MarketplaceCanal, Payable } from "@/lib/types";
@@ -86,12 +93,14 @@ export default function FaturamentoDrePage() {
   const [mesFiltro, setMesFiltro] = useState<number | null>(null);
   const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
 
-  // Drill-down da RECEITA: clientes com marketplaceManual abrem por canal; os demais (ex.: MJ
-  // Shoes) abrem por forma de recebimento (Cartão/Dinheiro/Pix), quando os lançamentos de Contas
-  // a Receber tiverem esse campo preenchido.
+  // Drill-down da RECEITA: clientes com marketplaceManual abrem por canal; clientes com tipos de
+  // receita bem definidos (ex.: Connect) abrem por classificação de Contas a Receber; os demais
+  // (ex.: MJ Shoes) abrem por forma de recebimento (Cartão/Dinheiro/Pix).
   const receitaDrillRows = client.temInformacoesDre
     ? receitaMarketplacePorCanal(marketplaceManual).map((r) => ({ key: r.canal, label: r.label, values: r.values, acumulado: r.acumulado }))
-    : receitaPorFormaRecebimento(receivables).map((r) => ({ key: r.forma, label: r.forma, values: r.values, acumulado: r.acumulado }));
+    : client.temReceitaPorClassificacao
+      ? receitaPorClassificacao(receivables).map((r) => ({ key: r.forma, label: r.forma, values: r.values, acumulado: r.acumulado }))
+      : receitaPorFormaRecebimento(receivables).map((r) => ({ key: r.forma, label: r.forma, values: r.values, acumulado: r.acumulado }));
   const temReceitaExpandivel = receitaDrillRows.length > 0;
 
   // Representatividade em %: da RECEITA até "Valor a Gastar"/Lucro Bruto (inclusive), a base é a

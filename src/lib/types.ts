@@ -31,6 +31,11 @@ export type Client = {
   // Quando true, mostra a aba "Informações do DRE" — onde a receita/CMV/comissão por
   // marketplace são digitadas manualmente (ver ClientFinanceData.marketplaceManual).
   temInformacoesDre?: boolean;
+  // Quando true, o drill-down da linha "RECEITA" do DRE abre por classificação de Contas a
+  // Receber (ex.: Honorários, Certificado Digital, Vendas de Sistemas) em vez do padrão por forma
+  // de recebimento (Pix/Cartão/etc.) — usado quando o cliente tem tipos de receita bem definidos
+  // e quer ver quanto cada um representa, igual a um DRE contábil tradicional.
+  temReceitaPorClassificacao?: boolean;
   // "sidebar" troca o menu de abas horizontal (padrão) por uma barra lateral vertical, com os
   // itens empilhados um abaixo do outro à esquerda do conteúdo.
   navLayout?: "sidebar";
@@ -183,6 +188,15 @@ export type LinhaDestaqueDre = {
   // linha de "Inadimplência" no DRE baseada no que foi lançado em Contas a Receber mas não
   // recebido, em vez de vir de Contas a Pagar. Sem lista, soma todas as classificações.
   receivablesPendentesClassificacoes?: string[];
+  // Igual a receivablesPendentesClassificacoes, mas por COMPETÊNCIA: soma, no mês de vencimento,
+  // todo Recebível que não foi recebido dentro do próprio mês de vencimento — seja porque ainda
+  // está em aberto (status "pendente") ou porque foi recebido só depois (recebimento num mês
+  // posterior ao vencimento). Usado quando o DRE de um mês já foi "fechado"/apresentado antes do
+  // recebimento chegar, e esse valor deve contar como inadimplência daquele mês mesmo que tenha
+  // sido pago depois — o Fluxo de Caixa mostra esse mesmo recebimento atrasado como "Recuperação
+  // de Inadimplência" no mês em que o dinheiro de fato entrou (ver
+  // ClientFinanceData.recuperacaoInadimplenciaFluxoCaixa). Sem lista, soma todas as classificações.
+  receivablesAtrasadosClassificacoes?: string[];
   // Quando setado, essa linha não aparece solta no DRE — ela entra dentro de uma seção colapsável
   // com esse nome, junto com as outras linhas que tiverem o mesmo grupo (na ordem em que
   // aparecem em linhasDestaqueDre). A seção mostra o somatório de todas elas e expande pra
@@ -259,6 +273,12 @@ export type ClientFinanceData = {
   // (ex.: um imposto atrasado pago em lote num único mês, que não representa o custo variável
   // recorrente e distorce o PE daquele mês pra cima). Não afeta o DRE em si — só essa análise.
   excecoesPontoEquilibrio?: { mes: number; linhas: string[] }[];
+  // Quando true, o Fluxo de Caixa separa, numa linha própria ("Recuperação de Inadimplência"),
+  // os recebimentos cujo mês de recebimento veio depois do mês de vencimento — em vez de somar
+  // junto com a forma de recebimento normal (Pix/Cartão/etc.). Pensado pra andar junto com
+  // LinhaDestaqueDre.receivablesAtrasadosClassificacoes no DRE (mesmo recebimento atrasado: conta
+  // como inadimplência no mês de vencimento, e como recuperação no mês em que entrou de fato).
+  recuperacaoInadimplenciaFluxoCaixa?: boolean;
   fluxoCaixaPeriodo: string;
   fluxoCaixaKpis: {
     saldoInicial: number;

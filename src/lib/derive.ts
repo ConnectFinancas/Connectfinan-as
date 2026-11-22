@@ -57,6 +57,25 @@ export function receitaPorFormaRecebimento(receivables: Receivable[]) {
     .sort((a, b) => b.acumulado - a.acumulado);
 }
 
+// Drill-down da RECEITA por classificação de Contas a Receber (ex.: Honorários - Connect
+// Soluções, Certificado Digital, Vendas de Sistemas) — ver Client.temReceitaPorClassificacao.
+export function receitaPorClassificacao(receivables: Receivable[]) {
+  const porClass = new Map<string, Receivable[]>();
+  for (const r of receivables) {
+    const classe = r.classificacao?.trim() || "Não classificado";
+    if (!porClass.has(classe)) porClass.set(classe, []);
+    porClass.get(classe)!.push(r);
+  }
+  return [...porClass.entries()]
+    .map(([forma, items]) => {
+      const values = monthTotals(items).map(round2);
+      const acumulado = round2(values.reduce((a, v) => a + v, 0));
+      return { forma, values, acumulado };
+    })
+    .filter((row) => row.acumulado > 0)
+    .sort((a, b) => b.acumulado - a.acumulado);
+}
+
 // Drill-down da linha "(-) Comissões de Marketplace" do DRE: abre em vez de lançamentos (essa
 // linha não vem de Contas a Pagar) o valor de comissão de cada canal, mês a mês.
 export function comissaoMarketplacePorCanal(marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>) {
@@ -143,6 +162,17 @@ function valoresDestaque(
     return monthTotals(
       receivables.filter((r) => r.status === "pendente" && (filtro.length === 0 || filtro.includes(r.classificacao)))
     );
+  }
+  if (linha.receivablesAtrasadosClassificacoes) {
+    const filtro = linha.receivablesAtrasadosClassificacoes;
+    const totals = Array(12).fill(0);
+    for (const r of receivables) {
+      if (filtro.length > 0 && !filtro.includes(r.classificacao)) continue;
+      const vencMes = monthIndex(r.vencimento);
+      const atrasado = r.status === "pendente" || (!!r.recebimento && monthIndex(r.recebimento) > vencMes);
+      if (atrasado) totals[vencMes] += r.valor;
+    }
+    return totals;
   }
   return Array(12).fill(0);
 }
@@ -739,13 +769,24 @@ function monthTotalsPorData<T>(items: T[], dataDe: (item: T) => string | undefin
 export function computeFluxoCaixaDreGrid(
   payables: Payable[],
   receivables: Receivable[],
-  categoriasPagar: CategoryGroup[]
+  categoriasPagar: CategoryGroup[],
+  recuperacaoInadimplencia = false
 ): DreGridRow[] {
   const recebidos = receivables.filter((r) => r.status === "recebido" && r.recebimento);
   const pagos = payables.filter((p) => p.status === "pago" && p.pagamento);
 
+  // Recebimento cujo mês veio depois do mês de vencimento = cobrança de um mês anterior que só
+  // "entrou no caixa" agora — separado da forma de recebimento normal (ver
+  // ClientFinanceData.recuperacaoInadimplenciaFluxoCaixa), pro Ewerton enxergar quanto do caixa
+  // do mês é recuperação de inadimplência passada, não faturamento novo recebido em dia.
+  const recuperacao = recuperacaoInadimplencia
+    ? recebidos.filter((r) => monthIndex(r.recebimento!) > monthIndex(r.vencimento))
+    : [];
+  const recuperacaoIds = new Set(recuperacao.map((r) => r.id));
+  const recebidosNormais = recuperacaoInadimplencia ? recebidos.filter((r) => !recuperacaoIds.has(r.id)) : recebidos;
+
   const porFonte = new Map<string, Receivable[]>();
-  for (const r of recebidos) {
+  for (const r of recebidosNormais) {
     const fonte = r.formaRecebimento?.trim() || "Não informado";
     if (!porFonte.has(fonte)) porFonte.set(fonte, []);
     porFonte.get(fonte)!.push(r);
@@ -757,6 +798,12 @@ export function computeFluxoCaixaDreGrid(
       return { label, values, acumulado, expandable: true };
     })
     .sort((a, b) => b.acumulado - a.acumulado);
+
+  if (recuperacao.length > 0) {
+    const values = monthTotalsPorData(recuperacao, (r) => r.recebimento, (r) => r.valor).map(round2);
+    const acumulado = round2(values.reduce((a, v) => a + v, 0));
+    entradaRows.push({ label: "Recuperação de Inadimplência", values, acumulado, expandable: true });
+  }
 
   const totalEntradasValues = Array(12).fill(0);
   let acumEntradas = 0;

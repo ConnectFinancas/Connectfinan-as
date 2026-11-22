@@ -101,6 +101,7 @@ export const clients: Client[] = [
     responsible: "Ewerton Lucas",
     regime: "Simples Nacional",
     theme: "light",
+    temReceitaPorClassificacao: true,
   },
   {
     slug: "connect-ecommerce",

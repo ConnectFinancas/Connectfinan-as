@@ -131,6 +131,7 @@ export default function FluxoDeCaixaPage() {
     classificacoesNoCmv,
     categoriasForaDoDre,
     saldoBancarioMensal,
+    recuperacaoInadimplenciaFluxoCaixa,
   } = useFinance();
 
   const [linhaAberta, setLinhaAberta] = useState<string | null>(null);
@@ -154,7 +155,7 @@ export default function FluxoDeCaixaPage() {
   const { fluxoCaixaPeriodo, fluxoCaixaKpis, faturamentoXRecebimentos, maioresRecebimentos, maioresPagamentos, indicesFinanceiros } =
     fluxoCaixaCalc;
 
-  const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar);
+  const dreCaixaGrid = computeFluxoCaixaDreGrid(payables, receivables, categoriasPagar, recuperacaoInadimplenciaFluxoCaixa);
 
   // % de representatividade da DRE de Caixa: tudo (entradas e saídas) sobre o Total de entradas
   // do período selecionado — mesma ideia do "% dos recebimentos" já usado nos KPIs acima.
