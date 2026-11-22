@@ -195,7 +195,7 @@ function somarMarketplace(
 // manualmente por mês (cmvManual), pois a análise estratégica é pelo preço de custo do produto
 // vendido, não pelo que foi pago ao fornecedor no período. CSV (custo sobre serviços) continua
 // somado automaticamente a partir dos lançamentos.
-const CUSTO_MERCADORIA_CATEGORIA = "Custo sobre Mercadorias Vendidas";
+export const CUSTO_MERCADORIA_CATEGORIA = "Custo sobre Mercadorias Vendidas";
 
 export function displayStatus(status: Status, vencimento: string): Status {
   if (status === "pago" || status === "recebido") return status;
