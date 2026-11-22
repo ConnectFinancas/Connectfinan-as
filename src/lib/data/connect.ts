@@ -2572,6 +2572,18 @@ export const connectData: ClientFinanceData = {
       categorias: [{ nome: "Despachante", padrao: true }],
     },
     {
+      classificacao: "REGISTRO DE MARCA",
+      color: "#818cf8",
+      padrao: true,
+      categorias: [{ nome: "Registro de Marca", padrao: true }],
+    },
+    {
+      classificacao: "EMISSÃO DE IRPF",
+      color: "#fb7185",
+      padrao: true,
+      categorias: [{ nome: "Emissão de IRPF", padrao: true }],
+    },
+    {
       classificacao: "RECEITAS A CLASSIFICAR",
       color: "#94a3b8",
       padrao: true,
