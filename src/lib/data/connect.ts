@@ -108,13 +108,25 @@ export const connectData: ClientFinanceData = {
     investimentos: 0,
   },
 
+  // Estrutura do DRE igual à planilha de referência enviada pelo Ewerton ("DRE 2026 — Connect
+  // Contábil"): depois do "(-) CMV" vêm, cada uma com sua própria linha, Impostos, Inadimplência
+  // e Investimentos — só depois disso cai no "Lucro Bruto ou Valor a Gastar". Por isso Impostos e
+  // Investimentos saem da seção genérica de Despesas (ver classificacoesForaDoDre abaixo) e
+  // entram aqui como linhas de destaque, vindo direto das classificações "IMPOSTOS"/"INVESTIMENTO"
+  // de Contas a Pagar (mesmos lançamentos, só mudou onde aparecem no DRE).
+  //
   // Inadimplência por COMPETÊNCIA: um título com vencimento em agosto só conta como honorário
   // recebido no DRE de agosto se também foi recebido em agosto — se ainda está em aberto ou só
   // foi recebido depois, entra como inadimplência no mês de vencimento (a pedido do Ewerton, pois
   // os DRE's já foram "fechados"/apresentados mês a mês). Em troca, o Fluxo de Caixa (regime de
   // caixa) mostra esse mesmo recebimento atrasado como "Recuperação de Inadimplência" no mês em
   // que o dinheiro de fato entrou, separado da receita nova do mês.
-  linhasDestaqueDre: [{ rotulo: "Inadimplência", receivablesAtrasadosClassificacoes: [] }],
+  linhasDestaqueDre: [
+    { rotulo: "Impostos", classificacoes: ["IMPOSTOS"] },
+    { rotulo: "Inadimplência", receivablesAtrasadosClassificacoes: [] },
+    { rotulo: "Investimentos", classificacoes: ["INVESTIMENTO"] },
+  ],
+  classificacoesForaDoDre: ["IMPOSTOS", "INVESTIMENTO"],
   recuperacaoInadimplenciaFluxoCaixa: true,
 
   fluxoCaixaPeriodo: "—",
