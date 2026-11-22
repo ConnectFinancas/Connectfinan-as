@@ -2390,6 +2390,10 @@ export const connectData: ClientFinanceData = {
         { nome: "Plano de Saúde", padrao: true },
         { nome: "Vale Alimentação", padrao: true },
         { nome: "Adiantamento de Funcionários", padrao: true },
+        { nome: "Cursos e Treinamentos", padrao: true },
+        { nome: "Férias", padrao: true },
+        { nome: "Gratificações", padrao: true },
+        { nome: "Rescisão / Admissão", padrao: true },
       ],
     },
     {
@@ -2408,6 +2412,7 @@ export const connectData: ClientFinanceData = {
         { nome: "Condomínio", padrao: true },
         { nome: "Seguros", padrao: true },
         { nome: "Advogado / Jurídico", padrao: true },
+        { nome: "IPTU", padrao: true },
       ],
     },
     {
@@ -2478,6 +2483,7 @@ export const connectData: ClientFinanceData = {
         { nome: "Uso e Consumo", padrao: true },
         { nome: "Manutenção de Equipamentos", padrao: true },
         { nome: "Despesas Eventuais", padrao: true },
+        { nome: "Material de Limpeza", padrao: true },
       ],
     },
     {
