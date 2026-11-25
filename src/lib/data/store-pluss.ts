@@ -310,8 +310,11 @@ export const storePlussData: ClientFinanceData = {
   // (aba "Informações do DRE"), então essas duas classificações não entram no DRE pra não contar
   // em dobro (a categoria "Devolução de Vendas" da Confecção é a exceção — ela sai daqui e vira
   // linha própria em linhasDestaqueDre, ver abaixo). Insumos (embalagens etc.) entram, mas como
-  // parte do detalhamento do CMV. Logística, Impostos e Reembolso saem da seção genérica de
-  // despesas porque viraram linhas destacadas (frete pago, imposto, devoluções) mais acima no DRE.
+  // parte do detalhamento do CMV. Impostos e Reembolso saem da seção genérica de despesas porque
+  // viraram linhas destacadas (imposto, devoluções) mais acima no DRE. Despesas Logísticas (frete
+  // pago sobre mercadoria comprada) NÃO sai mais daqui — a pedido do Ewerton, deixou de ser linha
+  // de destaque dentro de "Deduções de Receita Ligadas à Venda" e virou uma classificação normal
+  // de despesa, expansível em categoria → lançamento igual já era no Fluxo de Caixa.
   // "IMPOSTOS ATRASADOS" fica fora do DRE inteiro (nem despesa genérica, nem linha de destaque de
   // Imposto) — são DAS de competências anteriores (nov/dez 2025, jan/fev 2026) pagos de uma vez só
   // em 13/04/2026 (regularização), que não representam o imposto de abril/2026. Continuam
@@ -319,7 +322,6 @@ export const storePlussData: ClientFinanceData = {
   classificacoesForaDoDre: [
     "COMPRA DE PRODUTOS",
     "Confecção",
-    "DESPESAS LOGISTICAS",
     "IMPOSTOS",
     "IMPOSTOS ATRASADOS",
     "REEMBOLSO CLIENTES",
@@ -331,14 +333,15 @@ export const storePlussData: ClientFinanceData = {
   // evita contar o valor duas vezes (uma na linha de destaque, outra na despesa normal).
   categoriasForaDoDre: [{ classificacao: "DESPESAS COMERCIAIS / MARKETING", categoria: "Afiliados Tiktok" }],
 
-  // Estrutura pedida: Receita → (Comissão) → CMV → Frete pago → Devoluções e Reembolso → Frete
-  // descontado (Tiktok / Mercado Livre) → Imposto → Lucro Bruto ou Valor a Gastar → Despesas.
-  // Frete pago/Devoluções/Fretes descontados/Afiliados/Ads entram juntos dentro da seção
-  // colapsável "Deduções de Receita Ligadas à Venda" (grupo, a pedido do Ewerton) — só Imposto
-  // fica fora do grupo, como linha solta.
+  // Estrutura pedida: Receita → (Comissão) → CMV → Devoluções e Reembolso → Frete descontado
+  // (Tiktok / Mercado Livre) → Imposto → Lucro Bruto ou Valor a Gastar → Despesas (inclui Despesas
+  // Logísticas, que saiu daqui — ver classificacoesForaDoDre acima). Devoluções/Fretes
+  // descontados/Afiliados/Ads entram juntos dentro da seção colapsável "Deduções de Receita
+  // Ligadas à Venda" (grupo, a pedido do Ewerton) — só Imposto fica fora do grupo, como linha
+  // solta.
   // Dentro do grupo, ordem pedida pelo Ewerton: primeiro as deduções do Mercado Livre, depois
-  // Tiktok, depois Shopee/Shein (se tiverem), e só por último as genéricas (frete pago,
-  // devoluções/reembolso) que não são específicas de um canal.
+  // Tiktok, depois Shopee/Shein (se tiverem), e só por último as genéricas (devoluções/reembolso)
+  // que não são específicas de um canal.
   linhasDestaqueDre: [
     {
       rotulo: "Frete Descontado pelo Mercado Livre",
@@ -367,11 +370,6 @@ export const storePlussData: ClientFinanceData = {
     // marketplaceManual acima).
     { rotulo: "Ads Shopee", marketplaceCampo: { canal: "shopee", campo: "ads" }, grupo: "Deduções de Receita Ligadas à Venda" },
     {
-      rotulo: "Frete pago (Transporte de Mercadorias compradas)",
-      classificacoes: ["DESPESAS LOGISTICAS"],
-      grupo: "Deduções de Receita Ligadas à Venda",
-    },
-    {
       rotulo: "Devoluções e Reembolso",
       categorias: [
         { classificacao: "REEMBOLSO CLIENTES", categoria: "reembolso" },
@@ -387,7 +385,6 @@ export const storePlussData: ClientFinanceData = {
   // Fluxo de Caixa, em vez de caírem no balde genérico de "custos fixos".
   custosVariaveisDre: [
     "(-) Comissões de Marketplace",
-    "Frete pago (Transporte de Mercadorias compradas)",
     "Frete Descontado direto do Tiktok",
     "Frete Descontado pelo Mercado Livre",
     "Imposto",
