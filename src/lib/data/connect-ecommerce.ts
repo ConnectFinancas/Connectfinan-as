@@ -57,7 +57,18 @@ export const connectEcommerceData: ClientFinanceData = {
   // tinha o mesmo valor/vencimento do r350 mas com status "pendente" desatualizado); adicionado 1
   // título de DR STORE LTDA de R$200,00 (30/10) que não tinha sido lançado. OLIMERC LTDA foi
   // renomeada pra JOHLY LTDA no IXC (confirmado pelo Ewerton) — renomeado em todos os meses.
-  dataVersion: 3,
+  // Bump 3 → 4: lançamentos de setembro e outubro que aqui ainda estavam como "Honorários" já
+  // tinham sido identificados como outra coisa do lado da Connect (mesmos títulos, mesmos
+  // clientes) — replicado aqui. Outubro: Cactos Moda Feminina R$543,75 (r356) e Athirson dos
+  // Santos Andrade R$850,00 (r371) são Alteração Contratual; DR Store R$200,00 (r440, 30/10) é
+  // Certificado Digital. Setembro: ADDC Store R$200,00 (r293, 03/09) e Gabriel Damasceno da Silva
+  // R$100,00 (r316, 16/09) são Certificado Digital; Cactos Moda Feminina R$543,75 (r317), Diego
+  // Andre Mota R$1.650,00 (r327), Lualu R$1.650,00 (r328), RS Moda Feminina R$250,00 (r305) e
+  // Wallu Ecomerce R$1.650,00 (r329) são Alteração Contratual. Criadas as classificações "Alteração
+  // Contratual" e "Certificado Digital" no plano de contas a receber pra isso (só cosmético — a
+  // Receita total não muda, já que aqui soma-se todo Contas a Receber independente de
+  // classificação).
+  dataVersion: 4,
 
   ocultarCmv: true,
   // Imposto e Investimentos já entram no DRE como linha de destaque (linhasDestaqueDre abaixo) —
@@ -404,7 +415,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r290", cliente: "A identificar", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-06-01", valor: 842.5, status: "recebido", recebimento: "2026-06-01", descricao: "Valor faltante" },
   { id: "r291", cliente: "A identificar", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-07-01", valor: 1491.0, status: "recebido", recebimento: "2026-07-01", descricao: "Valor faltante" },
   { id: "r292", cliente: "A identificar", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-08-01", valor: 1491.0, status: "recebido", recebimento: "2026-08-01", descricao: "Valor faltante" },
-  { id: "r293", cliente: "ADDC STORE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-03", valor: 200.0, status: "recebido", recebimento: "2026-09-03", descricao: "Honorário mensal" },
+  { id: "r293", cliente: "ADDC STORE LTDA", categoria: "Certificado Digital", classificacao: "Certificado Digital", vencimento: "2026-09-03", valor: 200.0, status: "recebido", recebimento: "2026-09-03", descricao: "Certificado digital — mesmo título identificado na Connect" },
   { id: "r294", cliente: "MOYSES GOMES JUSTINO", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-05", valor: 297.0, status: "recebido", recebimento: "2026-09-15", descricao: "Honorário mensal" },
   { id: "r295", cliente: "AB CHERUBINI LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 347.0, status: "recebido", recebimento: "2026-09-09", descricao: "Honorário mensal" },
   { id: "r296", cliente: "ADDC STORE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 397.0, status: "recebido", recebimento: "2026-09-10", descricao: "Honorário mensal" },
@@ -416,7 +427,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r302", cliente: "ERICK ESTEVAO", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 997.0, status: "recebido", recebimento: "2026-09-08", descricao: "Honorário mensal" },
   { id: "r303", cliente: "EVER SHOPPING LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 1621.0, status: "recebido", recebimento: "2026-09-10", descricao: "Honorário mensal" },
   { id: "r304", cliente: "THAYANDERSON TRAJANO NASCIMENTO DA SILVA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 397.0, status: "recebido", recebimento: "2026-09-10", descricao: "Honorário mensal" },
-  { id: "r305", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 250.0, status: "pendente", descricao: "Honorário mensal" },
+  { id: "r305", cliente: "RS MODA FEMININA LTDA", categoria: "Alteração Contratual", classificacao: "Alteração Contratual", vencimento: "2026-09-10", valor: 250.0, status: "pendente", descricao: "Alteração contratual — mesmo título identificado na Connect" },
   { id: "r306", cliente: "STRONG VAREJO E DISTRIBUICAO DE COSMETICOS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 1197.0, status: "recebido", recebimento: "2026-09-10", descricao: "Honorário mensal" },
   { id: "r307", cliente: "VISTA VIPE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 397.0, status: "recebido", recebimento: "2026-09-10", descricao: "Honorário mensal" },
   { id: "r308", cliente: "VITRA COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-10", valor: 1194.0, status: "recebido", recebimento: "2026-09-10", descricao: "Honorário mensal" },
@@ -427,8 +438,8 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r313", cliente: "MONICA MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-15", valor: 297.0, status: "recebido", recebimento: "2026-09-14", descricao: "Honorário mensal" },
   { id: "r314", cliente: "VERSAT LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-15", valor: 347.0, status: "recebido", recebimento: "2026-09-18", descricao: "Honorário mensal" },
   { id: "r315", cliente: "WALLU ECOMERCE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-15", valor: 397.0, status: "recebido", recebimento: "2026-09-14", descricao: "Honorário mensal" },
-  { id: "r316", cliente: "GABRIEL DAMASCENO DA SILVA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-16", valor: 100.0, status: "recebido", recebimento: "2026-09-16", descricao: "Honorário mensal" },
-  { id: "r317", cliente: "CACTOS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-20", valor: 543.75, status: "recebido", recebimento: "2026-09-21", descricao: "Honorário mensal" },
+  { id: "r316", cliente: "GABRIEL DAMASCENO DA SILVA", categoria: "Certificado Digital", classificacao: "Certificado Digital", vencimento: "2026-09-16", valor: 100.0, status: "recebido", recebimento: "2026-09-16", descricao: "Certificado digital — mesmo título identificado na Connect" },
+  { id: "r317", cliente: "CACTOS MODA FEMININA LTDA", categoria: "Alteração Contratual", classificacao: "Alteração Contratual", vencimento: "2026-09-20", valor: 543.75, status: "recebido", recebimento: "2026-09-21", descricao: "Alteração contratual — mesmo título identificado na Connect" },
   { id: "r318", cliente: "CACTOS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-20", valor: 316.67, status: "recebido", recebimento: "2026-09-21", descricao: "Honorário mensal" },
   { id: "r319", cliente: "CARINA BOMBAS - COMERCIO E SERVICOS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-20", valor: 647.0, status: "recebido", recebimento: "2026-09-18", descricao: "Honorário mensal" },
   { id: "r320", cliente: "DEBORA ALESSANDRA SAMPAIO DE SOUZA SILVA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-20", valor: 316.67, status: "recebido", recebimento: "2026-09-21", descricao: "Honorário mensal" },
@@ -438,9 +449,9 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r324", cliente: "JULIANA NUNES DO NASCIMENTO", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-20", valor: 150.0, status: "recebido", recebimento: "2026-09-21", descricao: "Honorário mensal" },
   { id: "r325", cliente: "VESTBEM MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-20", valor: 316.67, status: "recebido", recebimento: "2026-09-21", descricao: "Honorário mensal" },
   { id: "r326", cliente: "VITRA NEGOCIOS DIGITAIS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-20", valor: 347.0, status: "recebido", recebimento: "2026-09-16", descricao: "Honorário mensal" },
-  { id: "r327", cliente: "DIEGO ANDRE MOTA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-23", valor: 1650.0, status: "recebido", recebimento: "2026-09-23", descricao: "Honorário mensal" },
-  { id: "r328", cliente: "LUALU LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-23", valor: 1650.0, status: "recebido", recebimento: "2026-09-23", descricao: "Honorário mensal" },
-  { id: "r329", cliente: "WALLU ECOMERCE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-23", valor: 1650.0, status: "recebido", recebimento: "2026-09-23", descricao: "Honorário mensal" },
+  { id: "r327", cliente: "DIEGO ANDRE MOTA LTDA", categoria: "Alteração Contratual", classificacao: "Alteração Contratual", vencimento: "2026-09-23", valor: 1650.0, status: "recebido", recebimento: "2026-09-23", descricao: "Alteração contratual — mesmo título identificado na Connect" },
+  { id: "r328", cliente: "LUALU LTDA", categoria: "Alteração Contratual", classificacao: "Alteração Contratual", vencimento: "2026-09-23", valor: 1650.0, status: "recebido", recebimento: "2026-09-23", descricao: "Alteração contratual — mesmo título identificado na Connect" },
+  { id: "r329", cliente: "WALLU ECOMERCE LTDA", categoria: "Alteração Contratual", classificacao: "Alteração Contratual", vencimento: "2026-09-23", valor: 1650.0, status: "recebido", recebimento: "2026-09-23", descricao: "Alteração contratual — mesmo título identificado na Connect" },
   { id: "r330", cliente: "2K STYLE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-25", valor: 347.0, status: "pendente", descricao: "Honorário mensal" },
   { id: "r331", cliente: "DR STORE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-25", valor: 347.0, status: "recebido", recebimento: "2026-09-25", descricao: "Honorário mensal" },
   { id: "r332", cliente: "GUILHERME DOS SANTOS TEIXEIRA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-09-25", valor: 497.0, status: "recebido", recebimento: "2026-10-05", descricao: "Honorário mensal" },
@@ -466,7 +477,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r353", cliente: "MONICA MODAS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-15", valor: 297.0, status: "recebido", recebimento: "2026-10-15", descricao: "Honorário mensal" },
   { id: "r354", cliente: "VERSAT LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-15", valor: 347.0, status: "recebido", recebimento: "2026-10-14", descricao: "Honorário mensal" },
   { id: "r355", cliente: "WALLU ECOMERCE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-15", valor: 397.0, status: "recebido", recebimento: "2026-10-13", descricao: "Honorário mensal" },
-  { id: "r356", cliente: "CACTOS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-20", valor: 543.75, status: "recebido", recebimento: "2026-10-20", descricao: "Honorário mensal" },
+  { id: "r356", cliente: "CACTOS MODA FEMININA LTDA", categoria: "Alteração Contratual", classificacao: "Alteração Contratual", vencimento: "2026-10-20", valor: 543.75, status: "recebido", recebimento: "2026-10-20", descricao: "Alteração contratual — mesmo título identificado na Connect" },
   { id: "r357", cliente: "CACTOS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-20", valor: 316.67, status: "recebido", recebimento: "2026-10-20", descricao: "Honorário mensal" },
   { id: "r358", cliente: "CARINA BOMBAS - COMERCIO E SERVICOS LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-20", valor: 647.0, status: "recebido", recebimento: "2026-10-21", descricao: "Honorário mensal" },
   { id: "r359", cliente: "DEBORA ALESSANDRA SAMPAIO DE SOUZA SILVA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-20", valor: 316.67, status: "recebido", recebimento: "2026-10-20", descricao: "Honorário mensal" },
@@ -481,7 +492,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r368", cliente: "GUILHERME DOS SANTOS TEIXEIRA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-25", valor: 497.0, status: "recebido", recebimento: "2026-10-26", descricao: "Honorário mensal" },
   { id: "r369", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-25", valor: 347.0, status: "pendente", descricao: "Honorário mensal" },
   { id: "r370", cliente: "STYLE POWER COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-25", valor: 347.0, status: "pendente", descricao: "Honorário mensal" },
-  { id: "r371", cliente: "ATHIRSON DOS SANTOS ANDRADE", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-28", valor: 850.0, status: "recebido", recebimento: "2026-10-27", descricao: "Honorário mensal" },
+  { id: "r371", cliente: "ATHIRSON DOS SANTOS ANDRADE", categoria: "Alteração Contratual", classificacao: "Alteração Contratual", vencimento: "2026-10-28", valor: 850.0, status: "recebido", recebimento: "2026-10-27", descricao: "Alteração contratual — mesmo título identificado na Connect" },
   { id: "r372", cliente: "HENDHYX MULTISSETORIAL LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-30", valor: 247.0, status: "pendente", descricao: "Honorário mensal" },
   { id: "r373", cliente: "MOYSES GOMES JUSTINO", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-11-05", valor: 297.0, status: "pendente", descricao: "Honorário mensal" },
   { id: "r374", cliente: "AB CHERUBINI LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-11-10", valor: 347.0, status: "pendente", descricao: "Honorário mensal" },
@@ -550,7 +561,7 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "r437", cliente: "GUILHERME DOS SANTOS TEIXEIRA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-12-25", valor: 497.0, status: "pendente", descricao: "Honorário mensal" },
   { id: "r438", cliente: "RS MODA FEMININA LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-12-25", valor: 347.0, status: "pendente", descricao: "Honorário mensal" },
   { id: "r439", cliente: "STYLE POWER COMERCIO DE VESTUARIO LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-12-25", valor: 347.0, status: "pendente", descricao: "Honorário mensal" },
-  { id: "r440", cliente: "DR STORE LTDA", categoria: "Honorários Connect Ecommerce", classificacao: "Honorários", vencimento: "2026-10-30", valor: 200.0, status: "recebido", recebimento: "2026-10-30", descricao: "Honorário mensal" },
+  { id: "r440", cliente: "DR STORE LTDA", categoria: "Certificado Digital", classificacao: "Certificado Digital", vencimento: "2026-10-30", valor: 200.0, status: "recebido", recebimento: "2026-10-30", descricao: "Certificado digital — mesmo título identificado na Connect" },
   ],
 
   seedPayables: [
@@ -636,6 +647,18 @@ export const connectEcommerceData: ClientFinanceData = {
       color: "#22d3a0",
       padrao: true,
       categorias: [{ nome: "Honorários Connect Ecommerce", padrao: true }],
+    },
+    {
+      classificacao: "Alteração Contratual",
+      color: "#fb923c",
+      padrao: true,
+      categorias: [{ nome: "Alteração Contratual", padrao: true }],
+    },
+    {
+      classificacao: "Certificado Digital",
+      color: "#f5c344",
+      padrao: true,
+      categorias: [{ nome: "Certificado Digital", padrao: true }],
     },
   ],
 };
