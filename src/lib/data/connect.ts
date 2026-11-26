@@ -101,7 +101,18 @@ export const connectData: ClientFinanceData = {
   //   → Vendas de Sistemas, confirmado pelo Ewerton).
   // Restam 77 títulos em "RECEITAS A CLASSIFICAR" (R$... ver tela) aguardando o Ewerton continuar
   // identificando pela planilha.
-  dataVersion: 8,
+  // Bump 8 → 9: várias rodadas de ajuste no plano de contas a pagar e no DRE que tinham ficado sem
+  // incrementar o dataVersion (o navegador do Ewerton continuava com a cópia salva antiga em vez
+  // dos dados novos). Entre elas: zerada a "RECEITAS A CLASSIFICAR" (planilha final de 48 casos),
+  // criadas "Serviços Extras"/"Despachante"/"Registro de Marca"/"Emissão de IRPF", corrigida a MJ
+  // Prime (R$1.621 x2/mês de Honorários pra BPO Financeiro), completadas as listas de categoria
+  // faltantes (Cursos e Treinamentos, Férias, Gratificações, Rescisão/Admissão, IPTU, Material de
+  // Limpeza), Material de Escritório movido pra Despesas Administrativas, removidas as
+  // classificações vazias "Custos Variáveis"/"Despesas Logísticas"/"Despesas Comerciais e
+  // Marketing" (só 1 lançamento de R$70 foi realocado pra Despesas Administrativas), e Impostos/
+  // Investimentos viraram linha de destaque antes do Valor a Gastar (igual à planilha de
+  // referência).
+  dataVersion: 9,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
