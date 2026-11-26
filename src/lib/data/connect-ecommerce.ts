@@ -66,7 +66,14 @@ export const connectEcommerceData: ClientFinanceData = {
   // 20/10), Diego Andre Mota R$1.650,00 (23/09), Lualu R$1.650,00 (23/09), RS Moda Feminina R$250,00
   // (10/09), Wallu Ecomerce R$1.650,00 (23/09), Athirson dos Santos Andrade R$850,00 (28/10) e DR
   // Store R$200,00 (30/10).
-  dataVersion: 4,
+  // Bump 4 → 5: Setembro e Outubro estavam sem nenhuma despesa lançada (Contas a Pagar só ia até
+  // Agosto/2026, p1-p32) — a tela mostrava R$ 0,00 em Imposto/Despesas nesses 2 meses. Adicionados
+  // p33-p40 com a mesma fórmula dos meses anteriores (Imposto = 6% da Receita; Comissão Vitor e
+  // André = 25% do Valor a Gastar; Comissão Sócios Connect = 25% do Valor a Gastar; Prestação de
+  // Serviços CONNECT = 40% do Valor a Gastar), usando a Receita e a Inadimplência já reconciliadas
+  // contra a Connect (Bump 3→4 e 4→5 do Contas a Receber): Setembro (Receita R$21.948,01,
+  // Inadimplência R$3.564,00) e Outubro (Receita R$19.672,01, Inadimplência R$1.288,00).
+  dataVersion: 5,
 
   ocultarCmv: true,
   // Imposto e Investimentos já entram no DRE como linha de destaque (linhasDestaqueDre abaixo) —
@@ -585,6 +592,14 @@ export const connectEcommerceData: ClientFinanceData = {
   { id: "p30", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-08-01", valor: 4589.44, status: "pago", pagamento: "2026-08-01", descricao: "Comissão Vitor e André (25%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
   { id: "p31", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-08-01", valor: 4589.44, status: "pago", pagamento: "2026-08-01", descricao: "Comissão Sócios Connect (25%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
   { id: "p32", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-08-01", valor: 7343.1, status: "pago", pagamento: "2026-08-01", descricao: "Prestação de Serviços CONNECT (40%) — Agosto/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p33", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-09-01", valor: 1316.88, status: "pago", pagamento: "2026-09-01", descricao: "Imposto (6% da receita de honorários) — Setembro/2026" },
+  { id: "p34", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-09-01", valor: 4266.78, status: "pago", pagamento: "2026-09-01", descricao: "Comissão Vitor e André (25%) — Setembro/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p35", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-09-01", valor: 4266.78, status: "pago", pagamento: "2026-09-01", descricao: "Comissão Sócios Connect (25%) — Setembro/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p36", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-09-01", valor: 6826.85, status: "pago", pagamento: "2026-09-01", descricao: "Prestação de Serviços CONNECT (40%) — Setembro/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p37", favorecido: "Receita Federal", categoria: "Imposto sobre Honorários (6%)", classificacao: "IMPOSTOS", vencimento: "2026-10-01", valor: 1180.32, status: "pago", pagamento: "2026-10-01", descricao: "Imposto (6% da receita de honorários) — Outubro/2026" },
+  { id: "p38", favorecido: "Vitor e André", categoria: "Comissão Vitor e André (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-10-01", valor: 4300.92, status: "pago", pagamento: "2026-10-01", descricao: "Comissão Vitor e André (25%) — Outubro/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p39", favorecido: "Sócios Connect", categoria: "Comissão Sócios Connect (25%)", classificacao: "DESPESA C/ PESSOAS", vencimento: "2026-10-01", valor: 4300.92, status: "pago", pagamento: "2026-10-01", descricao: "Comissão Sócios Connect (25%) — Outubro/2026, calculado sobre o Valor a Gastar do mês" },
+  { id: "p40", favorecido: "Connect", categoria: "Prestação de Serviços CONNECT (40%)", classificacao: "DESPESAS ADMINISTRATIVAS / MARKETING", vencimento: "2026-10-01", valor: 6881.48, status: "pago", pagamento: "2026-10-01", descricao: "Prestação de Serviços CONNECT (40%) — Outubro/2026, calculado sobre o Valor a Gastar do mês" },
   ],
 
   seedCategoriasPagar: [
