@@ -1,6 +1,6 @@
-// Data de referência do painel (ano fiscal simulado da M4 Logística).
-// Fixa para manter os indicadores de atraso consistentes com os dados de exemplo.
-export const HOJE = new Date(2026, 7, 6); // 06/08/2026
+// Data de referência do painel — a pedido do Ewerton, é a data real do calendário (não mais fixa),
+// pra "mês atual" e indicadores de atraso baterem sempre com hoje de verdade.
+export const HOJE = new Date();
 
 export function parseISO(date: string): Date {
   return new Date(date + "T00:00:00");
