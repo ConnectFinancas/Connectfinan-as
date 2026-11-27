@@ -308,7 +308,13 @@ export const mjPrimeData: ClientFinanceData = {
   // continua de fora do DRE (que já batia exatamente com cmvManual antes, e continua batendo). No
   // Fluxo de Caixa, a linha que antes aparecia como "CMV" (confundindo com o relatório de CMV)
   // agora aparece como "CUSTOS VARIAVEIS", com o mesmo valor de antes — só o rótulo mudou.
-  dataVersion: 30,
+  // Bump 30 → 31: lançados 2 impostos de novembro (p1834: DAE da MJ Prime, R$82.450,00; p1835:
+  // Simples Nacional da C&J Serviços, R$8.377,00 — ambos pagos em 20/11, criada a categoria
+  // "Imposto DAE"). A pedido do Ewerton: Impostos e Tarifas de Maquininha (PagBank) saem do
+  // detalhamento genérico de despesas e sobem pra linha de destaque, entre a Receita Bruta e o
+  // Valor a Gastar — nessa posição o % já sai calculado sobre o faturamento total automaticamente,
+  // igual às outras linhas de destaque. Despesas Financeiras continua só com Tarifas Bancárias.
+  dataVersion: 31,
   deducoesManuais: {
     impostos: 0,
     inadimplencia: 0,
@@ -332,7 +338,19 @@ export const mjPrimeData: ClientFinanceData = {
   // "Pagamentos a Fornecedores" (classificação CUSTOS VARIAVEIS) é o caixa que de fato saiu pros
   // fornecedores — fica de fora do DRE (o CMV do DRE é só o cmvManual acima, o relatório que o
   // Ewerton manda) e aparece só no Fluxo de Caixa, como saída real de caixa.
-  classificacoesForaDoDre: ["CUSTOS VARIAVEIS"],
+  //
+  // A pedido do Ewerton: Impostos e Tarifas de Maquininha saem do detalhamento genérico de
+  // despesas e sobem pra linha de destaque, logo depois da Receita Bruta e antes do Valor a
+  // Gastar — assim como % já é sempre calculado sobre a Receita Bruta nessa faixa do DRE, as duas
+  // linhas já saem com o % sobre o faturamento total "de graça", sem precisar de nada a mais.
+  // Tarifas de Maquininha sai de dentro de "Despesas Financeiras" (categoriasForaDoDre, só essa
+  // categoria — Tarifas Bancárias continua normal ali); Impostos sai inteiro da seção de despesas.
+  classificacoesForaDoDre: ["CUSTOS VARIAVEIS", "IMPOSTOS"],
+  categoriasForaDoDre: [{ classificacao: "DESPESAS FINANCEIRAS", categoria: "Tarifas de Maquininhas" }],
+  linhasDestaqueDre: [
+    { rotulo: "Impostos", classificacoes: ["IMPOSTOS"] },
+    { rotulo: "Tarifas de Maquininha", categorias: [{ classificacao: "DESPESAS FINANCEIRAS", categoria: "Tarifas de Maquininhas" }] },
+  ],
   // Abre a linha "(-) CMV" do DRE em MJ Prime x Borba (só exibição/%, não muda nenhum total —
   // a soma dos meses com dado bate exatamente com cmvManual acima). null = em branco na tela (não
   // como R$ 0,00/0,0%), por dois motivos bem diferentes:
@@ -2659,6 +2677,8 @@ export const mjPrimeData: ClientFinanceData = {
   { id: "p1831", favorecido: "DJ INDUSTRIA E COMERCIO DE MOVEIS LTDA", categoria: "Pagamentos a Fornecedores", classificacao: "CUSTOS VARIAVEIS", vencimento: "2026-10-29", valor: 979.52, status: "pago", pagamento: "2026-10-29", descricao: "[C E J SERVIÇOS] Fornecedor" },
   { id: "p1832", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-30", valor: 150.0, status: "pago", pagamento: "2026-10-30", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
   { id: "p1833", favorecido: "MARIANA BORBA DE ANDRADE", categoria: "Pró-Labore", classificacao: "DESPESAS C/ PESSOAS", vencimento: "2026-10-31", valor: 15.02, status: "pago", pagamento: "2026-10-31", descricao: "[C E J SERVIÇOS] Retirada de sócios" },
+  { id: "p1834", favorecido: "RECEITA FEDERAL", categoria: "Imposto DAE", classificacao: "IMPOSTOS", vencimento: "2026-11-20", valor: 82450.0, status: "pago", pagamento: "2026-11-20", descricao: "[MJ PRIME] Imposto DAE" },
+  { id: "p1835", favorecido: "RECEITA FEDERAL", categoria: "Imposto (Simples Nacional)", classificacao: "IMPOSTOS", vencimento: "2026-11-20", valor: 8377.0, status: "pago", pagamento: "2026-11-20", descricao: "[C E J SERVIÇOS] Simples Nacional" },
   ],
 
   seedCategoriasPagar: [
@@ -2731,6 +2751,7 @@ export const mjPrimeData: ClientFinanceData = {
         { nome: "Imposto (Simples Nacional)", padrao: true },
         { nome: "ICMS", padrao: true },
         { nome: "Imposto CIM", padrao: true },
+        { nome: "Imposto DAE", padrao: true },
       ],
     },
     {
