@@ -82,8 +82,17 @@ function formatPct(pct: number | null) {
 }
 
 export default function FaturamentoDrePage() {
-  const { summary, payables, receivables, marketplaceManual, classificacoesNoCmv, cmvManualPorEmpresa, categoriasForaDoDre, client } =
-    useFinance();
+  const {
+    summary,
+    payables,
+    receivables,
+    marketplaceManual,
+    classificacoesNoCmv,
+    cmvManualPorEmpresa,
+    categoriasForaDoDre,
+    canaisComissaoDestacada,
+    client,
+  } = useFinance();
   const { anoCorrente, faturamentoKpis, monthlyFinancials, receitaPorServico, dreGrid } = summary;
   const [detalhamentoAberto, setDetalhamentoAberto] = useState(false);
   const [classAberta, setClassAberta] = useState<string | null>(null);
@@ -607,7 +616,7 @@ export default function FaturamentoDrePage() {
                       })}
                     {isOpen &&
                       isComissaoRow &&
-                      comissaoMarketplacePorCanal(marketplaceManual).map((canalRow) => (
+                      comissaoMarketplacePorCanal(marketplaceManual, canaisComissaoDestacada).map((canalRow) => (
                         <tr key={canalRow.canal} className="border-b border-border-subtle bg-surface/60">
                           <td className="py-2 pl-9 pr-3 whitespace-nowrap sticky left-0 bg-surface text-xs text-muted">{canalRow.label}</td>
                           {mesesExibidos.map((i) => (

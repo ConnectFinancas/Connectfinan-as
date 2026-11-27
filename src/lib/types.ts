@@ -250,6 +250,11 @@ export type ClientFinanceData = {
   // aparecem entre a Receita e o "Lucro Bruto ou Valor a Gastar" — ver LinhaDestaqueDre acima.
   // Quando presente, substitui o fluxo padrão de "Receita Líquida" + deducoesManuais por esse.
   linhasDestaqueDre?: LinhaDestaqueDre[];
+  // Canais cuja comissão sai da linha genérica "(-) Comissões de Marketplace" (soma de todos os
+  // canais) pra virar linha de destaque própria em linhasDestaqueDre (marketplaceCampo, campo
+  // "comissao") — usado quando o cliente quer ver a comissão de um canal específico destacada, em
+  // vez de escondida dentro do total genérico.
+  canaisComissaoDestacada?: MarketplaceCanal[];
   // Saldo bancário real (soma de todas as contas) que o cliente informa mês a mês, pra conferir
   // se o Fluxo de Caixa calculado a partir dos lançamentos bate com o banco de verdade. Índice 0
   // = Jan, 11 = Dez; meses sem valor informado ficam undefined (não é o mesmo que "saldo zero").

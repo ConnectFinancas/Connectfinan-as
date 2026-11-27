@@ -78,8 +78,13 @@ export function receitaPorClassificacao(receivables: Receivable[]) {
 
 // Drill-down da linha "(-) Comissões de Marketplace" do DRE: abre em vez de lançamentos (essa
 // linha não vem de Contas a Pagar) o valor de comissão de cada canal, mês a mês.
-export function comissaoMarketplacePorCanal(marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>) {
+export function comissaoMarketplacePorCanal(
+  marketplaceManual: Record<MarketplaceCanal, MarketplaceMensal>,
+  canaisExcluidos: MarketplaceCanal[] = []
+) {
+  const excluidos = new Set(canaisExcluidos);
   return (Object.keys(marketplaceManual) as MarketplaceCanal[])
+    .filter((canal) => !excluidos.has(canal))
     .map((canal) => {
       const values = marketplaceManual[canal].comissao.map(round2);
       const acumulado = round2(values.reduce((a, v) => a + v, 0));
@@ -136,6 +141,11 @@ type DreConfig = {
   ocultarCmv?: boolean;
   marketplaceManual?: Record<MarketplaceCanal, MarketplaceMensal>;
   linhasDestaqueDre?: LinhaDestaqueDre[];
+  // Canais cuja comissão sai da linha genérica "(-) Comissões de Marketplace" (que soma todos os
+  // canais juntos) pra virar linha de destaque própria (ver linhasDestaqueDre com marketplaceCampo
+  // campo "comissao") — usado quando o cliente quer ver a comissão de um canal específico
+  // destacada, sem desaparecer dentro do total genérico nem contar em dobro.
+  canaisComissaoDestacada?: MarketplaceCanal[];
 };
 
 // Total mensal de uma linha de destaque do DRE — soma classificações inteiras, categorias
@@ -357,7 +367,17 @@ export function computeDreGrid(
   const acumReceita = sumReal(receitaBruta);
 
   // Comissão de marketplace: linha própria de dedução, só aparece pra clientes com esse dado.
-  const comissaoValues = somarMarketplace(dreConfig.marketplaceManual, "comissao").map(round2);
+  // Canais em canaisComissaoDestacada saem dessa soma genérica — a comissão deles vira linha de
+  // destaque própria (ver linhasDestaqueDre), em vez de ficar escondida dentro do total de todos
+  // os canais juntos.
+  const canaisComissaoExcluidos = new Set(dreConfig.canaisComissaoDestacada ?? []);
+  const marketplaceParaComissaoGenerica =
+    dreConfig.marketplaceManual && canaisComissaoExcluidos.size > 0
+      ? (Object.fromEntries(
+          Object.entries(dreConfig.marketplaceManual).filter(([canal]) => !canaisComissaoExcluidos.has(canal as MarketplaceCanal))
+        ) as Record<MarketplaceCanal, MarketplaceMensal>)
+      : dreConfig.marketplaceManual;
+  const comissaoValues = somarMarketplace(marketplaceParaComissaoGenerica, "comissao").map(round2);
   const acumComissao = sumReal(comissaoValues);
   const receitaAposComissao = receitaBruta.map((v, i) => round2(v - comissaoValues[i]));
   const acumReceitaAposComissao = round2(acumReceita - acumComissao);

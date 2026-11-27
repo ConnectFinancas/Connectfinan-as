@@ -82,6 +82,7 @@ type FinanceContextValue = FinanceState &
     | "custosFixosClassificacoesExtras"
     | "excecoesPontoEquilibrio"
     | "recuperacaoInadimplenciaFluxoCaixa"
+    | "canaisComissaoDestacada"
   > & {
   client: Client;
   fluxoDiario: { dia: string; saldo: number }[];
@@ -290,6 +291,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
       ocultarCmv: seed.ocultarCmv,
       marketplaceManual: client.temInformacoesDre ? state.marketplaceManual : undefined,
       linhasDestaqueDre: seed.linhasDestaqueDre,
+      canaisComissaoDestacada: seed.canaisComissaoDestacada,
     }),
     [
       seed.classificacoesForaDoDre,
@@ -297,6 +299,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
       seed.classificacoesNoCmv,
       seed.ocultarCmv,
       seed.linhasDestaqueDre,
+      seed.canaisComissaoDestacada,
       client.temInformacoesDre,
       state.marketplaceManual,
     ]
@@ -352,6 +355,7 @@ export function FinanceProvider({ client, children }: { client: Client; children
     custosFixosClassificacoesExtras: seed.custosFixosClassificacoesExtras,
     excecoesPontoEquilibrio: seed.excecoesPontoEquilibrio,
     recuperacaoInadimplenciaFluxoCaixa: seed.recuperacaoInadimplenciaFluxoCaixa,
+    canaisComissaoDestacada: seed.canaisComissaoDestacada,
     addPayable,
     addReceivable,
     markPago,

@@ -237,7 +237,14 @@ export const storePlussData: ClientFinanceData = {
   // preciso da fatura detalhada; e um lançamento de Adriana Pereira de Jesus (R$6.520, "Insumos
   // Confecção", agosto) que o dono mencionou mas não encontrei em nenhuma grafia nos dados — pode
   // ser um lançamento que nunca chegou a ser importado.
-  dataVersion: 38,
+  // Bump 38 → 39: a pedido do Ewerton, Comissão/Afiliados/Ads do Tiktok saem da seção colapsável
+  // "Deduções de Receita Ligadas à Venda" e viram linhas soltas, sempre visíveis (sem precisar
+  // abrir o grupo). Criada a linha "Comissão Tiktok" (nova: antes a comissão do Tiktok só aparecia
+  // escondida dentro do total genérico "(-) Comissões de Marketplace", que soma ML/Shopee/Shein/
+  // Tiktok juntos) — usa o novo campo canaisComissaoDestacada (derive.ts/types.ts) pra tirar só o
+  // Tiktok dessa soma genérica sem contar em dobro (conferido numericamente: a soma dos dois agora
+  // bate com o total de antes).
+  dataVersion: 39,
 
   // Agosto/2026 — números que o Ewerton passou a partir do relatório de cada plataforma (01/08 a
   // 31/08). Índice 7 = agosto. Setembro/2026 (índice 8) seguiu exatamente as mesmas regras de
@@ -361,6 +368,7 @@ export const storePlussData: ClientFinanceData = {
   // dentro de "Deduções de Receita Ligadas à Venda" (ver linhasDestaqueDre abaixo) — essa exclusão
   // evita contar o valor duas vezes (uma na linha de destaque, outra na despesa normal).
   categoriasForaDoDre: [{ classificacao: "DESPESAS COMERCIAIS / MARKETING", categoria: "Afiliados Tiktok" }],
+  canaisComissaoDestacada: ["tiktok"],
 
   // Estrutura pedida: Receita → (Comissão) → CMV → Devoluções e Reembolso → Frete descontado
   // (Tiktok / Mercado Livre) → Imposto → Lucro Bruto ou Valor a Gastar → Despesas (inclui Despesas
@@ -384,15 +392,21 @@ export const storePlussData: ClientFinanceData = {
       marketplaceCampo: { canal: "tiktok", campo: "freteDescontado" },
       grupo: "Deduções de Receita Ligadas à Venda",
     },
+    // A pedido do Ewerton: Comissão, Afiliados e Ads do Tiktok saem da seção colapsável
+    // "Deduções de Receita Ligadas à Venda" e ficam soltas, visíveis sem precisar abrir nada —
+    // ele quer acompanhar essas 3 de perto, separadas umas das outras.
+    // Comissão Tiktok = tiktok.comissao do marketplaceManual acima — sai da linha genérica "(-)
+    // Comissões de Marketplace" (que soma ML/Shopee/Shein juntos) via canaisComissaoDestacada,
+    // sem contar em dobro.
+    { rotulo: "Comissão Tiktok", marketplaceCampo: { canal: "tiktok", campo: "comissao" } },
     {
       rotulo: "Afiliados Tiktok",
       categorias: [{ classificacao: "DESPESAS COMERCIAIS / MARKETING", categoria: "Afiliados Tiktok" }],
-      grupo: "Deduções de Receita Ligadas à Venda",
     },
     // Mesmo padrão do Ads Shopee: digitado manualmente na aba Informações do DRE (sem lançamento
     // em Contas a Pagar), a partir de outubro/2026 (primeira vez que aparece — "Despesas
     // operacionais" do DRE Simplificado do GestorSeller, diferente de "Comissão de afiliados").
-    { rotulo: "Ads Tiktok", marketplaceCampo: { canal: "tiktok", campo: "ads" }, grupo: "Deduções de Receita Ligadas à Venda" },
+    { rotulo: "Ads Tiktok", marketplaceCampo: { canal: "tiktok", campo: "ads" } },
     // "Frete Descontado pela Shopee" removido do DRE a pedido do Ewerton (não deve mais ser
     // considerado nessa análise). Ads Shopee digitado manualmente na aba Informações do DRE (sem
     // relatório automático) — agosto fica de fora porque já está lançada em Contas a Pagar (ver
@@ -414,6 +428,7 @@ export const storePlussData: ClientFinanceData = {
   // Fluxo de Caixa, em vez de caírem no balde genérico de "custos fixos".
   custosVariaveisDre: [
     "(-) Comissões de Marketplace",
+    "Comissão Tiktok",
     "Frete Descontado direto do Tiktok",
     "Frete Descontado pelo Mercado Livre",
     "Imposto",
