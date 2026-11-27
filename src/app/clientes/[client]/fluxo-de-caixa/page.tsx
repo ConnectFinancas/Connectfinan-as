@@ -18,7 +18,7 @@ import {
 } from "@/lib/derive";
 import { dreMonths } from "@/lib/constants";
 import { formatCurrencyPrecise } from "@/lib/format";
-import { formatDateBR } from "@/lib/today";
+import { formatDateBR, HOJE } from "@/lib/today";
 import { DreGridRow, MarketplaceCanal, Payable } from "@/lib/types";
 import type { DreSheetRow, DreSheetRowKind } from "@/lib/excel-dre";
 
@@ -141,7 +141,8 @@ export default function FluxoDeCaixaPage() {
   const [cmvSubCompAberta, setCmvSubCompAberta] = useState<string | null>(null);
   // null = mostra o ano inteiro (12 colunas); um índice = filtra as duas tabelas largas (DRE de
   // Caixa e Demonstrativo por Competência) pra mostrar só aquele mês.
-  const [mesFiltro, setMesFiltro] = useState<number | null>(null);
+  // Abre já no mês atual em vez de "Ano inteiro" — o usuário troca pra "Ano inteiro" quando quiser.
+  const [mesFiltro, setMesFiltro] = useState<number | null>(HOJE.getMonth());
   const mesesExibidos = mesFiltro === null ? dreMonths.map((_, i) => i) : [mesFiltro];
 
   // KPIs/cards do topo em regime de caixa, recalculados pro mês selecionado no filtro acima —
@@ -365,7 +366,10 @@ export default function FluxoDeCaixaPage() {
               <option>Geral (receitas – despesas)</option>
             </select>
           </div>
-          <button className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors">
+          <button
+            onClick={() => setMesFiltro(HOJE.getMonth())}
+            className="rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-brand-700 hover:bg-surface-muted transition-colors"
+          >
             Mês atual
           </button>
           <button
